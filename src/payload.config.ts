@@ -7,6 +7,7 @@ import sharp from 'sharp';
 import { fileURLToPath } from 'url';
 
 import { Media } from '@/collections/media';
+import { Posts } from '@/collections/posts';
 import { Users } from '@/collections/users';
 
 const filename = fileURLToPath(import.meta.url);
@@ -14,7 +15,7 @@ const dirname = path.dirname(filename);
 
 export default buildConfig({
   admin: { user: 'users' },
-  collections: [Users, Media],
+  collections: [Users, Media, Posts],
   db: mongooseAdapter({ url: process.env.DATABASE_URL ?? '' }),
   editor: lexicalEditor(),
   plugins: [

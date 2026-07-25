@@ -14,7 +14,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "payload": "payload",
-    "generate:types": "payload generate:types",
+    "generate:types": "tsx scripts/generate-types.mjs",
     "generate:importmap": "payload generate:importmap"
   },
   "dependencies": {
@@ -46,6 +46,7 @@
     "jsdom": "^29.1.1",
     "postcss": "^8.5.23",
     "tailwindcss": "^4.3.3",
+    "tsx": "4.22.4",
     "typescript": "^5.9.3",
     "vitest": "^4.1.10"
   }
