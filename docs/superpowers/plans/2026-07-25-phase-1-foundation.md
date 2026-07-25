@@ -14,7 +14,7 @@
 
 - Package manager: `pnpm@10.12.4` (already in `package.json` — keep). Node version comes from `.nvmrc`.
 - TypeScript strict mode; ES2022+; never `any`.
-- Named exports only (Next.js route files like `page.tsx`/`layout.tsx`/`not-found.tsx` require default exports — those are the only exception).
+- Named exports only. Exceptions: Next.js route files (`page.tsx`/`layout.tsx`/`not-found.tsx`) and tool-loader config files (`next.config.ts`, `postcss.config.mjs`, `eslint.config.mjs`), which require default exports.
 - Files kebab-case; components PascalCase; tests colocated next to source as `<name>.test.tsx`.
 - Palette (copy verbatim, from spec §2): dark `--bg #0b0f14`, `--surface #10161d`, `--border #223140`, `--text #d7e2e9`, `--text-muted #7d93a5`, `--accent #46e08a`; light `--bg #f4f7f5`, `--surface #ffffff`, `--border #d8e2dc`, `--text #17211c`, `--text-muted #5c6f66`, `--accent #0d9155`.
 - Theme: class strategy, system preference → light fallback, manual `◐` toggle.
