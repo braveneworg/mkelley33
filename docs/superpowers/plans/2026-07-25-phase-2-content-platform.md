@@ -496,6 +496,8 @@ pnpm lint && pnpm typecheck && pnpm test && pnpm build
 
 All pass. `src/payload-types.ts` now exports `Post`, `User`, `Media`, `CodeBlockFields`. (generate:types does not need a live DB. If it errors demanding one, report BLOCKED with output.)
 
+**Known issue (from Task 1 execution):** the `payload generate:types` CLI fails on this Node 24 + tsx combo with `ERR_REQUIRE_ASYNC_MODULE` (upstream payloadcms/payload#16378). If it fails that way, use this fallback: inspect `node_modules/payload/dist/bin/` to find the function the `generate:types` bin invokes (prefer a public export from `payload` or `payload/node` if one exists), then create `scripts/generate-types.mjs` that imports that function and your config and calls it directly; run it with `node --import tsx/esm scripts/generate-types.mjs` (or plain `node` if no TS imports resolve through the config chain) and repoint the `generate:types` package script at it. If no invokable function can be found either, report BLOCKED with what the bin file actually contains.
+
 - [ ] **Step 10: Commit**
 
 ```bash
