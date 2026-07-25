@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 
 import { Inter, JetBrains_Mono } from 'next/font/google';
 
+import { SiteFooter } from '@/components/site/site-footer';
 import { SiteNav } from '@/components/site/site-nav';
 import { ThemeProvider } from '@/components/site/theme-provider';
 
@@ -38,6 +39,7 @@ export default function RootLayout({
           <div className="flex min-h-dvh flex-col">
             <SiteNav />
             <main className="flex-1">{children}</main>
+            <SiteFooter />
           </div>
         </ThemeProvider>
       </body>
