@@ -197,18 +197,18 @@ git commit -m "feat: scaffold Next.js 16 app with Tailwind 4 and TypeScript stri
 - [ ] **Step 1: Add dev dependencies**
 
 ```bash
-pnpm add -D vitest @vitejs/plugin-react jsdom vite-tsconfig-paths @vitest/coverage-v8 @testing-library/react @testing-library/jest-dom @testing-library/user-event
+pnpm add -D vitest @vitejs/plugin-react jsdom @vitest/coverage-v8 @testing-library/react @testing-library/jest-dom @testing-library/user-event
 ```
 
 - [ ] **Step 2: Create `vitest.config.ts`**
 
 ```typescript
 import react from '@vitejs/plugin-react';
-import tsconfigPaths from 'vite-tsconfig-paths';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
-  plugins: [tsconfigPaths(), react()],
+  plugins: [react()],
+  resolve: { tsconfigPaths: true },
   test: {
     coverage: {
       include: ['src/components/**', 'src/lib/**'],
