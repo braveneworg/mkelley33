@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 
 import { ThemeProvider } from '@/components/site/theme-provider';
 
@@ -15,5 +15,17 @@ describe('ThemeProvider', () => {
       </ThemeProvider>,
     );
     expect(screen.getByText('child content')).toBeInTheDocument();
+  });
+
+  it('applies the resolved theme class through the wrapper', async () => {
+    window.localStorage.setItem('theme', 'dark');
+    render(
+      <ThemeProvider>
+        <p>themed</p>
+      </ThemeProvider>,
+    );
+    await waitFor(() =>
+      expect(document.documentElement).toHaveClass('dark'),
+    );
   });
 });
