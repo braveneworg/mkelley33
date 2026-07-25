@@ -1,0 +1,673 @@
+---
+title: 'How to create a Next.js 14.1 blog using MDX markdown'
+date: '2024-02-06'
+description: 'A React, TypeScript, and Next.js tutorial for creating a blog using MDX markdown'
+---
+
+**Note**: this blog was developed using all of the following information.
+
+## MDX: writing a blog post in <a href="https://mdxjs.com/" target="markdown-component-era" rel="noopener">markdown for the component era</a>
+
+### Reasons why MDX with Next.js, React, and TypeScript
+
+- Next.js <a href="https://nextjs.org/docs/pages/building-your-application/rendering/static-site-generation" target="nextjs-ssg" rel="noopener">uses
+  SSG (Static Site Generation)</a> to create pages from MDX at build time
+- <a href="https://aws.amazon.com/caching/cdn/#:~:text=For%20caching%2C%20a%20CDN%20will,Point%20of%20Presence%20(PoP)." target="aws-caching" rel="noopener">Cache blog posts using a CDN</a>
+- Blog faster writing MDX than <a href="https://byby.dev/js-markdown-libs" target="mdx-alternatives" rel="noopener">alternative approaches</a> with HTML or other blogging platforms
+- <a href="https://mdxjs.com/#mdx-in-short" target="mdx-in-short" rel="noopener">Read about the benefits of MDX</a>
+- React components can be used in MDX
+- <a href="https://prismic.io/blog/what-is-typescript" target="prismic-what-is-typescript" rel="noopener">TypeScript reasons</a>: reduces bugs, documents code, enhances code quality, and makes code more maintainable
+
+## 1. Getting Started: Create a Next.js app
+
+This post shows you how to create your own Next.js blog using MDX markdown with React and TypeScript.
+
+### Pre-requisites and recommendations
+
+**Required**: a terminal and preferably some command-line knowledge
+
+### 1.1 **Install the project basics**
+
+- <a href="https://github.com/nvm-sh/nvm?tab=readme-ov-file#install--update-script" target="install-nvm" rel="noopener">Install nvm</a> to get the latest version of node.js LTS
+- `node -v > .nvmrc`. I'm using v20.8.0 because that's the version Vercel, my hosting provider, supports right now
+- `mkdir my-nextjs-blog` wherever you keep your projects directory
+- `cd my-nextjs-blog`
+- <a href="https://code.visualstudio.com/" target="install-vs-code">Install Visual Studio Code</a>
+- <a href="https://code.visualstudio.com/docs/setup/mac#_launching-from-the-command-line" target="vscode-command-line" rel="noopener">Launch Visual Studio Code</a>: `code .`
+- `⌘ + j` to open a terminal in your editor
+- `git init`
+- `npx gitignore node`
+- `git add .`
+- `git commit -m 'Add initial files`
+
+### 1.2 **Install Next.js**
+
+```shell showLineNumbers
+$ npx create-next-app
+
+Need to install the following packages:
+create-next-app@14.1.0
+Ok to proceed? (y)
+
+<Press return>
+
+✔ What is your project named? … . <literally type a period instead of a name>
+✔ Would you like to use TypeScript? … No / [Yes]
+✔ Would you like to use ESLint? … No / [Yes]
+✔ Would you like to use Tailwind CSS? … No / [Yes] <optional, but recommended>
+✔ Would you like to use `src/` directory? … No / [Yes]
+✔ Would you like to use App Router? (recommended) … No / [Yes]
+✔ Would you like to customize the default import alias (@/*)? … [No] / Yes
+Creating a new Next.js app in /Users/your-username/projects/my-nextjs-blog.
+
+Using npm.
+
+Initializing project with template: app
+
+
+Installing dependencies:
+- react
+- react-dom
+- next
+
+Installing devDependencies:
+- typescript
+- @types/node
+- @types/react
+- @types/react-dom
+- eslint
+- eslint-config-next
+
+<Wait for installation to finish>
+
+added 311 packages, and audited 312 packages in 18s
+
+119 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+Success! Created my-nextjs-blog at /Users/your-username/projects/my-nextjs-blog
+```
+
+## 2. Install and configure the blog dependencies
+
+### 2.1 Add Contentlayer, next-contentlayer
+
+#### 2.1.1 Why you need Contentlayer for Next.js
+
+From <a href="https://contentlayer.dev/" target="content-layer" rel="noopener">Contentlayer</a>:
+
+"Contentlayer is a content SDK that validates and transforms your content into type-safe JSON data you can easily import into your application."
+
+We'll use it to transform our MDX markdown files into JSON that Next.js can consume.
+
+#### 2.1.2 Installing Contentlayer and next-contentlayer with Next.js 14.1.0
+
+**The problem** is that next-contentlayer doesn't yet support Next.js 14.1.0
+
+So, to install next-contentlayer with Next.js 14.1.0 you can do the following:
+
+<CopyToClipboard />
+```shell
+$ npm i -D contentlayer@latest next-contentlayer@latest --legacy-peer-deps
+```
+
+At the time of this writing that translates to versions `0.3.4` being installed.
+
+- However, <a href="https://github.com/shadcn/next-contentlayer/issues/21" target="next-contentlayer-21" rel="noopener">there is an open issue on GitHub</a>.
+- There's also an <a href="https://github.com/shadcn/next-contentlayer/pull/24" target="next-contentlayer-pr-24" rel="noopener">approved PR out there</a>
+ that fixes one of the issues with `next/image` in an MDX component.
+
+Append `contentlayer` to `.gitignore`:
+
+<CopyToClipboard />
+```shell
+# contentlayer
+.contentlayer
+```
+
+### 2.2 Pause for npm dependency care
+
+This is around the time when I peg everything to patch versions.
+**Note**: I _do update_ to minor versions too, just more carefully, and less frequently than patch versions.
+
+So, open the `package.json` in your root directory and do the following:
+
+- Move your cursor to the first caret ^ and press ⌘ + d (or ctrl + d) until all the carets are selected.
+- Press delete, then press ~ to peg everything to the patch version
+
+You might see that versions of some packages may look something like this `~18` now.
+I prefer to see the exact version listed in my package.json and that will put us on
+the same page. So, run the following and copy the exact versions from the output of `npm ls`
+into your package.json:
+
+**Optional**:
+
+<CopyToClipboard />
+```shell
+$ npm i -g npm-check-updates
+$ npx ncu -ut patch
+$ npm i
+$ npx typesync
+$ npx i
+$ git add package.json package-lock.json
+$ git commit -m 'Update dependencies'
+```
+
+Now all of your dependencies in package.json should be the latest patch versions.
+
+### 2.3 Configure and install blog dependencies
+
+#### 2.3.1 Configure next-contentlayer
+
+Put the following code in your `next.config.mjs` that was generated by `npx create-next-app`:
+
+<CopyToClipboard />
+```typescript
+import { withContentlayer } from 'next-contentlayer';
+
+/** @type {import("next").NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
+  swcMinify: true,
+};
+
+export default withContentlayer(nextConfig);
+```
+
+#### 2.3.2 Configure and install plugins
+
+Next, install some dependencies that we'll use to do some configuration of features you
+might like in your blog. I'll explain what they are below. You'll have to
+use `--legacy-peer-deps` whenever you <br />`npm install` something now because of
+`next-contentlayer`.
+
+<CopyToClipboard />
+```shell
+$ npm i -D hastscript@latest rehype-autolink-headings@latest \
+  rehype-prism-plus@latest rehype-slug@latest remark-gfm@3.0.1 \
+  date-fns@latest clsx@latest
+  --legacy-peer-deps
+```
+
+Here's a brief list of what each of the above dependencies does:
+
+- `hastscript`: creates # anchors in conjunction with `rehype-autolink-headings`
+- `rehype-prism-plus`: highlight code blocks and gets you the `showLineNumbers`
+- `rehype-slug`: puts ids on your headings
+- `remark-gfm`: plugin to enable the extensions to markdown that GitHub adds with GFM
+- `date-fns`: A date utility library that's used to format the date of your blog post
+- `clsx`: a CSS class utility library that lets you set multiple classes dynamically
+
+Create `contentlayer.config.ts` and place the following contents in it:
+
+<CopyToClipboard />
+```typescript showLineNumbers
+import { defineDocumentType, makeSource } from 'contentlayer/source-files';
+import rehypeAutoLinkHeadings, {
+  type Options as AutolinkOptions,
+} from 'rehype-autolink-headings';
+import rehypeSlug from 'rehype-slug';
+import remarkGfm from 'remark-gfm';
+import rehypePrism from 'rehype-prism-plus';
+import { s } from 'hastscript';
+
+export const Post = defineDocumentType(() => ({
+  name: 'Post',
+  filePathPattern: `**/*.mdx`,
+  contentType: 'mdx',
+  fields: {
+    title: {
+      type: 'string',
+      required: true,
+    },
+    description: {
+      type: 'string',
+      required: true,
+    },
+    published: {
+      type: 'boolean',
+      default: true,
+    },
+    date: {
+      type: 'date',
+      required: true,
+    },
+  },
+  computedFields: {
+    slug: {
+      type: 'string',
+      resolve: (post: any) => `/${post}._raw.flattenedPath`,
+    },
+    url: {
+      type: 'string',
+      resolve: (post: any) => `/blog/${post._raw.flattenedPath}`,
+    },
+  },
+}));
+
+export default makeSource({
+  contentDirPath: 'src/app/blog/(posts)',
+  documentTypes: [Post],
+  mdx: {
+    remarkPlugins: [remarkGfm],
+    rehypePlugins: [
+      rehypeSlug,
+      rehypePrism,
+      [
+        rehypeAutoLinkHeadings,
+        {
+          behavior: 'prepend',
+          test: ['h2', 'h3', 'h4'],
+          properties: { class: 'heading-link', ariaLabel: 'Link to section' },
+          content: s(
+            'svg',
+            {
+              xmlns: 'http://www.w3.org/2000/svg',
+              viewBox: '0 0 24 24',
+              width: '24',
+              height: '24',
+              fill: 'none',
+              stroke: 'currentColor',
+              'stroke-width': '2',
+              'stroke-linecap': 'round',
+              'stroke-linejoin': 'round',
+              'aria-label': 'Anchor link',
+            },
+            [
+              s('line', { x1: '4', y1: '9', x2: '20', y2: '9' }),
+              s('line', { x1: '4', y1: '15', x2: '20', y2: '15' }),
+              s('line', { x1: '10', y1: '3', x2: '8', y2: '21' }),
+              s('line', { x1: '16', y1: '3', x2: '14', y2: '21' }),
+            ]
+          ),
+        } satisfies Partial<AutolinkOptions>,
+      ],
+    ],
+  },
+});
+```
+
+#### 2.3.3 Edit your tsconfig.json
+
+Add to the contents of tsconfig.json the following:
+
+<CopyToClipboard />
+```json showLineNumbers
+{
+  "compilerOptions": {
+    "paths": {
+      "contentlayer/generated": ["./.contentlayer/generated"]
+    }
+  }
+  "include": [
+    "contentlayer.config.ts",
+    ".contentlayer/generated"
+  ]
+}
+```
+
+## 3 Create Next.js blog directory structure, pages, styles, and components
+
+### 3.1 Project Directory Structure
+
+Your src directory should look something like the following:
+
+```shell showLineNumbers
+src
+├── app
+│  ├── blog
+│  │  ├── (posts)
+│  │  │  ├── sample-blog-post.mdx
+│  │  ├── [slug]
+│  │  │  ├── page.tsx
+│  │  │  └── prism.css
+│  │  └── page.tsx
+├── components
+│  ├── Pagination.tsx
+```
+
+There will be other files too that were generated by Next.js, but for now just focus
+on creating the following directories:
+
+```shell showLineNumbers
+  cd src
+  mkdir components
+  cd app
+  mkdir -p "blog/(posts)"
+  mkdir -p "blog/[slug]"
+```
+
+### 3.2 Prism stylesheet
+
+Go to <a href="https://prismjs.com/download.html#themes=prism-dark&languages=markup+css+clike+javascript" target="prismjs" rel="noopener">prismjs.com</a>
+and scroll to the bottom of the page. Click the "Download CSS" button. Note the directory
+structure above, and place it in the appropriate directory.
+
+### 3.3 Next.js pages, MDX markdown, and React components files
+
+**Note**: Some files have been omitted or changed to prevent this post from becoming overly-long.
+You can find all the files in my living repo <a href="https://github.com/mkelley33/mkelley33-pwa" target="mkelley33-pwa" rel="noopener">mkelley33-pwa</a>
+on GitHub. There may be some differences, but I've tried to keep the files in this post as close to the
+ones I use. Feel free to let me know if you get stuck in the comments below.
+
+#### 3.3.1 Create the Next.js pages, components, and sample MDX markdown file:
+
+```shell showLineNumbers
+  cd "src/app/blog/(posts)"
+  touch sample-blog-post.mdx
+  cd "../[slug]"
+  touch page.tsx
+  cd ../../blog
+  touch page.tsx
+  cd ../../components
+  touch Pagination.tsx
+```
+
+**Paste sample mdx** into `sample-blog-post.mdx`:
+
+<CopyToClipboard />
+```markdown showLineNumbers
+  ---
+  title: 'Your sample blog post'
+  date: '2024-02-06'
+  description: 'A description of your sample blog post'
+  ---
+
+  ## Your second level heading
+
+  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec sed lectus vitae sem suscipit gravida sed ac nibh. Nullam ultricies purus lacus, non interdum libero sodales eu. Sed sed aliquam mauris. Praesent rutrum dictum ex, ut elementum elit accumsan eu. Mauris a malesuada dolor. Integer rutrum metus nec mi imperdiet, vitae vehicula enim egestas. Fusce sed finibus ligula. Phasellus pharetra purus at sollicitudin posuere. Donec vehicula tellus nec nunc feugiat, vitae bibendum tellus condimentum. Morbi ac leo pellentesque, vehicula neque sit amet, interdum nisl.
+
+  Ut a turpis et mi tempor vestibulum et nec quam. Nulla consequat auctor ipsum, nec iaculis quam malesuada quis. Phasellus metus enim, aliquet id iaculis et, dignissim ac lectus. Nulla commodo quis orci ut posuere. Donec hendrerit non dolor nec lacinia. Etiam accumsan felis sed condimentum hendrerit. Phasellus auctor pulvinar ante, non sollicitudin diam posuere nec.
+
+  ...JSX: put whatever components you want into this file
+
+  ...HTML: put whatever tags you want into this file
+```
+
+**Paste blog page contents** into `src/app/blog/[slug]/page.tsx`:
+
+<CopyToClipboard />
+```typescript showLineNumbers
+import './prism.css';
+
+import { format, parseISO } from 'date-fns';
+
+import Link from 'next/link';
+import type { MDXComponents } from 'mdx/types';
+import { Metadata } from 'next';
+import { allPosts } from 'contentlayer/generated';
+import { notFound } from 'next/navigation';
+import { useMDXComponent } from 'next-contentlayer/hooks';
+
+interface IBlogPostProps {
+  params: { slug: string };
+}
+
+export async function generateMetadata({ params: { slug } }: IBlogPostProps): Promise<Metadata> {
+  const post = allPosts.find((post) => post._raw.flattenedPath === slug);
+
+  return {
+    title: `${post?.title} - mkelley33`,
+    description: post?.description,
+  };
+}
+
+export const generateStaticParams = async () => allPosts.map((post) => ({ slug: post._raw.flattenedPath }));
+
+const BlogPost = ({ params: { slug } }: IBlogPostProps) => {
+  const post = allPosts.find((post) => post._raw.flattenedPath === slug);
+
+  if (!post) notFound();
+
+  const MDXContent = useMDXComponent(post.body.code);
+
+  const mdxComponents: MDXComponents = {
+    // Override the default <a> element to use the next/link component.
+    a: ({ href, children }) => <Link href={href as string}>{children}</Link>,
+  };
+
+  return (
+    <>
+      <article>
+        <h1>{post.title}</h1>
+        <time dateTime={post.date} className="block text-xs uppercase font-bold mb-3">
+          {format(parseISO(post.date), 'MMM dd, yyyy')}
+        </time>
+        <MDXContent components={mdxComponents} />
+      </article>
+    </>
+  );
+};
+
+export default BlogPost;
+
+```
+
+**Page pagination component** into `src/app/components/Pagination.tsx`:
+
+You'll use this in the blog listing later below.
+
+<CopyToClipboard />
+```typescript showLineNumbers
+import Link from 'next/link';
+import clsx from 'clsx';
+
+interface IPaginationProps {
+  isFirstPage: boolean;
+  isLastPage: boolean;
+  page: number;
+  prevPage: string;
+  nextPage: string;
+  totalPages: number;
+  pagination: Array<string | number>;
+}
+
+export default function Pagination({
+  pagination,
+  isFirstPage,
+  isLastPage,
+  page,
+  prevPage,
+  nextPage,
+  totalPages,
+}: IPaginationProps) {
+  return totalPages > 1 ? (
+    <nav aria-label="pagination" className="border-t-2 pt-3 border-slate-500">
+      <ul className="flex flex-row list-none m-0 p-0">
+        {!isFirstPage && (
+          <li className="mr-3">
+            <Link href={prevPage}>Prev</Link>
+          </li>
+        )}
+        {pagination.map((currentPage, idx) => {
+          const aria = page === currentPage ? { 'aria-current': 'page' } : {};
+          const ellipsisText = page < totalPages ? 'end' : 'beginning';
+          return (
+            <span key={idx}>
+              {currentPage !== '...' && (
+                <li className="mr-3">
+                  {/* @ts-expect-error valid aria attribute */}
+                  <Link
+                    className={clsx({
+                      'no-underline': page === currentPage,
+                    })}
+                    href={`/blog/?page=${currentPage}`}
+                    {...aria}
+                  >
+                    <span className="hidden">page </span>
+                    {currentPage}
+                  </Link>
+                </li>
+              )}
+              {currentPage === '...' && (
+                <li className="mr-3">
+                  <Link
+                    href={`/blog/?page=${page < totalPages ? totalPages : 1}`}
+                  >
+                    <span className="hidden">go to {ellipsisText} pages</span>
+                    <span aria-hidden>{currentPage}</span>
+                  </Link>
+                </li>
+              )}
+            </span>
+          );
+        })}
+        {!isLastPage && (
+          <li>
+            <Link href={nextPage}>Next</Link>
+          </li>
+        )}
+      </ul>
+    </nav>
+  ) : null;
+}
+
+```
+
+**Paste blog listing contents** into `src/app/blog/page.tsx`:
+
+<CopyToClipboard />
+```typescript showLineNumbers
+import { Metadata } from 'next';
+import Link from 'next/link';
+import { compareDesc, format, parseISO } from 'date-fns';
+import { allPosts, type Post } from 'contentlayer/generated';
+import Pagination from '@/components/Pagination';
+import { memo } from 'react';
+
+export const metadata: Metadata = {
+  title: 'Blog',
+};
+
+// https://gist.github.com/kottenator/9d936eb3e4e3c3e02598?permalink_comment_id=3413141#gistcomment-3413141
+function paginate(current: number, total: number) {
+  const center = [current - 2, current - 1, current, current + 1, current + 2],
+    filteredCenter: Array<string | number> = center.filter((p) => p > 1 && p < total),
+    includeThreeLeft = current === 5,
+    includeThreeRight = current === total - 4,
+    includeLeftDots = current > 5,
+    includeRightDots = current < total - 4;
+
+  if (includeThreeLeft) filteredCenter.unshift(2);
+  if (includeThreeRight) filteredCenter.push(total - 1);
+
+  if (includeLeftDots) filteredCenter.unshift('...');
+  if (includeRightDots) filteredCenter.push('...');
+
+  return [1, ...filteredCenter, total];
+}
+
+const MAX_LIMIT = 50;
+
+function PostCard(post: Post) {
+  return (
+    <article className="mb-8">
+      <h2 className="mb-1 text-xl">
+        <Link href={post.url}>{post.title}</Link>
+      </h2>
+      <time dateTime={post.date} className="mb-2 block text-xs">
+        {format(parseISO(post.date), 'LLLL d, yyyy')}
+      </time>
+      <p className="text-sm [&>*]:mb-3 [&>*:last-child]:mb-0">{post.description}</p>
+    </article>
+  );
+}
+
+const BlogList = async ({ searchParams }: { searchParams?: { [key: string]: string | string[] | undefined } }) => {
+  const posts = allPosts.sort((a, b) => compareDesc(new Date(a.date), new Date(b.date)));
+  const page = +(searchParams?.page ?? 1);
+  const limit = +(searchParams?.limit ?? 5);
+
+  if (typeof limit !== 'undefined' && limit > 50) {
+    throw new Error(`Max limit of ${MAX_LIMIT} blog posts exceeded.`);
+  }
+
+  const isFirstPage = page === 1;
+  const totalItems = allPosts.length;
+  const totalPages = Math.ceil(totalItems / limit);
+  const isLastPage = page * limit >= totalPages * limit;
+  const pageStart = (page - 1 < 0 ? 0 : page - 1) * limit;
+  const pageEnd = Math.min(pageStart + limit - 1, totalItems - 1);
+  const postsSlice = posts.slice(pageStart, pageEnd + 1);
+  const pagination = paginate(page, totalPages);
+  const nextPage = `/blog/?page=${page + 1}`;
+  const prevPage = `/blog/?page=${page - 1}`;
+
+  return (
+    <section>
+      <h1>Blog Posts by Michaux Kelley</h1>
+      {postsSlice.map((post) => (
+        <PostCard key={post.url} {...post} />
+      ))}
+
+      <Pagination
+        isFirstPage={isFirstPage}
+        isLastPage={isLastPage}
+        pagination={pagination}
+        page={page}
+        totalPages={totalPages}
+        nextPage={nextPage}
+        prevPage={prevPage}
+      />
+    </section>
+  );
+};
+
+export default memo(BlogList);
+```
+
+**Edit the app page.tsx and layout.tsx**:
+
+Open `src/app/layout.tsx` and paste the following:
+
+<CopyToClipboard />
+```typescript
+import './globals.css';
+import { Inter } from 'next/font/google';
+
+const inter = Inter({ subsets: ['latin'] });
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body className={inter.className}>
+        <main>
+          {children}
+        </main>
+      </body>
+    </html>
+  );
+}
+
+```
+
+Open `src/app/page.tsx` and replace the contents with:
+
+<CopyToClipboard />
+```typescript showLineNumbers
+import Link from 'next/link';
+
+export default function Home() {
+  return (
+    <>
+      <h1>REPLACE ME</h1>
+      <p><Link href="/blog">Blog</Link></p>
+    </>
+  );
+}
+```
+
+## 4 Run the blog project
+
+1. Open a new terminal your root directory from Visual Studio Code (`⌘ + j`).
+2. Type `npm run dev`
+3. Open your browser to http://localhost:3000/blog/
+
+Now you should have a blog up and running! If you run into any problems,
+have any questions, or need to troubleshoot, have a look at <a href="https://github.com/mkelley33/mkelley33-pwa" target="mkelley33-pwa" rel="noopener">my blog repository on GitHub</a>,
+or feel free to <a href="/contact">contact me</a> or leave a comment below.
