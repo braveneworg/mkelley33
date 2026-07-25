@@ -3,14 +3,31 @@ import { siteConfig } from '@/lib/site-config';
 interface FooterLink {
   href: string;
   label: string;
+  rel: string;
 }
 
 function externalLinks(): FooterLink[] {
-  const candidates: { href: string | null; label: string }[] = [
-    { href: siteConfig.socials.github, label: 'github' },
-    { href: siteConfig.socials.linkedin, label: 'linkedin' },
-    { href: siteConfig.socials.bluesky, label: 'bluesky' },
-    { href: siteConfig.repoUrl, label: 'source' },
+  const candidates: { href: string | null; label: string; rel: string }[] = [
+    {
+      href: siteConfig.socials.github,
+      label: 'github',
+      rel: 'me noopener noreferrer',
+    },
+    {
+      href: siteConfig.socials.linkedin,
+      label: 'linkedin',
+      rel: 'me noopener noreferrer',
+    },
+    {
+      href: siteConfig.socials.bluesky,
+      label: 'bluesky',
+      rel: 'me noopener noreferrer',
+    },
+    {
+      href: siteConfig.repoUrl,
+      label: 'source',
+      rel: 'noopener noreferrer',
+    },
   ];
   return candidates.filter(
     (candidate): candidate is FooterLink => candidate.href !== null,
@@ -30,7 +47,7 @@ export function SiteFooter() {
               <a
                 className="transition-colors hover:text-fg"
                 href={link.href}
-                rel="me noopener noreferrer"
+                rel={link.rel}
                 target="_blank"
               >
                 {link.label}

@@ -33,4 +33,11 @@ describe('SiteFooter', () => {
       screen.queryByRole('link', { name: 'source' }),
     ).not.toBeInTheDocument();
   });
+
+  it('marks external links as safe new-tab links', () => {
+    render(<SiteFooter />);
+    const github = screen.getByRole('link', { name: 'github' });
+    expect(github).toHaveAttribute('target', '_blank');
+    expect(github).toHaveAttribute('rel', 'me noopener noreferrer');
+  });
 });
