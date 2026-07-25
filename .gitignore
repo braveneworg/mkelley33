@@ -2,3 +2,7 @@ node_modules/
 .superpowers/
 .env
 .env.local
+.next/
+next-env.d.ts
+coverage/
+*.tsbuildinfo
