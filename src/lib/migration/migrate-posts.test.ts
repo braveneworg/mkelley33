@@ -43,6 +43,21 @@ describe('splitFences', () => {
       expect(fenceSegment.code).toContain('export default dotenv;');
     }
   });
+
+  it('normalizes CRLF line endings before splitting', () => {
+    const markdown = 'before\r\n```ts\r\nconst a = 1;\r\n```\r\nafter\r\n';
+
+    const segments = splitFences(markdown);
+
+    expect(segments).toHaveLength(3);
+    expect(segments[0]?.type).toBe('prose');
+    expect(segments[1]).toMatchObject({
+      code: 'const a = 1;',
+      language: 'ts',
+      type: 'fence',
+    });
+    expect(segments[2]?.type).toBe('prose');
+  });
 });
 
 describe('normalizeLanguage', () => {

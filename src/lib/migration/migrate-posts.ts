@@ -67,13 +67,14 @@ export function normalizeLanguage(info: string): CodeLanguage {
 }
 
 export function splitFences(markdown: string): Segment[] {
+  const normalized = markdown.replace(/\r\n/g, '\n');
   const segments: Segment[] = [];
   const fence = /^```([^\n]*)\n([\s\S]*?)^```[ \t]*$/gm;
   let last = 0;
-  for (const match of markdown.matchAll(fence)) {
+  for (const match of normalized.matchAll(fence)) {
     const index = match.index ?? 0;
     if (index > last) {
-      segments.push({ markdown: markdown.slice(last, index), type: 'prose' });
+      segments.push({ markdown: normalized.slice(last, index), type: 'prose' });
     }
     segments.push({
       code: match[2]?.replace(/\n$/, '') ?? '',
@@ -82,8 +83,8 @@ export function splitFences(markdown: string): Segment[] {
     });
     last = index + match[0].length;
   }
-  if (last < markdown.length) {
-    segments.push({ markdown: markdown.slice(last), type: 'prose' });
+  if (last < normalized.length) {
+    segments.push({ markdown: normalized.slice(last), type: 'prose' });
   }
   return segments;
 }
