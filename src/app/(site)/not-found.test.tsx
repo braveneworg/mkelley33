@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 
-import NotFound from '@/app/not-found';
+import NotFound from '@/app/(site)/not-found';
 
 describe('NotFound', () => {
   it('renders the command-not-found heading', () => {
