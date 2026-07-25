@@ -1,0 +1,52 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  color-scheme: light;
+  --bg: #f4f7f5;
+  --surface: #ffffff;
+  --border: #d8e2dc;
+  --text: #17211c;
+  --text-muted: #5c6f66;
+  --accent: #0d9155;
+  --grid-line: rgba(23, 33, 28, 0.05);
+}
+
+.dark {
+  color-scheme: dark;
+  --bg: #0b0f14;
+  --surface: #10161d;
+  --border: #223140;
+  --text: #d7e2e9;
+  --text-muted: #7d93a5;
+  --accent: #46e08a;
+  --grid-line: rgba(120, 150, 170, 0.05);
+}
+
+@theme inline {
+  --color-canvas: var(--bg);
+  --color-surface: var(--surface);
+  --color-edge: var(--border);
+  --color-fg: var(--text);
+  --color-fg-muted: var(--text-muted);
+  --color-phosphor: var(--accent);
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, 'SFMono-Regular', monospace;
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+}
+
+@utility bg-blueprint {
+  background-image: linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+}
+
+*:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

@@ -14,7 +14,7 @@
 
 - Package manager: `pnpm@10.12.4` (already in `package.json` — keep). Node version comes from `.nvmrc`.
 - TypeScript strict mode; ES2022+; never `any`.
-- Named exports only (Next.js route files like `page.tsx`/`layout.tsx`/`not-found.tsx` require default exports — those are the only exception).
+- Named exports only. Exceptions: Next.js route files (`page.tsx`/`layout.tsx`/`not-found.tsx`) and tool-loader config files (`next.config.ts`, `postcss.config.mjs`, `eslint.config.mjs`), which require default exports.
 - Files kebab-case; components PascalCase; tests colocated next to source as `<name>.test.tsx`.
 - Palette (copy verbatim, from spec §2): dark `--bg #0b0f14`, `--surface #10161d`, `--border #223140`, `--text #d7e2e9`, `--text-muted #7d93a5`, `--accent #46e08a`; light `--bg #f4f7f5`, `--surface #ffffff`, `--border #d8e2dc`, `--text #17211c`, `--text-muted #5c6f66`, `--accent #0d9155`.
 - Theme: class strategy, system preference → light fallback, manual `◐` toggle.
@@ -197,18 +197,18 @@ git commit -m "feat: scaffold Next.js 16 app with Tailwind 4 and TypeScript stri
 - [ ] **Step 1: Add dev dependencies**
 
 ```bash
-pnpm add -D vitest @vitejs/plugin-react jsdom vite-tsconfig-paths @vitest/coverage-v8 @testing-library/react @testing-library/jest-dom @testing-library/user-event
+pnpm add -D vitest @vitejs/plugin-react jsdom @vitest/coverage-v8 @testing-library/react @testing-library/jest-dom @testing-library/user-event
 ```
 
 - [ ] **Step 2: Create `vitest.config.ts`**
 
 ```typescript
 import react from '@vitejs/plugin-react';
-import tsconfigPaths from 'vite-tsconfig-paths';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
-  plugins: [tsconfigPaths(), react()],
+  plugins: [react()],
+  resolve: { tsconfigPaths: true },
   test: {
     coverage: {
       include: ['src/components/**', 'src/lib/**'],
@@ -294,24 +294,20 @@ git commit -m "test: add Vitest + React Testing Library setup with matchMedia mo
 - [ ] **Step 1: Add dev dependencies**
 
 ```bash
-pnpm add -D eslint @eslint/eslintrc eslint-config-next eslint-plugin-perfectionist
+pnpm add -D eslint@^9 eslint-config-next eslint-plugin-perfectionist
 ```
 
 - [ ] **Step 2: Create `eslint.config.mjs`**
 
 ```javascript
-import { FlatCompat } from '@eslint/eslintrc';
+import nextCoreWebVitals from 'eslint-config-next/core-web-vitals';
+import nextTypescript from 'eslint-config-next/typescript';
 import perfectionist from 'eslint-plugin-perfectionist';
-import { dirname } from 'path';
-import { fileURLToPath } from 'url';
-
-const compat = new FlatCompat({
-  baseDirectory: dirname(fileURLToPath(import.meta.url)),
-});
 
 const eslintConfig = [
   { ignores: ['.next/**', 'coverage/**', 'node_modules/**', 'next-env.d.ts'] },
-  ...compat.extends('next/core-web-vitals', 'next/typescript'),
+  ...nextCoreWebVitals,
+  ...nextTypescript,
   {
     plugins: { perfectionist },
     rules: {
@@ -322,6 +318,8 @@ const eslintConfig = [
 
 export default eslintConfig;
 ```
+
+(ESLint is pinned to ^9 — ESLint 10 is incompatible with eslint-config-next 16. The config uses eslint-config-next's native flat exports; FlatCompat crashes against them.)
 
 - [ ] **Step 3: Run lint and fix anything it reports**
 
