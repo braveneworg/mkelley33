@@ -294,24 +294,20 @@ git commit -m "test: add Vitest + React Testing Library setup with matchMedia mo
 - [ ] **Step 1: Add dev dependencies**
 
 ```bash
-pnpm add -D eslint @eslint/eslintrc eslint-config-next eslint-plugin-perfectionist
+pnpm add -D eslint@^9 eslint-config-next eslint-plugin-perfectionist
 ```
 
 - [ ] **Step 2: Create `eslint.config.mjs`**
 
 ```javascript
-import { FlatCompat } from '@eslint/eslintrc';
+import nextCoreWebVitals from 'eslint-config-next/core-web-vitals';
+import nextTypescript from 'eslint-config-next/typescript';
 import perfectionist from 'eslint-plugin-perfectionist';
-import { dirname } from 'path';
-import { fileURLToPath } from 'url';
-
-const compat = new FlatCompat({
-  baseDirectory: dirname(fileURLToPath(import.meta.url)),
-});
 
 const eslintConfig = [
   { ignores: ['.next/**', 'coverage/**', 'node_modules/**', 'next-env.d.ts'] },
-  ...compat.extends('next/core-web-vitals', 'next/typescript'),
+  ...nextCoreWebVitals,
+  ...nextTypescript,
   {
     plugins: { perfectionist },
     rules: {
@@ -322,6 +318,8 @@ const eslintConfig = [
 
 export default eslintConfig;
 ```
+
+(ESLint is pinned to ^9 — ESLint 10 is incompatible with eslint-config-next 16. The config uses eslint-config-next's native flat exports; FlatCompat crashes against them.)
 
 - [ ] **Step 3: Run lint and fix anything it reports**
 
