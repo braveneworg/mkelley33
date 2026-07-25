@@ -100,8 +100,10 @@ theme toggle `◐`; blinking block cursor accents; 404 = "command not found".
    - **contributions** — react-starter-kit (kriasoft), mean.io (linnovate).
 7. **`$ tail -3 ./blog`** — three latest posts.
 8. **`$ subscribe --newsletter`** — inline email field styled as a prompt.
-9. **Footer** — socials (GitHub, LinkedIn), "open source on GitHub" repo link
-   (same placeholder), copyleft line, `/uses` link, RSS.
+9. **Footer** — socials rendered subtly as muted mono links (GitHub, LinkedIn
+   `linkedin.com/in/mkelley33`, Bluesky), "open source on GitHub" repo link
+   (same placeholder), copyleft line, `/uses` link, RSS. The same three social
+   links also appear as ⌘K palette entries — nowhere louder than that.
 
 ### Blog post page (Hybrid treatment)
 
@@ -239,9 +241,9 @@ Server Components fetch via repositories; Server Actions mutate and return
   keyboard support (incl. dialog + palette), reduced-motion parity.
 - **Performance**: Server Components by default, `next/font` self-hosting,
   lazy-loaded below-the-fold beats, Lighthouse budget ≥90 all categories.
-- **SEO**: Metadata API per page, JSON-LD (Person site-wide, BlogPosting per
-  post), RSS at `/feed.xml`, sitemap, terminal-styled generated OG images
-  (satori via `next/og`).
+- **SEO**: Metadata API per page, JSON-LD (Person site-wide with `sameAs`
+  covering GitHub/LinkedIn/Bluesky, BlogPosting per post), RSS at `/feed.xml`,
+  sitemap, terminal-styled generated OG images (satori via `next/og`).
 
 ## 9. Content migration
 
@@ -258,5 +260,6 @@ comments; analytics beyond Vercel Analytics (flag: enable it, zero-config);
 visitor accounts.
 
 Open items owner will supply: GitHub repo URL for the open-source beat +
-footer; headshot image; resume PDF export for `/cv` download; SES production
-access (out of sandbox) for mkelley33.com; Turnstile site keys.
+footer; Bluesky profile URL; headshot image; resume PDF export for `/cv`
+download; SES production access (out of sandbox) for mkelley33.com; Turnstile
+site keys.
