@@ -5,6 +5,7 @@ import { Inter, JetBrains_Mono } from 'next/font/google';
 import { SiteFooter } from '@/components/site/site-footer';
 import { SiteNav } from '@/components/site/site-nav';
 import { ThemeProvider } from '@/components/site/theme-provider';
+import { siteConfig } from '@/lib/site-config';
 
 import './globals.css';
 
@@ -15,9 +16,12 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Michaux Kelley — Full-Stack AI Forward Deployed Engineer',
-  description:
-    'Production React, Next.js, and Node.js engineering — and AI-assisted development, deployed forward into teams.',
+  description: siteConfig.description,
+  metadataBase: new URL(siteConfig.url),
+  title: {
+    default: siteConfig.title,
+    template: '%s · mkelley33',
+  },
 };
 
 export const viewport: Viewport = {
