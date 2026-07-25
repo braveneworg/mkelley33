@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 
 import { Inter, JetBrains_Mono } from 'next/font/google';
 
+import { SiteNav } from '@/components/site/site-nav';
 import { ThemeProvider } from '@/components/site/theme-provider';
 
 import './globals.css';
@@ -33,7 +34,12 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}
       >
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <div className="flex min-h-dvh flex-col">
+            <SiteNav />
+            <main className="flex-1">{children}</main>
+          </div>
+        </ThemeProvider>
       </body>
     </html>
   );
