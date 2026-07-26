@@ -1,0 +1,24 @@
+# pnpm settings live here rather than in .npmrc: AGENTS.md hard constraint #2
+# forbids agents from reading .npmrc, which would leave install behaviour
+# impossible to diagnose.
+
+# package.json's engines field only prints a warning on mismatch and lets the
+# install succeed, so the Node 24 / pnpm 11 pin would otherwise be advisory
+# only. engineStrict turns a mismatch into a non-zero exit.
+engineStrict: true
+
+# pnpm 11 promoted "ignored build scripts" from a warning to a hard error
+# (ERR_PNPM_IGNORED_BUILDS), which also disables pnpm exec/run, so every
+# dependency with a postinstall must be approved explicitly. All four place or
+# fetch native binaries:
+#   esbuild, unrs-resolver — platform-specific binaries
+#   sharp                  — libvips, backs next/image optimisation
+#   mongodb-memory-server  — fetches the mongod binary at install time instead
+#                            of lazily on first use, where the download could
+#                            exceed the 120s hookTimeout in the *.int.test.ts
+#                            suites and fail them on a cold cache
+allowBuilds:
+  esbuild: true
+  mongodb-memory-server: true
+  sharp: true
+  unrs-resolver: true
