@@ -67,6 +67,22 @@ describe('subscribers repository', () => {
     expect(await unsubscribeSubscriber('0'.repeat(64))).toBe(false);
   });
 
+  it('clears confirmedAt when a confirmed subscriber re-subscribes', async () => {
+    const { confirmSubscriber, unsubscribeSubscriber, upsertPendingSubscriber } =
+      await import('@/lib/repositories/subscribers');
+    const fresh = await upsertPendingSubscriber('four@example.com');
+    expect(await confirmSubscriber(fresh.rawToken ?? '')).toBe(true);
+    expect(await unsubscribeSubscriber(fresh.rawToken ?? '')).toBe(true);
+    const again = await upsertPendingSubscriber('four@example.com');
+    expect(again.alreadyActive).toBe(false);
+    const found = await payload.find({
+      collection: 'subscribers',
+      where: { email: { equals: 'four@example.com' } },
+    });
+    expect(found.docs[0]?.status).toBe('pending');
+    expect(found.docs[0]?.confirmedAt).toBeNull();
+  });
+
   it('rejects a stale confirm link after unsubscribing', async () => {
     const { confirmSubscriber, unsubscribeSubscriber, upsertPendingSubscriber } =
       await import('@/lib/repositories/subscribers');

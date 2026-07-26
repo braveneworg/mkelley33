@@ -29,6 +29,7 @@ const createTransport = (): Transporter<unknown> => {
     },
     host,
     port,
+    requireTLS: port !== 465,
     secure: port === 465,
   });
 };
@@ -37,12 +38,21 @@ const createTransport = (): Transporter<unknown> => {
 export const sendEmail = async (input: SendEmailInput): Promise<boolean> => {
   transporter ??= createTransport();
   try {
-    await transporter.sendMail({
+    const info: unknown = await transporter.sendMail({
       from: process.env.EMAIL_FROM ?? 'mkelley33.com <no-reply@mkelley33.com>',
       subject: input.subject,
       text: input.text,
       to: input.to,
     });
+    if (
+      !process.env.SMTP_HOST &&
+      info !== null &&
+      typeof info === 'object' &&
+      'message' in info &&
+      typeof (info as { message: unknown }).message === 'string'
+    ) {
+      console.info('email (not sent):', (info as { message: string }).message);
+    }
     return true;
   } catch (error) {
     console.error('sendEmail failed:', error);

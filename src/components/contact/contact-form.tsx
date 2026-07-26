@@ -140,7 +140,15 @@ export const ContactForm = ({ services }: { services: ContactServiceOption[] }) 
         <select
           className={`mt-1 ${INPUT_CLASSES}`}
           id="contact-reason"
-          {...form.register('reason')}
+          {...form.register('reason', {
+            onChange: (event) => {
+              if (event.target.value !== 'services') {
+                form.setValue('requestedServices', [], {
+                  shouldValidate: false,
+                });
+              }
+            },
+          })}
         >
           {CONTACT_REASONS.map((value) => (
             <option key={value} value={value}>

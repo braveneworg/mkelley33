@@ -71,6 +71,28 @@ describe('ContactForm', () => {
     expect(screen.queryByText('AI enablement')).not.toBeInTheDocument();
   });
 
+  it('clears selected services when the reason leaves services', async () => {
+    const user = userEvent.setup();
+    render(<ContactForm services={services} />);
+    await user.selectOptions(screen.getByLabelText('reason'), 'services');
+    await user.click(screen.getByRole('button', { name: /select services/ }));
+    await user.click(screen.getByRole('checkbox', { name: 'AI enablement' }));
+    await user.click(screen.getByRole('button', { name: 'done' }));
+    expect(screen.getByText('AI enablement')).toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText('reason'), 'general');
+    expect(screen.queryByText('AI enablement')).not.toBeInTheDocument();
+    await user.type(screen.getByLabelText('name'), 'Ada');
+    await user.type(screen.getByLabelText('email'), 'ada@example.com');
+    await user.type(
+      screen.getByLabelText('message'),
+      'Help my team adopt AI-assisted development.'
+    );
+    await user.click(screen.getByRole('button', { name: 'solve turnstile' }));
+    await user.click(screen.getByRole('button', { name: /send-message/ }));
+    expect(await screen.findByText(/message queued/)).toBeInTheDocument();
+    expect(submitContact).toHaveBeenCalledWith(expect.objectContaining({ requestedServices: [] }));
+  });
+
   it('submits the happy path and shows the queued confirmation', async () => {
     const user = userEvent.setup();
     render(<ContactForm services={services} />);

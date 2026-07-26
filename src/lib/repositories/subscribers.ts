@@ -51,6 +51,7 @@ export const upsertPendingSubscriber = async (email: string): Promise<UpsertPend
       collection: 'subscribers',
       data: {
         confirmToken: token.hash,
+        confirmedAt: null,
         status: 'pending',
         unsubscribedAt: null,
       },
@@ -58,11 +59,35 @@ export const upsertPendingSubscriber = async (email: string): Promise<UpsertPend
       overrideAccess: true,
     });
   } else {
-    await payload.create({
-      collection: 'subscribers',
-      data: { confirmToken: token.hash, email: normalized, status: 'pending' },
-      overrideAccess: true,
-    });
+    try {
+      await payload.create({
+        collection: 'subscribers',
+        data: { confirmToken: token.hash, email: normalized, status: 'pending' },
+        overrideAccess: true,
+      });
+    } catch (error) {
+      // Unique-index race: another request created this email between our
+      // find and create. Re-arm the existing doc instead of failing the user.
+      const raced =
+        error instanceof Error && error.message.includes('E11000')
+          ? await findByEmail(normalized)
+          : null;
+      if (!raced) {
+        throw error;
+      }
+      await payload.update({
+        collection: 'subscribers',
+        data: {
+          confirmToken: token.hash,
+          confirmedAt: null,
+          status: 'pending',
+          unsubscribedAt: null,
+        },
+        id: raced.id,
+        overrideAccess: true,
+      });
+      return { alreadyActive: false, rawToken: token.raw };
+    }
   }
   return { alreadyActive: false, rawToken: token.raw };
 };
