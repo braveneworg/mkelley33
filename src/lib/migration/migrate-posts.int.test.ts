@@ -17,6 +17,55 @@ const EXPECTED_SLUGS = [
   'using-recaptcha-v2-with-formik',
 ];
 
+interface LinkNodeInfo {
+  text: string;
+  url: string;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+/** Recursively collect every `text` string found in a Lexical node tree
+ * (including inside link nodes' children), for asserting on rendered prose. */
+function collectTextValues(node: unknown, out: string[] = []): string[] {
+  if (Array.isArray(node)) {
+    for (const child of node) {
+      collectTextValues(child, out);
+    }
+    return out;
+  }
+  if (isRecord(node)) {
+    if (typeof node.text === 'string') {
+      out.push(node.text);
+    }
+    if (node.children !== undefined) {
+      collectTextValues(node.children, out);
+    }
+  }
+  return out;
+}
+
+/** Recursively collect every Lexical `link` node's URL and rendered text. */
+function collectLinkNodes(node: unknown, out: LinkNodeInfo[] = []): LinkNodeInfo[] {
+  if (Array.isArray(node)) {
+    for (const child of node) {
+      collectLinkNodes(child, out);
+    }
+    return out;
+  }
+  if (isRecord(node)) {
+    if (node.type === 'link' && isRecord(node.fields)) {
+      const url = typeof node.fields.url === 'string' ? node.fields.url : '';
+      out.push({ text: collectTextValues(node.children).join(''), url });
+    }
+    if (node.children !== undefined) {
+      collectLinkNodes(node.children, out);
+    }
+  }
+  return out;
+}
+
 let harness: TestPayload;
 
 beforeAll(async () => {
@@ -56,6 +105,48 @@ describe('migratePosts', () => {
     const json = JSON.stringify(post.docs[0]?.body);
     expect(json.length).toBeGreaterThan(500);
     expect(json).toMatch(/"type":\s*"block"|"type":\s*"code"/);
+  });
+
+  it('converts inline HTML anchors in prose to real markdown links, for every post', async () => {
+    for (const slug of EXPECTED_SLUGS) {
+      const post = await harness.payload.find({
+        collection: 'posts',
+        where: { slug: { equals: slug } },
+      });
+      const body = post.docs[0]?.body;
+      const textValues = collectTextValues(body?.root.children);
+      const rawAnchors = textValues.filter((text) => text.includes('<a '));
+      expect(rawAnchors, `slug "${slug}" still has literal <a> tags: ${JSON.stringify(rawAnchors)}`).toEqual([]);
+    }
+  });
+
+  it('emits real Lexical link nodes (not literal text) for the posts with inline anchors', async () => {
+    const nextjsPost = await harness.payload.find({
+      collection: 'posts',
+      where: { slug: { equals: 'create-a-nextjs-blog' } },
+    });
+    const nextjsLinks = collectLinkNodes(nextjsPost.docs[0]?.body.root.children);
+    const mdxLink = nextjsLinks.find((link) => link.url === 'https://mdxjs.com/');
+    expect(mdxLink).toBeDefined();
+    expect(mdxLink?.text.trim().length).toBeGreaterThan(0);
+
+    const npmPost = await harness.payload.find({
+      collection: 'posts',
+      where: { slug: { equals: 'npm-ing-and-npx-ing-commands' } },
+    });
+    const npmLinks = collectLinkNodes(npmPost.docs[0]?.body.root.children);
+    const semverLink = npmLinks.find((link) => link.url === 'https://semver.org/');
+    expect(semverLink).toBeDefined();
+    expect(semverLink?.text.trim().length).toBeGreaterThan(0);
+  });
+
+  it('leaves the <div> inside the recaptcha code fence untouched (regression guard)', async () => {
+    const post = await harness.payload.find({
+      collection: 'posts',
+      where: { slug: { equals: 'using-recaptcha-v2-with-formik' } },
+    });
+    const json = JSON.stringify(post.docs[0]?.body);
+    expect(json).toContain('<div');
   });
 
   it('is idempotent — second run updates instead of duplicating', async () => {
@@ -103,6 +194,65 @@ describe('migratePosts', () => {
       // than converted into an empty lexical node.
       expect(children).toHaveLength(2);
       expect(children.every((child) => child.type === 'block')).toBe(true);
+    } finally {
+      await fs.rm(tempDir, { force: true, recursive: true });
+    }
+  });
+
+  it('handles an empty fence without crashing, producing an empty code block', async () => {
+    const tempDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), 'migrate-posts-empty-fence-'),
+    );
+    try {
+      await fs.writeFile(
+        path.join(tempDir, 'empty-fence-post.mdx'),
+        [
+          '---',
+          "title: 'Empty Fence Fixture'",
+          "date: '2024-06-01'",
+          '---',
+          'Some intro prose before an empty fence.',
+          '',
+          '```text',
+          '```',
+          '',
+          'Some prose after a whitespace-only fence.',
+          '',
+          '```text',
+          '   ',
+          '```',
+          '',
+        ].join('\n'),
+        'utf8',
+      );
+
+      const result = await migratePosts(harness.payload, tempDir);
+
+      expect(result.created).toEqual(['empty-fence-post']);
+      const found = await harness.payload.find({
+        collection: 'posts',
+        where: { slug: { equals: 'empty-fence-post' } },
+      });
+      const children = found.docs[0]?.body.root.children ?? [];
+      const codeBlocks = children.filter((child) => {
+        const fields = isRecord(child.fields) ? child.fields : undefined;
+        return child.type === 'block' && fields?.blockType === 'code';
+      });
+      // Both fences (truly empty, and whitespace-only) survive as code
+      // blocks rather than crashing the migration or being silently
+      // dropped — the fence content is preserved verbatim (only the final
+      // newline before the closing ``` is trimmed), so a whitespace-only
+      // fence keeps its whitespace rather than being collapsed to ''.
+      expect(codeBlocks).toHaveLength(2);
+      const [emptyBlock, whitespaceBlock] = codeBlocks;
+      const emptyFields = isRecord(emptyBlock?.fields)
+        ? emptyBlock.fields
+        : undefined;
+      const whitespaceFields = isRecord(whitespaceBlock?.fields)
+        ? whitespaceBlock.fields
+        : undefined;
+      expect(emptyFields?.code).toBe('');
+      expect(whitespaceFields?.code).toBe('   ');
     } finally {
       await fs.rm(tempDir, { force: true, recursive: true });
     }

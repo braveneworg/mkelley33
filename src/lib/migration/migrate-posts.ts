@@ -43,6 +43,36 @@ export function stripMdxArtifacts(markdown: string): string {
     .join('\n');
 }
 
+/** Convert inline `<a href="...">text</a>` HTML anchors found in prose
+ * markdown into standard markdown links (`[text](url)`).
+ *
+ * `stripMdxArtifacts` only strips capital-letter JSX component tags, so
+ * hand-written lowercase HTML anchors in the legacy posts pass through
+ * untouched and `convertMarkdownToLexical` otherwise emits them as literal
+ * text nodes instead of link nodes. The `href` attribute is located
+ * independently of its position among other attributes (e.g. `target`,
+ * `rel`), and anchor text spanning multiple lines is collapsed to a single
+ * space-joined line since markdown link text is not multi-line.
+ *
+ * Only ever applied to prose segments: `splitFences` extracts fenced code
+ * blocks before prose processing runs, so literal HTML inside a code
+ * sample (e.g. a JSX `<div>`) is never passed through this function. */
+export function convertInlineAnchors(markdown: string): string {
+  return markdown.replace(
+    /<a\s+[^<>]*?href\s*=\s*(["'])([^"']*)\1[^<>]*?>([\s\S]*?)<\/a>/gi,
+    (_match, _quote: string, href: string, text: string) => {
+      // Markdown link destinations don't reliably survive literal,
+      // unescaped parentheses (e.g. a URL containing `...(PoP).` breaks
+      // convertMarkdownToLexical's link parsing and it falls back to
+      // literal `[text](url)` text instead of a link node).
+      // Percent-encoding is a semantically-equivalent, parser-safe way to
+      // carry them through.
+      const safeHref = href.replace(/\(/g, '%28').replace(/\)/g, '%29');
+      return `[${text.replace(/\s+/g, ' ').trim()}](${safeHref})`;
+    },
+  );
+}
+
 export function normalizeLanguage(info: string): CodeLanguage {
   const token = info.trim().split(/\s+/)[0]?.toLowerCase() ?? '';
   const map: Record<string, CodeLanguage> = {
@@ -138,7 +168,7 @@ export async function migratePosts(
       }
       const proseState = convertMarkdownToLexical({
         editorConfig,
-        markdown: stripMdxArtifacts(segment.markdown),
+        markdown: stripMdxArtifacts(convertInlineAnchors(segment.markdown)),
       });
       children.push(...proseState.root.children);
     }
