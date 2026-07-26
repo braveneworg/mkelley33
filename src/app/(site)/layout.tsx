@@ -1,5 +1,7 @@
 import { Inter, JetBrains_Mono } from 'next/font/google';
 
+import { Analytics } from '@vercel/analytics/next';
+
 import { PaletteMount } from '@/components/palette/palette-mount';
 import { SerwistRegister } from '@/components/site/serwist-register';
 import { SiteFooter } from '@/components/site/site-footer';
@@ -79,6 +81,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             type="application/ld+json"
           />
         </SerwistRegister>
+        <Analytics />
       </body>
     </html>
   );
