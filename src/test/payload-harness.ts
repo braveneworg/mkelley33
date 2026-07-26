@@ -1,6 +1,6 @@
-import type { Payload } from 'payload';
-
 import { MongoMemoryServer } from 'mongodb-memory-server';
+
+import type { Payload } from 'payload';
 
 export interface TestPayload {
   payload: Payload;
@@ -12,7 +12,7 @@ export interface TestPayload {
  * the payload config module is evaluated, so the config is imported
  * dynamically here — callers must not import `@payload-config` themselves.
  */
-export async function createTestPayload(): Promise<TestPayload> {
+export const createTestPayload = async (): Promise<TestPayload> => {
   const mongod = await MongoMemoryServer.create();
   process.env.DATABASE_URL = mongod.getUri();
   process.env.PAYLOAD_SECRET ??= 'test-secret';
@@ -26,4 +26,4 @@ export async function createTestPayload(): Promise<TestPayload> {
       await mongod.stop();
     },
   };
-}
+};

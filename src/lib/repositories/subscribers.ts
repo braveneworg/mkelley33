@@ -1,20 +1,18 @@
-import config from '@payload-config';
 import { getPayload } from 'payload';
 
-import type { Subscriber } from '@/payload-types';
+import config from '@payload-config';
 
 import { generateToken, hashToken } from '@/lib/newsletter-tokens';
+import type { Subscriber } from '@/payload-types';
 
 export interface UpsertPendingResult {
   alreadyActive: boolean;
   rawToken: null | string;
 }
 
-async function client() {
-  return getPayload({ config });
-}
+const client = async () => getPayload({ config });
 
-async function findByEmail(email: string): Promise<null | Subscriber> {
+const findByEmail = async (email: string): Promise<null | Subscriber> => {
   const payload = await client();
   const result = await payload.find({
     collection: 'subscribers',
@@ -23,9 +21,9 @@ async function findByEmail(email: string): Promise<null | Subscriber> {
     where: { email: { equals: email } },
   });
   return result.docs[0] ?? null;
-}
+};
 
-async function findByToken(rawToken: string): Promise<null | Subscriber> {
+const findByToken = async (rawToken: string): Promise<null | Subscriber> => {
   const payload = await client();
   const result = await payload.find({
     collection: 'subscribers',
@@ -34,15 +32,13 @@ async function findByToken(rawToken: string): Promise<null | Subscriber> {
     where: { confirmToken: { equals: hashToken(rawToken) } },
   });
   return result.docs[0] ?? null;
-}
+};
 
 /**
  * Creates or re-arms a pending subscriber and returns the raw token to email.
  * Active subscribers keep their existing token (used for unsubscribe links).
  */
-export async function upsertPendingSubscriber(
-  email: string,
-): Promise<UpsertPendingResult> {
+export const upsertPendingSubscriber = async (email: string): Promise<UpsertPendingResult> => {
   const normalized = email.trim().toLowerCase();
   const payload = await client();
   const existing = await findByEmail(normalized);
@@ -69,9 +65,9 @@ export async function upsertPendingSubscriber(
     });
   }
   return { alreadyActive: false, rawToken: token.raw };
-}
+};
 
-export async function confirmSubscriber(rawToken: string): Promise<boolean> {
+export const confirmSubscriber = async (rawToken: string): Promise<boolean> => {
   const subscriber = await findByToken(rawToken);
   if (!subscriber) {
     return false;
@@ -90,11 +86,9 @@ export async function confirmSubscriber(rawToken: string): Promise<boolean> {
     overrideAccess: true,
   });
   return true;
-}
+};
 
-export async function unsubscribeSubscriber(
-  rawToken: string,
-): Promise<boolean> {
+export const unsubscribeSubscriber = async (rawToken: string): Promise<boolean> => {
   const subscriber = await findByToken(rawToken);
   if (!subscriber) {
     return false;
@@ -110,4 +104,4 @@ export async function unsubscribeSubscriber(
     overrideAccess: true,
   });
   return true;
-}
+};

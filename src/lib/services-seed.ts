@@ -1,11 +1,11 @@
-import type { Payload } from 'payload';
-
 import { SERVICES } from '@/lib/services-content';
 
+import type { Payload } from 'payload';
+
 /** Idempotent upsert of the canonical services list, keyed by slug. */
-export async function seedServices(
-  payload: Payload,
-): Promise<{ created: string[]; updated: string[] }> {
+export const seedServices = async (
+  payload: Payload
+): Promise<{ created: string[]; updated: string[] }> => {
   const created: string[] = [];
   const updated: string[] = [];
   for (const [index, service] of SERVICES.entries()) {
@@ -32,4 +32,4 @@ export async function seedServices(
     }
   }
   return { created, updated };
-}
+};

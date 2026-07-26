@@ -1,6 +1,6 @@
-import type { Transporter } from 'nodemailer';
-
 import nodemailer from 'nodemailer';
+
+import type { Transporter } from 'nodemailer';
 
 export interface SendEmailInput {
   subject: string;
@@ -10,11 +10,10 @@ export interface SendEmailInput {
 
 let transporter: null | Transporter<unknown> = null;
 
-function createTransport(): Transporter<unknown> {
+const createTransport = (): Transporter<unknown> => {
   const host = process.env.SMTP_HOST;
   if (!host) {
-    const message =
-      'SMTP_HOST unset — email disabled, using JSON transport (logged only)';
+    const message = 'SMTP_HOST unset — email disabled, using JSON transport (logged only)';
     if (process.env.NODE_ENV === 'production') {
       console.error(message);
     } else {
@@ -32,10 +31,10 @@ function createTransport(): Transporter<unknown> {
     port,
     secure: port === 465,
   });
-}
+};
 
 /** Never throws — email failure must not break the calling flow (spec §7). */
-export async function sendEmail(input: SendEmailInput): Promise<boolean> {
+export const sendEmail = async (input: SendEmailInput): Promise<boolean> => {
   transporter ??= createTransport();
   try {
     await transporter.sendMail({
@@ -49,4 +48,4 @@ export async function sendEmail(input: SendEmailInput): Promise<boolean> {
     console.error('sendEmail failed:', error);
     return false;
   }
-}
+};

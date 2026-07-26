@@ -11,8 +11,7 @@ const MAX_ATTEMPTS = 2;
 
 // Prerender workers can freeze >30s on cold-cache module evaluation; give the
 // driver timeouts that outlast the freeze so connections survive it.
-const DRIVER_PARAMS =
-  'connectTimeoutMS=120000&serverSelectionTimeoutMS=120000';
+const DRIVER_PARAMS = 'connectTimeoutMS=120000&serverSelectionTimeoutMS=120000';
 
 function runBuild(uri) {
   return spawnSync('pnpm', ['build'], {
@@ -41,7 +40,7 @@ for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
   }
   if (attempt < MAX_ATTEMPTS) {
     console.error(
-      `build:ci attempt ${attempt} failed (exit ${status}) — retrying with a fresh mongod`,
+      `build:ci attempt ${attempt} failed (exit ${status}) — retrying with a fresh mongod`
     );
   }
 }

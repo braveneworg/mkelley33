@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-export function CopyButton({ code }: { code: string }) {
+export const CopyButton = ({ code }: { code: string }) => {
   const [copied, setCopied] = useState(false);
 
   const copy = async (): Promise<void> => {
@@ -18,11 +18,11 @@ export function CopyButton({ code }: { code: string }) {
   return (
     <button
       aria-label="Copy code"
-      className="font-mono text-xs text-fg-muted transition-colors hover:text-phosphor"
+      className="text-fg-muted hover:text-phosphor font-mono text-xs transition-colors"
       onClick={() => void copy()}
       type="button"
     >
       {copied ? 'copied ✓' : 'copy'}
     </button>
   );
-}
+};

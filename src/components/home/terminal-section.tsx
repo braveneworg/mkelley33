@@ -1,20 +1,18 @@
 import { Reveal } from '@/components/motion/reveal';
 
-export function TerminalSection({
+export const TerminalSection = ({
   children,
   command,
 }: {
   children: React.ReactNode;
   command: string;
-}) {
-  return (
-    <section className="mx-auto w-full max-w-5xl px-5 py-12 sm:py-16">
-      <p className="font-mono text-sm text-fg-muted">
-        <span className="text-phosphor">$</span> {command}
-      </p>
-      <Reveal>
-        <div className="mt-6">{children}</div>
-      </Reveal>
-    </section>
-  );
-}
+}) => (
+  <section className="mx-auto w-full max-w-5xl px-5 py-12 sm:py-16">
+    <p className="text-fg-muted font-mono text-sm">
+      <span className="text-phosphor">$</span> {command}
+    </p>
+    <Reveal>
+      <div className="mt-6">{children}</div>
+    </Reveal>
+  </section>
+);

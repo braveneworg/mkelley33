@@ -1,7 +1,7 @@
-import type { Metadata } from 'next';
-
 import { ServiceSection } from '@/components/services/service-section';
 import { listServices } from '@/lib/repositories/services';
+
+import type { Metadata } from 'next';
 
 export const revalidate = 300;
 
@@ -15,15 +15,13 @@ export default async function ServicesPage() {
   const services = await listServices();
   return (
     <div className="mx-auto w-full max-w-5xl px-5 py-16 sm:py-20">
-      <p className="font-mono text-sm text-fg-muted">
+      <p className="text-fg-muted font-mono text-sm">
         <span className="text-phosphor">$</span> ls ./services
       </p>
-      <h1 className="mt-4 font-mono text-3xl font-bold tracking-tight sm:text-4xl">
-        # Services
-      </h1>
-      <p className="mt-3 max-w-2xl leading-relaxed text-fg-muted">
-        Five ways I can help your team ship. Every engagement starts with a
-        conversation — request a quote and tell me where it hurts.
+      <h1 className="mt-4 font-mono text-3xl font-bold tracking-tight sm:text-4xl"># Services</h1>
+      <p className="text-fg-muted mt-3 max-w-2xl leading-relaxed">
+        Five ways I can help your team ship. Every engagement starts with a conversation — request a
+        quote and tell me where it hurts.
       </p>
       <div className="mt-10">
         {services.map((service) => (

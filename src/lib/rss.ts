@@ -1,17 +1,15 @@
+import { siteConfig } from '@/lib/site-config';
 import type { Post } from '@/payload-types';
 
-import { siteConfig } from '@/lib/site-config';
-
-export function escapeXml(value: string): string {
-  return value
+export const escapeXml = (value: string): string =>
+  value
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&apos;');
-}
 
-export function buildRssXml(posts: Post[]): string {
+export const buildRssXml = (posts: Post[]): string => {
   const items = posts
     .map((post) => {
       const url = `${siteConfig.url}/blog/${post.slug}`;
@@ -21,9 +19,7 @@ export function buildRssXml(posts: Post[]): string {
         `      <link>${escapeXml(url)}</link>`,
         `      <guid>${escapeXml(url)}</guid>`,
         `      <pubDate>${new Date(post.publishedAt).toUTCString()}</pubDate>`,
-        post.excerpt
-          ? `      <description>${escapeXml(post.excerpt)}</description>`
-          : '',
+        post.excerpt ? `      <description>${escapeXml(post.excerpt)}</description>` : '',
         '    </item>',
       ]
         .filter(Boolean)
@@ -45,4 +41,4 @@ export function buildRssXml(posts: Post[]): string {
   ]
     .filter(Boolean)
     .join('\n');
-}
+};

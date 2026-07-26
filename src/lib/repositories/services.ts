@@ -1,9 +1,10 @@
-import config from '@payload-config';
-import { getPayload } from 'payload';
 import { cache } from 'react';
 
-import type { ServiceContent } from '@/lib/services-content';
+import { getPayload } from 'payload';
 
+import config from '@payload-config';
+
+import type { ServiceContent } from '@/lib/services-content';
 import { SERVICES } from '@/lib/services-content';
 
 export const listServices = cache(async (): Promise<ServiceContent[]> => {
@@ -32,9 +33,7 @@ export const listServices = cache(async (): Promise<ServiceContent[]> => {
   }
 });
 
-export async function findServiceIdsBySlugs(
-  slugs: string[],
-): Promise<string[]> {
+export const findServiceIdsBySlugs = async (slugs: string[]): Promise<string[]> => {
   if (slugs.length === 0) {
     return [];
   }
@@ -51,4 +50,4 @@ export async function findServiceIdsBySlugs(
     console.error('findServiceIdsBySlugs failed:', error);
     return [];
   }
-}
+};

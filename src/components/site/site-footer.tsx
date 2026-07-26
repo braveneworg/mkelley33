@@ -8,7 +8,7 @@ interface FooterLink {
   rel: string;
 }
 
-function externalLinks(): FooterLink[] {
+const externalLinks = (): FooterLink[] => {
   const candidates: { href: string | null; label: string; rel: string }[] = [
     {
       href: siteConfig.socials.github,
@@ -31,43 +31,40 @@ function externalLinks(): FooterLink[] {
       rel: 'noopener noreferrer',
     },
   ];
-  return candidates.filter(
-    (candidate): candidate is FooterLink => candidate.href !== null,
-  );
-}
+  return candidates.filter((candidate): candidate is FooterLink => candidate.href !== null);
+};
 
-export function SiteFooter() {
-  return (
-    <footer className="border-t border-edge">
-      <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center gap-x-5 gap-y-2 px-5 py-6 font-mono text-xs text-fg-muted">
-        <p>
-          🄯 {new Date().getFullYear()} michaux kelley — copyleft, share alike
-        </p>
-        <ul className="ml-auto flex flex-wrap gap-x-4">
-          {externalLinks().map((link) => (
-            <li key={link.label}>
-              <a
-                className="transition-colors hover:text-fg"
-                href={link.href}
-                rel={link.rel}
-                target="_blank"
-              >
-                {link.label}
-              </a>
-            </li>
-          ))}
-          <li>
-            <Link className="transition-colors hover:text-fg" href="/uses">
-              uses
-            </Link>
-          </li>
-          <li>
-            <a className="transition-colors hover:text-fg" href="/feed.xml">
-              rss
+export const SiteFooter = () => (
+  <footer className="border-edge border-t">
+    <div className="text-fg-muted mx-auto flex w-full max-w-5xl flex-wrap items-center gap-x-5 gap-y-2 px-5 py-6 font-mono text-xs">
+      <p>🄯 {new Date().getFullYear()} michaux kelley — copyleft, share alike</p>
+      <ul className="ml-auto flex flex-wrap gap-x-4">
+        {externalLinks().map((link) => (
+          <li key={link.label}>
+            {/* eslint-disable-next-line react/jsx-no-target-blank -- rel is
+                data-driven so socials can carry rel="me"; every literal in the
+                candidates list above includes "noopener noreferrer". */}
+            <a
+              className="hover:text-fg transition-colors"
+              href={link.href}
+              rel={link.rel}
+              target="_blank"
+            >
+              {link.label}
             </a>
           </li>
-        </ul>
-      </div>
-    </footer>
-  );
-}
+        ))}
+        <li>
+          <Link className="hover:text-fg transition-colors" href="/uses">
+            uses
+          </Link>
+        </li>
+        <li>
+          <a className="hover:text-fg transition-colors" href="/feed.xml">
+            rss
+          </a>
+        </li>
+      </ul>
+    </div>
+  </footer>
+);

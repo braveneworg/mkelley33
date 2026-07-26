@@ -29,9 +29,7 @@ export const contactSchema = z
     name: z.string().trim().min(1, 'name is required').max(120),
     reason: z.enum(CONTACT_REASONS),
     requestedServices: z.array(z.string().min(1)).max(5),
-    turnstileToken: z
-      .string()
-      .min(1, 'verification incomplete — give it a beat and retry'),
+    turnstileToken: z.string().min(1, 'verification incomplete — give it a beat and retry'),
     website: z.literal(''),
   })
   .superRefine((data, ctx) => {

@@ -5,7 +5,7 @@ interface LexicalNode {
   text?: unknown;
 }
 
-export function extractLexicalText(state: unknown): string {
+export const extractLexicalText = (state: unknown): string => {
   const parts: string[] = [];
   const visit = (node: unknown): void => {
     if (node === null || typeof node !== 'object') {
@@ -20,17 +20,15 @@ export function extractLexicalText(state: unknown): string {
     }
   };
   const root =
-    state !== null && typeof state === 'object'
-      ? (state as { root?: unknown }).root
-      : undefined;
+    state !== null && typeof state === 'object' ? (state as { root?: unknown }).root : undefined;
   visit(root);
   return parts.join(' ');
-}
+};
 
-export function readTimeMinutes(state: unknown): number {
+export const readTimeMinutes = (state: unknown): number => {
   const words = extractLexicalText(state).split(/\s+/).filter(Boolean).length;
   return Math.max(1, Math.ceil(words / 200));
-}
+};
 
 export const computeReadTime: CollectionBeforeChangeHook = ({ data }) => {
   if (data && data.body !== undefined) {

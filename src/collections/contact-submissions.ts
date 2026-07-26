@@ -1,9 +1,6 @@
-import type { CollectionConfig } from 'payload';
+import { CONTACT_REASON_LABELS, CONTACT_REASONS } from '@/lib/validation/contact';
 
-import {
-  CONTACT_REASON_LABELS,
-  CONTACT_REASONS,
-} from '@/lib/validation/contact';
+import type { CollectionConfig } from 'payload';
 
 export const ContactSubmissions: CollectionConfig = {
   access: {

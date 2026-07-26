@@ -13,12 +13,12 @@ export async function GET(request: Request): Promise<NextResponse> {
     .filter(
       (post) =>
         post.title.toLowerCase().includes(q) ||
-        (post.tags ?? []).some((tag) => tag.toLowerCase().includes(q)),
+        (post.tags ?? []).some((tag) => tag.toLowerCase().includes(q))
     )
     .slice(0, 8)
     .map((post) => ({ slug: post.slug, title: post.title }));
   return NextResponse.json(
     { results },
-    { headers: { 'cache-control': 's-maxage=300, stale-while-revalidate=600' } },
+    { headers: { 'cache-control': 's-maxage=300, stale-while-revalidate=600' } }
   );
 }

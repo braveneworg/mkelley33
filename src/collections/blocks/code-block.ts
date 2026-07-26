@@ -33,8 +33,7 @@ export const CodeBlock: Block = {
     }),
     import: ({ children, props }) => ({
       code: children,
-      language:
-        typeof props?.language === 'string' ? props.language : 'text',
+      language: typeof props?.language === 'string' ? props.language : 'text',
     }),
   },
 };

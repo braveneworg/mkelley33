@@ -1,22 +1,15 @@
-import type { CollectionConfig } from 'payload';
-
-import {
-  BlocksFeature,
-  lexicalEditor,
-} from '@payloadcms/richtext-lexical';
+import { BlocksFeature, lexicalEditor } from '@payloadcms/richtext-lexical';
 
 import { CodeBlock } from '@/collections/blocks/code-block';
 import { computeReadTime } from '@/collections/hooks/compute-read-time';
-import {
-  revalidateAfterChange,
-  revalidateAfterDelete,
-} from '@/collections/hooks/revalidate-post';
+import { revalidateAfterChange, revalidateAfterDelete } from '@/collections/hooks/revalidate-post';
+
+import type { CollectionConfig } from 'payload';
 
 export const Posts: CollectionConfig = {
   slug: 'posts',
   access: {
-    read: ({ req }) =>
-      req.user ? true : { status: { equals: 'published' } },
+    read: ({ req }) => (req.user ? true : { status: { equals: 'published' } }),
   },
   admin: { defaultColumns: ['title', 'status', 'publishedAt'], useAsTitle: 'title' },
   fields: [

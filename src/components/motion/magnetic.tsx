@@ -4,7 +4,7 @@ import type { PointerEvent, ReactNode } from 'react';
 
 import { motion, useMotionValue, useReducedMotion, useSpring } from 'motion/react';
 
-export function Magnetic({ children }: { children: ReactNode }) {
+export const Magnetic = ({ children }: { children: ReactNode }) => {
   const reduced = useReducedMotion();
   const x = useMotionValue(0);
   const y = useMotionValue(0);
@@ -15,16 +15,16 @@ export function Magnetic({ children }: { children: ReactNode }) {
     return <span className="inline-block">{children}</span>;
   }
 
-  function onPointerMove(event: PointerEvent<HTMLSpanElement>) {
+  const onPointerMove = (event: PointerEvent<HTMLSpanElement>) => {
     const rect = event.currentTarget.getBoundingClientRect();
     x.set((event.clientX - rect.left - rect.width / 2) * 0.2);
     y.set((event.clientY - rect.top - rect.height / 2) * 0.2);
-  }
+  };
 
-  function onPointerLeave() {
+  const onPointerLeave = () => {
     x.set(0);
     y.set(0);
-  }
+  };
 
   return (
     <motion.span
@@ -36,4 +36,4 @@ export function Magnetic({ children }: { children: ReactNode }) {
       {children}
     </motion.span>
   );
-}
+};

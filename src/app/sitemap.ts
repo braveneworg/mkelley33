@@ -1,7 +1,7 @@
-import type { MetadataRoute } from 'next';
-
 import { listPublishedPosts } from '@/lib/repositories/posts';
 import { siteConfig } from '@/lib/site-config';
+
+import type { MetadataRoute } from 'next';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const posts = await listPublishedPosts();

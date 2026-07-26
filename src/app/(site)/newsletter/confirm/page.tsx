@@ -1,6 +1,6 @@
-import type { Metadata } from 'next';
-
 import { confirmSubscriber } from '@/lib/repositories/subscribers';
+
+import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   robots: { follow: false, index: false },
@@ -16,27 +16,22 @@ export default async function ConfirmPage({
   const confirmed = token ? await confirmSubscriber(token) : false;
   return (
     <div className="mx-auto w-full max-w-5xl px-5 py-16 sm:py-20">
-      <p className="font-mono text-sm text-fg-muted">
+      <p className="text-fg-muted font-mono text-sm">
         <span className="text-phosphor">$</span> ./confirm-subscription
       </p>
       {confirmed ? (
         <>
-          <h1 className="mt-4 font-mono text-3xl font-bold tracking-tight">
-            # subscribed ✓
-          </h1>
-          <p className="mt-3 max-w-2xl leading-relaxed text-fg-muted">
-            you&apos;re in — new posts land in your inbox. unsubscribe anytime
-            from any email.
+          <h1 className="mt-4 font-mono text-3xl font-bold tracking-tight"># subscribed ✓</h1>
+          <p className="text-fg-muted mt-3 max-w-2xl leading-relaxed">
+            you&apos;re in — new posts land in your inbox. unsubscribe anytime from any email.
           </p>
         </>
       ) : (
         <>
-          <h1 className="mt-4 font-mono text-3xl font-bold tracking-tight">
-            # invalid token
-          </h1>
-          <p className="mt-3 max-w-2xl leading-relaxed text-fg-muted">
-            this confirmation link is invalid or was replaced by a newer one —
-            subscribe again to get a fresh link.
+          <h1 className="mt-4 font-mono text-3xl font-bold tracking-tight"># invalid token</h1>
+          <p className="text-fg-muted mt-3 max-w-2xl leading-relaxed">
+            this confirmation link is invalid or was replaced by a newer one — subscribe again to
+            get a fresh link.
           </p>
         </>
       )}

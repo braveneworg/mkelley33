@@ -2,7 +2,7 @@ import type { Post } from '@/payload-types';
 
 let counter = 0;
 
-export function makePost(overrides: Partial<Post> = {}): Post {
+export const makePost = (overrides: Partial<Post> = {}): Post => {
   counter += 1;
   const base: Post = {
     body: {
@@ -36,4 +36,4 @@ export function makePost(overrides: Partial<Post> = {}): Post {
     updatedAt: '2024-01-01T00:00:00.000Z',
   };
   return { ...base, ...overrides };
-}
+};

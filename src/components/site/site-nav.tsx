@@ -13,23 +13,23 @@ const NAV_LINKS = [
   { href: '/contact', label: './contact' },
 ] as const;
 
-function isActive(pathname: string, href: string): boolean {
+const isActive = (pathname: string, href: string): boolean => {
   if (href === '/') {
     return pathname === '/';
   }
   return pathname === href || pathname.startsWith(`${href}/`);
-}
+};
 
-export function SiteNav() {
+export const SiteNav = () => {
   const pathname = usePathname();
 
   return (
-    <header className="border-b border-edge">
+    <header className="border-edge border-b">
       <nav
         aria-label="Primary"
         className="mx-auto flex w-full max-w-5xl flex-wrap items-center gap-x-5 gap-y-2 px-5 py-4 font-mono text-sm"
       >
-        <Link className="font-bold text-phosphor" href="/">
+        <Link className="text-phosphor font-bold" href="/">
           ~/mkelley33
         </Link>
         <ul className="ml-auto flex flex-wrap items-center gap-x-4 gap-y-2">
@@ -37,7 +37,7 @@ export function SiteNav() {
             <li key={link.href}>
               <Link
                 aria-current={isActive(pathname, link.href) ? 'page' : undefined}
-                className="text-fg-muted transition-colors hover:text-fg aria-[current=page]:text-fg"
+                className="text-fg-muted hover:text-fg aria-[current=page]:text-fg transition-colors"
                 href={link.href}
               >
                 {link.label}
@@ -47,7 +47,7 @@ export function SiteNav() {
           <li className="hidden sm:block">
             <button
               aria-label="Open command palette"
-              className="rounded border border-edge px-1.5 py-0.5 text-xs text-fg-muted transition-colors hover:border-phosphor hover:text-fg"
+              className="border-edge text-fg-muted hover:border-phosphor hover:text-fg rounded border px-1.5 py-0.5 text-xs transition-colors"
               onClick={() => window.dispatchEvent(new Event('palette:open'))}
               type="button"
             >
@@ -61,4 +61,4 @@ export function SiteNav() {
       </nav>
     </header>
   );
-}
+};

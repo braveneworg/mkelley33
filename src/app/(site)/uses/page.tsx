@@ -1,10 +1,9 @@
-import type { Metadata } from 'next';
-
 import { siteConfig } from '@/lib/site-config';
 
+import type { Metadata } from 'next';
+
 export const metadata: Metadata = {
-  description:
-    'Hardware, editor, terminal, AI toolbox, and stack defaults — what I actually use.',
+  description: 'Hardware, editor, terminal, AI toolbox, and stack defaults — what I actually use.',
   title: 'uses',
 };
 
@@ -83,32 +82,28 @@ const SECTIONS: UsesSection[] = [
 export default function UsesPage() {
   return (
     <div className="mx-auto w-full max-w-5xl px-5 py-16 sm:py-20">
-      <p className="font-mono text-sm text-fg-muted">
+      <p className="text-fg-muted font-mono text-sm">
         <span className="text-phosphor">$</span> cat ./uses.md
       </p>
-      <h1 className="mt-4 font-mono text-3xl font-bold tracking-tight sm:text-4xl">
-        # Uses
-      </h1>
-      <p className="mt-3 max-w-2xl leading-relaxed text-fg-muted">
+      <h1 className="mt-4 font-mono text-3xl font-bold tracking-tight sm:text-4xl"># Uses</h1>
+      <p className="text-fg-muted mt-3 max-w-2xl leading-relaxed">
         The hardware, software, and AI tooling behind the work.
       </p>
       {SECTIONS.map((section) => (
         <section className="mt-10" key={section.heading}>
-          <h2 className="font-mono text-lg font-bold text-phosphor">
-            {section.heading}/
-          </h2>
+          <h2 className="text-phosphor font-mono text-lg font-bold">{section.heading}/</h2>
           <ul className="mt-4 max-w-2xl space-y-3">
             {section.entries.map((entry) => (
               <li key={entry.name}>
-                <p className="font-mono text-sm text-fg">{entry.name}</p>
-                <p className="text-sm text-fg-muted">{entry.note}</p>
+                <p className="text-fg font-mono text-sm">{entry.name}</p>
+                <p className="text-fg-muted text-sm">{entry.note}</p>
               </li>
             ))}
           </ul>
         </section>
       ))}
       {siteConfig.repoUrl ? (
-        <p className="mt-12 font-mono text-sm text-fg-muted">
+        <p className="text-fg-muted mt-12 font-mono text-sm">
           #{' '}
           <a
             className="text-phosphor underline underline-offset-4"

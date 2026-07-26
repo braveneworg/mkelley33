@@ -1,15 +1,13 @@
 'use client';
 
-import {
-  QueryClient,
-  QueryClientProvider,
-  useQuery,
-} from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
+
+import { useRouter } from 'next/navigation';
+
+import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { Command } from 'cmdk';
 import { motion, useReducedMotion } from 'motion/react';
 import { useTheme } from 'next-themes';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
 
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { siteConfig } from '@/lib/site-config';
@@ -31,19 +29,17 @@ const PAGES = [
 const ITEM_CLASSES =
   'flex cursor-pointer items-center gap-2 rounded px-3 py-2 text-fg data-[selected=true]:bg-canvas data-[selected=true]:text-phosphor';
 
-function PostResults({
+const PostResults = ({
   onNavigate,
   query,
 }: {
   onNavigate: (href: string) => void;
   query: string;
-}) {
+}) => {
   const { data } = useQuery({
     enabled: query.trim().length >= 2,
     queryFn: async (): Promise<SearchResult[]> => {
-      const response = await fetch(
-        `/api/search?q=${encodeURIComponent(query.trim())}`,
-      );
+      const response = await fetch(`/api/search?q=${encodeURIComponent(query.trim())}`);
       if (!response.ok) {
         return [];
       }
@@ -69,9 +65,9 @@ function PostResults({
       ))}
     </Command.Group>
   );
-}
+};
 
-function PaletteDialog() {
+const PaletteDialog = () => {
   const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme();
   const reduced = useReducedMotion();
@@ -79,15 +75,15 @@ function PaletteDialog() {
   const [query, setQuery] = useState('');
 
   useEffect(() => {
-    function onKeyDown(event: KeyboardEvent) {
+    const onKeyDown = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault();
         setOpen((current) => !current);
       }
-    }
-    function onOpenEvent() {
+    };
+    const onOpenEvent = () => {
       setOpen(true);
-    }
+    };
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('palette:open', onOpenEvent);
     return () => {
@@ -96,31 +92,26 @@ function PaletteDialog() {
     };
   }, []);
 
-  function navigate(href: string) {
+  const navigate = (href: string) => {
     setOpen(false);
     setQuery('');
     router.push(href);
-  }
+  };
 
-  function openExternal(url: string) {
+  const openExternal = (url: string) => {
     setOpen(false);
     window.open(url, '_blank', 'noopener,noreferrer');
-  }
+  };
 
   const socials = [
     { label: 'github', url: siteConfig.socials.github },
     { label: 'linkedin', url: siteConfig.socials.linkedin },
-    ...(siteConfig.socials.bluesky
-      ? [{ label: 'bluesky', url: siteConfig.socials.bluesky }]
-      : []),
+    ...(siteConfig.socials.bluesky ? [{ label: 'bluesky', url: siteConfig.socials.bluesky }] : []),
   ];
 
   return (
     <Dialog onOpenChange={setOpen} open={open}>
-      <DialogContent
-        aria-describedby={undefined}
-        className="top-[20%] max-w-lg translate-y-0 p-2"
-      >
+      <DialogContent aria-describedby={undefined} className="top-[20%] max-w-lg translate-y-0 p-2">
         <DialogTitle className="sr-only">command palette</DialogTitle>
         <motion.div
           animate={reduced ? undefined : { opacity: 1, scale: 1 }}
@@ -128,18 +119,19 @@ function PaletteDialog() {
           transition={{ bounce: 0.25, duration: 0.25, type: 'spring' }}
         >
           <Command
-            className="font-mono text-sm [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:text-fg-muted"
+            className="[&_[cmdk-group-heading]]:text-fg-muted font-mono text-sm [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs"
             label="command palette"
           >
             <Command.Input
+              // eslint-disable-next-line jsx-a11y/no-autofocus -- dialog pattern: focus must land in the palette's input when the dialog opens, not remain behind it
               autoFocus
-              className="w-full rounded border border-edge bg-canvas px-3 py-2 text-fg placeholder:text-fg-muted focus:border-phosphor focus:outline-none"
+              className="border-edge bg-canvas text-fg placeholder:text-fg-muted focus:border-phosphor w-full rounded border px-3 py-2 focus:outline-none"
               onValueChange={setQuery}
               placeholder="type a command or search…"
               value={query}
             />
             <Command.List className="mt-2 max-h-72 overflow-y-auto">
-              <Command.Empty className="px-3 py-6 text-fg-muted">
+              <Command.Empty className="text-fg-muted px-3 py-6">
                 <span aria-hidden="true"># </span>nothing found
               </Command.Empty>
               <Command.Group heading="pages">
@@ -192,13 +184,13 @@ function PaletteDialog() {
       </DialogContent>
     </Dialog>
   );
-}
+};
 
-export function CommandPalette() {
+export const CommandPalette = () => {
   const [client] = useState(() => new QueryClient());
   return (
     <QueryClientProvider client={client}>
       <PaletteDialog />
     </QueryClientProvider>
   );
-}
+};

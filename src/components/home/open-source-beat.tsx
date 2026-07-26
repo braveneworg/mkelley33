@@ -1,52 +1,47 @@
 import { TerminalSection } from '@/components/home/terminal-section';
 import { siteConfig } from '@/lib/site-config';
 
-export function OpenSourceBeat() {
-  return (
-    <TerminalSection command="ls ./open-source">
-      <ul className="max-w-2xl space-y-5">
-        <li>
-          {siteConfig.repoUrl ? (
-            <a
-              className="font-mono text-sm text-phosphor underline underline-offset-4"
-              href={siteConfig.repoUrl}
-              rel="noopener noreferrer"
-              target="_blank"
-            >
-              this-site/
-            </a>
-          ) : (
-            <span className="font-mono text-sm text-phosphor">this-site/</span>
-          )}
-          <p className="mt-1 text-sm leading-relaxed text-fg-muted">
-            You&apos;re looking at it. This entire site — design system, CMS,
-            tests, CI — is open source on GitHub.
-          </p>
-        </li>
-        <li>
+export const OpenSourceBeat = () => (
+  <TerminalSection command="ls ./open-source">
+    <ul className="max-w-2xl space-y-5">
+      <li>
+        {siteConfig.repoUrl ? (
           <a
-            className="font-mono text-sm text-phosphor underline underline-offset-4"
-            href="https://github.com/braveneworg/boudreaux"
+            className="text-phosphor font-mono text-sm underline underline-offset-4"
+            href={siteConfig.repoUrl}
             rel="noopener noreferrer"
             target="_blank"
           >
-            boudreaux/
+            this-site/
           </a>
-          <p className="mt-1 text-sm leading-relaxed text-fg-muted">
-            MPL 2.0 music marketplace for Fake Four Records — founding
-            engineer. Streaming, downloads, and Stripe Connect payouts
-            (fakefourrecords.com).
-          </p>
-        </li>
-        <li>
-          <span className="font-mono text-sm text-phosphor">
-            contributions/
-          </span>
-          <p className="mt-1 text-sm leading-relaxed text-fg-muted">
-            react-starter-kit (kriasoft) and mean.io (linnovate).
-          </p>
-        </li>
-      </ul>
-    </TerminalSection>
-  );
-}
+        ) : (
+          <span className="text-phosphor font-mono text-sm">this-site/</span>
+        )}
+        <p className="text-fg-muted mt-1 text-sm leading-relaxed">
+          You&apos;re looking at it. This entire site — design system, CMS, tests, CI — is open
+          source on GitHub.
+        </p>
+      </li>
+      <li>
+        <a
+          className="text-phosphor font-mono text-sm underline underline-offset-4"
+          href="https://github.com/braveneworg/boudreaux"
+          rel="noopener noreferrer"
+          target="_blank"
+        >
+          boudreaux/
+        </a>
+        <p className="text-fg-muted mt-1 text-sm leading-relaxed">
+          MPL 2.0 music marketplace for Fake Four Records — founding engineer. Streaming, downloads,
+          and Stripe Connect payouts (fakefourrecords.com).
+        </p>
+      </li>
+      <li>
+        <span className="text-phosphor font-mono text-sm">contributions/</span>
+        <p className="text-fg-muted mt-1 text-sm leading-relaxed">
+          react-starter-kit (kriasoft) and mean.io (linnovate).
+        </p>
+      </li>
+    </ul>
+  </TerminalSection>
+);

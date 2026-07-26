@@ -1,10 +1,11 @@
+import path from 'path';
+import { fileURLToPath } from 'url';
+
 import { mongooseAdapter } from '@payloadcms/db-mongodb';
 import { lexicalEditor } from '@payloadcms/richtext-lexical';
 import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob';
-import path from 'path';
 import { buildConfig } from 'payload';
 import sharp from 'sharp';
-import { fileURLToPath } from 'url';
 
 import { ContactSubmissions } from '@/collections/contact-submissions';
 import { Media } from '@/collections/media';

@@ -1,6 +1,6 @@
-import type { Metadata } from 'next';
-
 import { CvDocument } from '@/components/cv/cv-document';
+
+import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   description:

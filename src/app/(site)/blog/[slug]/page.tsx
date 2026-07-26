@@ -1,5 +1,3 @@
-import type { Metadata } from 'next';
-
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
@@ -7,6 +5,8 @@ import { PostBody } from '@/components/blog/post-body';
 import { serializeJsonLd } from '@/lib/json-ld';
 import { getPostBySlug, listPublishedPosts } from '@/lib/repositories/posts';
 import { siteConfig } from '@/lib/site-config';
+
+import type { Metadata } from 'next';
 
 export const revalidate = 300;
 
@@ -23,9 +23,7 @@ export async function generateStaticParams() {
   }
 }
 
-export async function generateMetadata({
-  params,
-}: PageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const post = await getPostBySlug(slug);
   if (!post) {
@@ -55,17 +53,15 @@ export default async function PostPage({ params }: PageProps) {
   };
   return (
     <article className="mx-auto w-full max-w-5xl px-5 py-16 sm:py-20">
-      <p className="font-mono text-sm text-fg-muted">
+      <p className="text-fg-muted font-mono text-sm">
         <span className="text-phosphor">$</span> cat ./blog/{slug}.mdx
       </p>
       <h1 className="mt-4 font-mono text-3xl font-bold tracking-tight sm:text-4xl">
         # {post.title}
       </h1>
-      <p className="mt-3 flex flex-wrap gap-x-4 font-mono text-xs text-fg-muted">
+      <p className="text-fg-muted mt-3 flex flex-wrap gap-x-4 font-mono text-xs">
         <time dateTime={post.publishedAt}>{post.publishedAt.slice(0, 10)}</time>
-        {typeof post.readTime === 'number' ? (
-          <span>{post.readTime} min read</span>
-        ) : null}
+        {typeof post.readTime === 'number' ? <span>{post.readTime} min read</span> : null}
         {(post.tags ?? []).map((tag) => (
           <span className="text-phosphor" key={tag}>
             #{tag}
@@ -75,11 +71,11 @@ export default async function PostPage({ params }: PageProps) {
       <PostBody body={post.body} />
       <nav
         aria-label="Adjacent posts"
-        className="mt-12 flex flex-wrap justify-between gap-4 border-t border-edge pt-6 font-mono text-sm"
+        className="border-edge mt-12 flex flex-wrap justify-between gap-4 border-t pt-6 font-mono text-sm"
       >
         {older ? (
           <Link
-            className="text-fg-muted transition-colors hover:text-phosphor"
+            className="text-fg-muted hover:text-phosphor transition-colors"
             href={`/blog/${older.slug}`}
           >
             ← {older.title}
@@ -89,7 +85,7 @@ export default async function PostPage({ params }: PageProps) {
         )}
         {newer ? (
           <Link
-            className="text-fg-muted transition-colors hover:text-phosphor"
+            className="text-fg-muted hover:text-phosphor transition-colors"
             href={`/blog/${newer.slug}`}
           >
             {newer.title} →
