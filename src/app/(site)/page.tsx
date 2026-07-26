@@ -10,7 +10,7 @@ import { listPublishedPosts } from '@/lib/repositories/posts';
 export const revalidate = 300;
 
 export default async function HomePage() {
-  const posts = (await listPublishedPosts().catch(() => [])).slice(0, 3);
+  const posts = (await listPublishedPosts()).slice(0, 3);
   return (
     <>
       <Hero />
