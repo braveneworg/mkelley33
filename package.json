@@ -17,7 +17,8 @@
     "payload": "payload",
     "generate:types": "tsx scripts/generate-types.mjs",
     "generate:importmap": "payload generate:importmap",
-    "migrate:posts": "tsx --env-file-if-exists=.env.local scripts/migrate-posts.ts"
+    "migrate:posts": "tsx --env-file-if-exists=.env.local scripts/migrate-posts.ts",
+    "seed:services": "tsx --env-file-if-exists=.env.local scripts/seed-services.ts"
   },
   "dependencies": {
     "@payloadcms/db-mongodb": "^3.86.0",

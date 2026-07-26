@@ -5,6 +5,7 @@ import { Inter, JetBrains_Mono } from 'next/font/google';
 import { SiteFooter } from '@/components/site/site-footer';
 import { SiteNav } from '@/components/site/site-nav';
 import { ThemeProvider } from '@/components/site/theme-provider';
+import { serializeJsonLd } from '@/lib/json-ld';
 import { siteConfig } from '@/lib/site-config';
 
 import './globals.css';
@@ -34,6 +35,19 @@ export const viewport: Viewport = {
   ],
 };
 
+const personJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  jobTitle: 'Full-Stack AI Forward Deployed Engineer',
+  name: siteConfig.name,
+  sameAs: [
+    siteConfig.socials.github,
+    siteConfig.socials.linkedin,
+    ...(siteConfig.socials.bluesky ? [siteConfig.socials.bluesky] : []),
+  ],
+  url: siteConfig.url,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
@@ -49,6 +63,10 @@ export default function RootLayout({
             <SiteFooter />
           </div>
         </ThemeProvider>
+        <script
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(personJsonLd) }}
+          type="application/ld+json"
+        />
       </body>
     </html>
   );

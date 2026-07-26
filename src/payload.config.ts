@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 
 import { Media } from '@/collections/media';
 import { Posts } from '@/collections/posts';
+import { Services } from '@/collections/services';
 import { Users } from '@/collections/users';
 
 const filename = fileURLToPath(import.meta.url);
@@ -15,7 +16,7 @@ const dirname = path.dirname(filename);
 
 export default buildConfig({
   admin: { user: 'users' },
-  collections: [Users, Media, Posts],
+  collections: [Users, Media, Posts, Services],
   db: mongooseAdapter({ url: process.env.DATABASE_URL ?? '' }),
   editor: lexicalEditor(),
   plugins: [

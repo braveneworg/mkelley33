@@ -1,9 +1,13 @@
 export interface SiteConfig {
   description: string;
   handle: string;
+  /** Path under /public to the headshot image; null until the owner supplies it. */
+  headshot: string | null;
   name: string;
   /** Public repo for the "open source on GitHub" links — owner supplies later. */
   repoUrl: string | null;
+  /** Path under /public to the resume PDF; null until the owner supplies it. */
+  resumePdf: string | null;
   socials: {
     /** Owner supplies later; footer hides the link while null. */
     bluesky: string | null;
@@ -19,8 +23,10 @@ export const siteConfig: SiteConfig = {
   description:
     'Production React, Next.js, and Node.js engineering — and AI-assisted development, deployed forward into teams.',
   handle: 'mkelley33',
+  headshot: null,
   name: 'Michaux Kelley',
-  repoUrl: null,
+  repoUrl: 'https://github.com/braveneworg/mkelley33',
+  resumePdf: null,
   socials: {
     bluesky: null,
     github: 'https://github.com/mkelley33',

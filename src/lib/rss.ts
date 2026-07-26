@@ -18,8 +18,8 @@ export function buildRssXml(posts: Post[]): string {
       return [
         '    <item>',
         `      <title>${escapeXml(post.title)}</title>`,
-        `      <link>${url}</link>`,
-        `      <guid>${url}</guid>`,
+        `      <link>${escapeXml(url)}</link>`,
+        `      <guid>${escapeXml(url)}</guid>`,
         `      <pubDate>${new Date(post.publishedAt).toUTCString()}</pubDate>`,
         post.excerpt
           ? `      <description>${escapeXml(post.excerpt)}</description>`
@@ -32,12 +32,13 @@ export function buildRssXml(posts: Post[]): string {
     .join('\n');
   return [
     '<?xml version="1.0" encoding="UTF-8"?>',
-    '<rss version="2.0">',
+    '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">',
     '  <channel>',
     `    <title>${escapeXml(siteConfig.title)}</title>`,
     `    <link>${siteConfig.url}</link>`,
     `    <description>${escapeXml(siteConfig.description)}</description>`,
     `    <language>en</language>`,
+    `    <atom:link href="${siteConfig.url}/feed.xml" rel="self" type="application/rss+xml" />`,
     items,
     '  </channel>',
     '</rss>',

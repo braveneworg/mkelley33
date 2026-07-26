@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 import { siteConfig } from '@/lib/site-config';
 
 interface FooterLink {
@@ -54,6 +56,11 @@ export function SiteFooter() {
               </a>
             </li>
           ))}
+          <li>
+            <Link className="transition-colors hover:text-fg" href="/uses">
+              uses
+            </Link>
+          </li>
           <li>
             <a className="transition-colors hover:text-fg" href="/feed.xml">
               rss
