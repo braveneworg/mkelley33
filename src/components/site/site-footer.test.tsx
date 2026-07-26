@@ -40,4 +40,11 @@ describe('SiteFooter', () => {
     expect(github).toHaveAttribute('target', '_blank');
     expect(github).toHaveAttribute('rel', 'me noopener noreferrer');
   });
+
+  it('links the RSS feed internally', () => {
+    render(<SiteFooter />);
+    const rss = screen.getByRole('link', { name: 'rss' });
+    expect(rss).toHaveAttribute('href', '/feed.xml');
+    expect(rss).not.toHaveAttribute('target');
+  });
 });
