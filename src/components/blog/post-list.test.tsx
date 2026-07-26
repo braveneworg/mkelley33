@@ -26,4 +26,22 @@ describe('PostList', () => {
     render(<PostList posts={[]} />);
     expect(screen.getByText(/total 0/i)).toBeInTheDocument();
   });
+
+  it('omits read time, excerpt, and tags when absent', () => {
+    const post = makePost({
+      excerpt: null,
+      readTime: null,
+      slug: 'no-metadata-post',
+      tags: null,
+      title: 'A post with no extras',
+    });
+    const { container } = render(<PostList posts={[post]} />);
+    expect(
+      screen.getByRole('link', { name: /a post with no extras/i }),
+    ).toHaveAttribute('href', '/blog/no-metadata-post');
+    expect(screen.getByText('2024-02-06')).toBeInTheDocument();
+    expect(screen.queryByText(/min$/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^#/)).not.toBeInTheDocument();
+    expect(container.querySelector('article p')).not.toBeInTheDocument();
+  });
 });

@@ -64,4 +64,38 @@ describe('PostBody', () => {
     expect(await screen.findByText('ts')).toBeInTheDocument();
     expect(screen.getByText('body text')).toBeInTheDocument();
   });
+
+  it('falls back to an empty string and "text" language when a code block omits its fields', async () => {
+    const body = {
+      root: {
+        children: [
+          {
+            fields: {
+              blockName: '',
+              blockType: 'code',
+              id: 'a1b2c3d4e5f60718293a4b5c',
+            },
+            format: '',
+            type: 'block',
+            version: 2,
+          },
+        ],
+        direction: null,
+        format: '',
+        indent: 0,
+        type: 'root',
+        version: 1,
+      },
+    } as unknown as Post['body'];
+
+    await act(async () => {
+      render(
+        <Suspense fallback={null}>
+          <PostBody body={makePost({ body }).body} />
+        </Suspense>,
+      );
+    });
+
+    expect(await screen.findByText('text')).toBeInTheDocument();
+  });
 });

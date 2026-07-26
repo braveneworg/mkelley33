@@ -19,4 +19,13 @@ describe('buildRssXml', () => {
     expect(xml).toContain('</channel>');
     expect(xml).not.toContain('<item>');
   });
+
+  it('omits the item description element when a post has no excerpt', () => {
+    const xml = buildRssXml([
+      makePost({ excerpt: null, slug: 'no-excerpt-post' }),
+    ]);
+    const itemXml = xml.slice(xml.indexOf('<item>'), xml.indexOf('</item>'));
+    expect(itemXml).toContain('<item>');
+    expect(itemXml).not.toContain('<description>');
+  });
 });
