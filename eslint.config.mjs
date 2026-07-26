@@ -66,7 +66,7 @@ const eslintConfig = [
     files: ['**/*.{mjs,cjs}'],
     languageOptions: { globals: { ...globals.node } },
   },
-   // Prettier integration and custom rules
+  // Prettier integration and custom rules
   {
     files: ['**/*.{js,jsx,ts,tsx}'],
     plugins: {
@@ -359,6 +359,26 @@ const eslintConfig = [
   },
   // Security linting (full recommended rule set, applied everywhere).
   security.configs.recommended,
+  {
+    // `detect-object-injection` flags every computed member access, including
+    // the ones TypeScript already proves safe — a `Record<Union, T>` read with
+    // a key of that same union type. Every occurrence in this codebase is that
+    // pattern, so the rule is pure noise here and, under `--max-warnings=0`,
+    // would break the build on correct code. Genuinely dynamic lookups keyed by
+    // untrusted strings use a `Map` instead (see `normalizeLanguage`), which is
+    // safe by construction rather than by lint.
+    rules: { 'security/detect-object-injection': 'off' },
+  },
+  {
+    // Tests are not an attack surface: they build file paths from `mkdtemp`
+    // fixtures and regexes from their own fixture data. The plugin's threat
+    // model (untrusted runtime input reaching `fs`/`RegExp`) does not apply.
+    files: ['**/*.spec.{js,jsx,ts,tsx}', '**/*.int.spec.{js,jsx,ts,tsx}'],
+    rules: {
+      'security/detect-non-literal-fs-filename': 'off',
+      'security/detect-non-literal-regexp': 'off',
+    },
+  },
   eslintPluginPrettierRecommended,
   ...pluginQuery.configs['flat/recommended'],
   {
@@ -375,7 +395,7 @@ const eslintConfig = [
     },
     rules: {
       // Validation only. Class *ordering/formatting* is owned by
-      // prettier-plugin-tailwindcss (prettier.config.js), so better-tailwindcss's
+      // prettier-plugin-tailwindcss (prettier.config.mjs), so better-tailwindcss's
       // stylistic rules (enforce-consistent-class-order, line-wrapping, etc.) are
       // intentionally omitted to avoid fighting Prettier.
       'better-tailwindcss/no-conflicting-classes': 'error',
@@ -421,7 +441,6 @@ const eslintConfig = [
       'import-x/order': 'off',
     },
   },
-
 ];
 
 export default eslintConfig;

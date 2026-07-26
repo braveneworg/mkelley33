@@ -34,14 +34,11 @@ describe('splitFences', () => {
       '```',
     ].join('\n');
 
-    const segments = splitFences(markdown);
-    const fenceSegment = segments.find((s) => s.type === 'fence');
+    const fenceSegments = splitFences(markdown).filter((s) => s.type === 'fence');
 
-    expect(fenceSegment?.type).toBe('fence');
-    if (fenceSegment?.type === 'fence') {
-      expect(fenceSegment.code).toContain("import dotenv from 'dotenv';");
-      expect(fenceSegment.code).toContain('export default dotenv;');
-    }
+    expect(fenceSegments).toHaveLength(1);
+    expect(fenceSegments[0].code).toContain("import dotenv from 'dotenv';");
+    expect(fenceSegments[0].code).toContain('export default dotenv;');
   });
 
   it('normalizes CRLF line endings before splitting', () => {
@@ -71,5 +68,11 @@ describe('normalizeLanguage', () => {
 
   it('falls back to text for unknown languages', () => {
     expect(normalizeLanguage('ruby')).toBe('text');
+  });
+
+  it('falls back to text for object prototype keys', () => {
+    expect(normalizeLanguage('constructor')).toBe('text');
+    expect(normalizeLanguage('__proto__')).toBe('text');
+    expect(normalizeLanguage('toString')).toBe('text');
   });
 });

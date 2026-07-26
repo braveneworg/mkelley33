@@ -1,13 +1,11 @@
 import type { ReactNode } from 'react';
 
-const SIZE_CLASSES = { sm: 'text-sm', xs: 'text-xs' } as const;
-
 export interface ErrorTextProps {
   children: ReactNode;
   className?: string;
   id?: string;
   role?: 'alert' | 'status';
-  size?: keyof typeof SIZE_CLASSES;
+  size?: 'sm' | 'xs';
 }
 
 /**
@@ -16,7 +14,7 @@ export interface ErrorTextProps {
  * the message without the decorative comment marker.
  */
 export const ErrorText = ({ children, className, id, role, size = 'xs' }: ErrorTextProps) => {
-  const classes = `text-fg-muted font-mono ${SIZE_CLASSES[size]}`;
+  const classes = `text-fg-muted font-mono ${size === 'sm' ? 'text-sm' : 'text-xs'}`;
   return (
     <p className={className ? `${classes} ${className}` : classes} id={id} role={role}>
       <span aria-hidden="true"># </span>

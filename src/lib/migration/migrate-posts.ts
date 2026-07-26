@@ -67,27 +67,32 @@ export const convertInlineAnchors = (markdown: string): string =>
     }
   );
 
+// A Map rather than an object literal: the token comes from arbitrary markdown
+// fence info, and a plain-object lookup would resolve inherited keys such as
+// `constructor` or `__proto__` to Object internals instead of falling through
+// to the `text` default.
+const LANGUAGE_ALIASES = new Map<string, CodeLanguage>([
+  ['bash', 'bash'],
+  ['css', 'css'],
+  ['html', 'html'],
+  ['javascript', 'js'],
+  ['js', 'js'],
+  ['json', 'json'],
+  ['jsx', 'jsx'],
+  ['markdown', 'md'],
+  ['md', 'md'],
+  ['sh', 'bash'],
+  ['shell', 'bash'],
+  ['text', 'text'],
+  ['ts', 'ts'],
+  ['tsx', 'tsx'],
+  ['typescript', 'ts'],
+  ['zsh', 'bash'],
+]);
+
 export const normalizeLanguage = (info: string): CodeLanguage => {
   const token = info.trim().split(/\s+/)[0]?.toLowerCase() ?? '';
-  const map: Record<string, CodeLanguage> = {
-    bash: 'bash',
-    css: 'css',
-    html: 'html',
-    javascript: 'js',
-    js: 'js',
-    json: 'json',
-    jsx: 'jsx',
-    markdown: 'md',
-    md: 'md',
-    sh: 'bash',
-    shell: 'bash',
-    text: 'text',
-    ts: 'ts',
-    tsx: 'tsx',
-    typescript: 'ts',
-    zsh: 'bash',
-  };
-  return map[token] ?? 'text';
+  return LANGUAGE_ALIASES.get(token) ?? 'text';
 };
 
 export const splitFences = (markdown: string): Segment[] => {
@@ -137,10 +142,16 @@ export const migratePosts = async (
   const editorConfig = await editorConfigFactory.default({
     config: payload.config,
   });
+  // `contentDir` is an operator-supplied path from the `migrate:posts` script,
+  // not request input — reading it dynamically is this function's entire job,
+  // so the non-literal-path warnings here are expected rather than suppressible
+  // by restructuring.
+  // eslint-disable-next-line security/detect-non-literal-fs-filename
   const files = (await fs.readdir(contentDir)).filter((f) => f.endsWith('.mdx'));
 
   for (const file of files.sort()) {
     const slug = path.basename(file, '.mdx');
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
     const raw = await fs.readFile(path.join(contentDir, file), 'utf8');
     const { content, data: front } = matter(raw);
 

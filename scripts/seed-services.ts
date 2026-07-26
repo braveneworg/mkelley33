@@ -7,7 +7,7 @@ import { seedServices } from '@/lib/services-seed';
 const run = async (): Promise<void> => {
   const payload = await getPayload({ config });
   const result = await seedServices(payload);
-  console.log(
+  console.info(
     `seed:services done — created: [${result.created.join(', ')}], updated: [${result.updated.join(', ')}]`
   );
   process.exit(0);
