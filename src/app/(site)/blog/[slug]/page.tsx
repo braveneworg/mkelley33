@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { PostBody } from '@/components/blog/post-body';
+import { serializeJsonLd } from '@/lib/json-ld';
 import { getPostBySlug, listPublishedPosts } from '@/lib/repositories/posts';
 import { siteConfig } from '@/lib/site-config';
 
@@ -97,7 +98,7 @@ export default async function PostPage({ params }: PageProps) {
       </nav>
       <script
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c'),
+          __html: serializeJsonLd(jsonLd),
         }}
         type="application/ld+json"
       />
