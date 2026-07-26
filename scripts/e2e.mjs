@@ -139,9 +139,13 @@ try {
   const staticReady = await pollUntilOk('http://localhost:3000', 90);
   // A DB-backed route proves the server's mongo pool actually works — the
   // home page alone can serve prerendered HTML with a wedged pool behind it.
+  // The token is a deliberately NON-hex sentinel: the route treats any
+  // unknown token as invalid (still exercising the DB lookup), and a non-hex
+  // value can never match the newsletter spec's [0-9a-f]{64} scrape regex
+  // over e2e-server.log if the probe URL ever gets logged.
   const dbReady =
     staticReady &&
-    (await pollUntilOk(`http://localhost:3000/newsletter/confirm?token=${'0'.repeat(64)}`, 60));
+    (await pollUntilOk(`http://localhost:3000/newsletter/confirm?token=${'z'.repeat(64)}`, 60));
   if (dbReady) {
     const pw = await runCommand(
       ['exec', 'playwright', 'test'],
