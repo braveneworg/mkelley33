@@ -96,7 +96,9 @@ export default async function PostPage({ params }: PageProps) {
         ) : null}
       </nav>
       <script
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c'),
+        }}
         type="application/ld+json"
       />
     </article>
