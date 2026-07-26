@@ -58,9 +58,10 @@ per lesson. Never preload them all. Before starting work that matches a
 category, read every file in that category's directory, recursing into any
 subdirectories:
 
-| Category        | Load before                                      |
-| --------------- | ------------------------------------------------ |
-| `git-workflow/` | branching, committing, pushing, PRs, code review |
+| Category        | Load before                                                 |
+| --------------- | ----------------------------------------------------------- |
+| `git-workflow/` | branching, committing, pushing, PRs, code review            |
+| `testing/`      | test harnesses, E2E, mongodb-memory-server, child processes |
 
 When corrected — or when you catch your own mistake — add the lesson as a new
 file in the matching category (create a new category directory if none fits)
