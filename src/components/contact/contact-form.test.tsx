@@ -114,4 +114,20 @@ describe('ContactForm', () => {
     ).toBeInTheDocument();
     expect(screen.getByLabelText('name')).toHaveValue('Ada');
   });
+
+  it('associates picker and turnstile errors with their controls', async () => {
+    const user = userEvent.setup();
+    render(<ContactForm services={services} />);
+    await user.selectOptions(screen.getByLabelText('reason'), 'services');
+    await user.click(screen.getByRole('button', { name: /send-message/ }));
+    expect(
+      await screen.findByText('select at least one service'),
+    ).toHaveAttribute('id', 'contact-services-error');
+    expect(
+      screen.getByRole('button', { name: /select services/ }),
+    ).toHaveAttribute('aria-describedby', 'contact-services-error');
+    expect(
+      screen.getByRole('button', { name: /send-message/ }),
+    ).toHaveAttribute('aria-describedby', 'contact-turnstile-error');
+  });
 });

@@ -171,7 +171,7 @@ export function ContactForm({
       {reason === 'services' ? (
         <div>
           <Dialog>
-            <DialogTrigger className="rounded border border-edge px-3 py-2 font-mono text-sm text-fg transition-colors hover:border-phosphor">
+            <DialogTrigger aria-describedby={errors.requestedServices ? 'contact-services-error' : undefined} className="rounded border border-edge px-3 py-2 font-mono text-sm text-fg transition-colors hover:border-phosphor">
               select services…
             </DialogTrigger>
             <DialogContent aria-describedby={undefined}>
@@ -219,7 +219,7 @@ export function ContactForm({
             </ul>
           ) : null}
           {errors.requestedServices ? (
-            <p className="mt-1 font-mono text-xs text-fg-muted">
+            <p className="mt-1 font-mono text-xs text-fg-muted" id="contact-services-error">
               <span aria-hidden="true"># </span>
               {errors.requestedServices.message}
             </p>
@@ -266,7 +266,7 @@ export function ContactForm({
         siteKey={turnstileSiteKey()}
       />
       {errors.turnstileToken ? (
-        <p className="font-mono text-xs text-fg-muted">
+        <p className="font-mono text-xs text-fg-muted" id="contact-turnstile-error">
           <span aria-hidden="true"># </span>
           {errors.turnstileToken.message}
         </p>
@@ -278,6 +278,7 @@ export function ContactForm({
         </p>
       ) : null}
       <button
+        aria-describedby={errors.turnstileToken ? 'contact-turnstile-error' : undefined}
         className="rounded border border-phosphor px-4 py-2 font-mono text-sm text-phosphor transition-colors hover:bg-phosphor hover:text-canvas disabled:opacity-50"
         disabled={isPending}
         type="submit"
