@@ -18,7 +18,13 @@ export const ThemeToggle = () => {
 
   return (
     <button
-      aria-label="Toggle theme"
+      aria-label={
+        !mounted
+          ? 'Toggle theme'
+          : resolvedTheme === 'dark'
+            ? 'Switch to light theme'
+            : 'Switch to dark theme'
+      }
       className="text-fg-muted hover:text-phosphor transition-colors"
       disabled={!mounted}
       onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}

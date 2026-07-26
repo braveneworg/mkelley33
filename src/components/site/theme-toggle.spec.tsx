@@ -19,13 +19,22 @@ describe('ThemeToggle', () => {
 
   it('renders a button with an accessible name', async () => {
     renderToggle();
-    expect(await screen.findByRole('button', { name: /toggle theme/i })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('button', { name: /switch to (light|dark) theme/i })
+    ).toBeInTheDocument();
+  });
+
+  it('labels the toggle with the destination theme', async () => {
+    render(<ThemeToggle />);
+    expect(
+      await screen.findByRole('button', { name: /switch to (light|dark) theme/i })
+    ).toBeInTheDocument();
   });
 
   it('toggles the dark class on <html>', async () => {
     const user = userEvent.setup();
     renderToggle();
-    const button = await screen.findByRole('button', { name: /toggle theme/i });
+    const button = await screen.findByRole('button', { name: /switch to (light|dark) theme/i });
 
     await user.click(button);
     await waitFor(() => expect(document.documentElement).toHaveClass('dark'));

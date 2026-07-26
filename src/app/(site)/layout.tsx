@@ -4,6 +4,7 @@ import { PaletteMount } from '@/components/palette/palette-mount';
 import { SerwistRegister } from '@/components/site/serwist-register';
 import { SiteFooter } from '@/components/site/site-footer';
 import { SiteNav } from '@/components/site/site-nav';
+import { ThemeColorSync } from '@/components/site/theme-color-sync';
 import { ThemeProvider } from '@/components/site/theme-provider';
 import { serializeJsonLd } from '@/lib/json-ld';
 import { siteConfig } from '@/lib/site-config';
@@ -55,14 +56,23 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
+        <a
+          className="focus:border-phosphor focus:bg-surface sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:rounded-sm focus:border focus:px-3 focus:py-2 focus:font-mono focus:text-sm"
+          href="#main"
+        >
+          skip to content
+        </a>
         <SerwistRegister>
           <ThemeProvider>
             <div className="flex min-h-dvh flex-col">
               <SiteNav />
-              <main className="flex-1">{children}</main>
+              <main className="flex-1" id="main">
+                {children}
+              </main>
               <SiteFooter />
             </div>
             <PaletteMount />
+            <ThemeColorSync />
           </ThemeProvider>
           <script
             dangerouslySetInnerHTML={{ __html: serializeJsonLd(personJsonLd) }}
