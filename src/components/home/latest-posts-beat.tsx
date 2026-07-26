@@ -6,7 +6,9 @@ import type { Post } from '@/payload-types';
 export const LatestPostsBeat = ({ posts }: { posts: Post[] }) => (
   <TerminalSection command="tail -3 ./blog">
     {posts.length === 0 ? (
-      <p className="text-fg-muted font-mono text-sm"># no posts yet</p>
+      <p className="text-fg-muted font-mono text-sm">
+        <span aria-hidden="true"># </span>no posts yet
+      </p>
     ) : (
       <ul className="max-w-2xl space-y-4">
         {posts.map((post) => (

@@ -7,7 +7,12 @@ export const metadata: Metadata = { title: 'command not found' };
 export default function NotFound() {
   return (
     <section className="mx-auto w-full max-w-5xl px-5 py-20 font-mono sm:py-28">
-      <p className="text-fg-muted text-sm">$ open requested-page</p>
+      <p className="text-fg-muted text-sm">
+        <span aria-hidden="true" className="text-phosphor">
+          $
+        </span>{' '}
+        open requested-page
+      </p>
       <h1 className="mt-4 text-2xl font-bold">
         zsh: command not found <span className="text-phosphor">(404)</span>
       </h1>

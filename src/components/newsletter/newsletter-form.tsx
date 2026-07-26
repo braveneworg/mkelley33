@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Turnstile } from '@marsidev/react-turnstile';
 import { useForm } from 'react-hook-form';
 
+import { ErrorText, FieldError, fieldMessage } from '@/components/ui/error-text';
 import { subscribeNewsletter } from '@/lib/actions/newsletter';
 import { turnstileSiteKey } from '@/lib/turnstile';
 import type { NewsletterFormValues } from '@/lib/validation/newsletter';
@@ -81,12 +82,7 @@ export const NewsletterForm = () => {
           {isPending ? 'sending…' : 'subscribe'}
         </button>
       </div>
-      {errors.email ? (
-        <p className="text-fg-muted font-mono text-xs" id="newsletter-email-error">
-          <span aria-hidden="true"># </span>
-          {errors.email.message}
-        </p>
-      ) : null}
+      <FieldError id="newsletter-email-error" message={fieldMessage(errors.email)} />
       <div className="hidden">
         <label htmlFor="newsletter-website">website</label>
         <input
@@ -103,17 +99,11 @@ export const NewsletterForm = () => {
         ref={turnstileRef}
         siteKey={turnstileSiteKey()}
       />
-      {errors.turnstileToken ? (
-        <p className="text-fg-muted font-mono text-xs" id="newsletter-turnstile-error">
-          <span aria-hidden="true"># </span>
-          {errors.turnstileToken.message}
-        </p>
-      ) : null}
+      <FieldError id="newsletter-turnstile-error" message={fieldMessage(errors.turnstileToken)} />
       {serverError ? (
-        <p className="text-fg-muted font-mono text-sm" role="alert">
-          <span aria-hidden="true"># </span>
+        <ErrorText role="alert" size="sm">
           {serverError}
-        </p>
+        </ErrorText>
       ) : null}
     </form>
   );

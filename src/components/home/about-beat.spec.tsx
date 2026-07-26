@@ -12,18 +12,19 @@ describe('AboutBeat', () => {
 
   it('renders a placeholder while the headshot is pending', () => {
     render(<AboutBeat headshotSrc={null} />);
-    expect(screen.getByText('# headshot: pending')).toBeInTheDocument();
+    // The comment glyph is decorative, so only the plain text is exposed.
+    expect(screen.getByText('headshot: pending')).toBeInTheDocument();
     expect(screen.queryByRole('img')).not.toBeInTheDocument();
   });
 
   it('defaults the headshot to siteConfig.headshot when no prop is passed', () => {
     render(<AboutBeat />);
-    expect(screen.getByText('# headshot: pending')).toBeInTheDocument();
+    expect(screen.getByText('headshot: pending')).toBeInTheDocument();
   });
 
   it('renders the headshot image when supplied', () => {
     render(<AboutBeat headshotSrc="/headshot.jpg" />);
     expect(screen.getByRole('img', { name: 'Michaux Kelley' })).toBeInTheDocument();
-    expect(screen.queryByText('# headshot: pending')).not.toBeInTheDocument();
+    expect(screen.queryByText('headshot: pending')).not.toBeInTheDocument();
   });
 });

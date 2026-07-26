@@ -9,13 +9,19 @@ import {
 import { siteConfig } from '@/lib/site-config';
 
 const SectionHeading = ({ children }: { children: React.ReactNode }) => (
-  <h2 className="text-phosphor mt-10 font-mono text-lg font-bold print:text-black">{children}</h2>
+  <h2 className="text-phosphor mt-10 font-mono text-lg font-bold print:text-black">
+    <span aria-hidden="true"># </span>
+    {children}
+  </h2>
 );
 
 export const CvDocument = ({ resumePdf = siteConfig.resumePdf }: { resumePdf?: string | null }) => (
   <article className="cv-document mx-auto w-full max-w-3xl px-5 py-16 sm:py-20">
     <p className="text-fg-muted font-mono text-sm print:hidden">
-      <span className="text-phosphor">$</span> cat ./cv.md
+      <span aria-hidden="true" className="text-phosphor">
+        $
+      </span>{' '}
+      cat ./cv.md
     </p>
     <h1 className="mt-4 font-mono text-3xl font-bold tracking-tight">{siteConfig.name}</h1>
     <p className="text-fg-muted mt-2 font-mono text-sm">
@@ -28,10 +34,10 @@ export const CvDocument = ({ resumePdf = siteConfig.resumePdf }: { resumePdf?: s
       </a>
     ) : null}
 
-    <SectionHeading># Professional summary</SectionHeading>
+    <SectionHeading>Professional summary</SectionHeading>
     <p className="text-fg mt-3 leading-relaxed">{CV_SUMMARY}</p>
 
-    <SectionHeading># Technical skills</SectionHeading>
+    <SectionHeading>Technical skills</SectionHeading>
     <dl className="mt-3 space-y-3">
       {CV_SKILLS.map((group) => (
         <div key={group.label}>
@@ -41,7 +47,7 @@ export const CvDocument = ({ resumePdf = siteConfig.resumePdf }: { resumePdf?: s
       ))}
     </dl>
 
-    <SectionHeading># Professional experience</SectionHeading>
+    <SectionHeading>Professional experience</SectionHeading>
     <ol className="mt-3 space-y-8">
       {CV_EXPERIENCE.map((entry) => (
         <li key={entry.hash}>
@@ -63,7 +69,7 @@ export const CvDocument = ({ resumePdf = siteConfig.resumePdf }: { resumePdf?: s
       ))}
     </ol>
 
-    <SectionHeading># Education</SectionHeading>
+    <SectionHeading>Education</SectionHeading>
     <ul className="mt-3 space-y-3">
       {CV_EDUCATION.map((item) => (
         <li key={item.title}>
@@ -73,7 +79,7 @@ export const CvDocument = ({ resumePdf = siteConfig.resumePdf }: { resumePdf?: s
       ))}
     </ul>
 
-    <SectionHeading># Open source &amp; writing</SectionHeading>
+    <SectionHeading>Open source &amp; writing</SectionHeading>
     <ul className="mt-3 space-y-2">
       {CV_OPEN_SOURCE.map((item) => (
         <li className="text-fg text-sm leading-relaxed" key={item}>

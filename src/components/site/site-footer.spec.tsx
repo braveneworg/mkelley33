@@ -12,11 +12,11 @@ describe('SiteFooter', () => {
 
   it('renders github and linkedin links', () => {
     render(<SiteFooter />);
-    expect(screen.getByRole('link', { name: 'github' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /^github/ })).toHaveAttribute(
       'href',
       siteConfig.socials.github
     );
-    expect(screen.getByRole('link', { name: 'linkedin' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /^linkedin/ })).toHaveAttribute(
       'href',
       siteConfig.socials.linkedin
     );
@@ -29,9 +29,21 @@ describe('SiteFooter', () => {
 
   it('marks external links as safe new-tab links', () => {
     render(<SiteFooter />);
-    const github = screen.getByRole('link', { name: 'github' });
+    const github = screen.getByRole('link', { name: /^github/ });
     expect(github).toHaveAttribute('target', '_blank');
     expect(github).toHaveAttribute('rel', 'me noopener noreferrer');
+  });
+
+  it('extends every new-tab link name with an opens-in-new-tab note', () => {
+    render(<SiteFooter />);
+    for (const name of [/^github/, /^linkedin/, /^source/]) {
+      expect(screen.getByRole('link', { name })).toHaveAccessibleName(/\(opens in new tab\)$/);
+    }
+  });
+
+  it('hides the copyleft glyph from assistive tech', () => {
+    render(<SiteFooter />);
+    expect(screen.getByText('🄯')).toHaveAttribute('aria-hidden', 'true');
   });
 
   it('links the RSS feed internally', () => {
@@ -43,7 +55,7 @@ describe('SiteFooter', () => {
 
   it('links the repo source now that repoUrl is set', () => {
     render(<SiteFooter />);
-    expect(screen.getByRole('link', { name: 'source' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /^source/ })).toHaveAttribute(
       'href',
       'https://github.com/braveneworg/mkelley33'
     );

@@ -18,7 +18,8 @@ export const PostList = ({ posts }: { posts: Post[] }) => {
               {typeof post.readTime === 'number' ? <span>{post.readTime} min</span> : null}
               {(post.tags ?? []).map((tag) => (
                 <span className="text-phosphor" key={tag}>
-                  #{tag}
+                  <span aria-hidden="true">#</span>
+                  {tag}
                 </span>
               ))}
             </div>

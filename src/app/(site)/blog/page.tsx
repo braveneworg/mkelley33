@@ -15,8 +15,15 @@ export default async function BlogIndexPage() {
   const posts = await listPublishedPosts();
   return (
     <section className="mx-auto w-full max-w-5xl px-5 py-16 sm:py-20">
-      <p className="text-phosphor font-mono text-sm">$ ls ./blog</p>
-      <h1 className="mt-3 font-mono text-3xl font-bold tracking-tight"># blog</h1>
+      <p className="text-fg-muted font-mono text-sm">
+        <span aria-hidden="true" className="text-phosphor">
+          $
+        </span>{' '}
+        ls ./blog
+      </p>
+      <h1 className="mt-3 font-mono text-3xl font-bold tracking-tight">
+        <span aria-hidden="true"># </span>blog
+      </h1>
       <div className="mt-10">
         <PostList posts={posts} />
       </div>

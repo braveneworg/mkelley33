@@ -15,8 +15,8 @@ export const Hero = () => (
       </h1>
       <p className="text-phosphor mt-3 font-mono text-lg">{siteConfig.tagline}</p>
       <p className="text-fg-muted mt-5 max-w-xl leading-relaxed">
-        # 10+ years of production React, Next.js &amp; Node — deployed forward with Claude Code, MCP
-        &amp; friends
+        <span aria-hidden="true"># </span>10+ years of production React, Next.js &amp; Node —
+        deployed forward with Claude Code, MCP &amp; friends
       </p>
       <div className="mt-8 flex flex-wrap gap-4 font-mono text-sm">
         <Magnetic>

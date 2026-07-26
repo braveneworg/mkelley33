@@ -37,7 +37,10 @@ const externalLinks = (): FooterLink[] => {
 export const SiteFooter = () => (
   <footer className="border-edge border-t">
     <div className="text-fg-muted mx-auto flex w-full max-w-5xl flex-wrap items-center gap-x-5 gap-y-2 px-5 py-6 font-mono text-xs">
-      <p>🄯 {new Date().getFullYear()} michaux kelley — copyleft, share alike</p>
+      <p>
+        <span aria-hidden="true">🄯</span> {new Date().getFullYear()} michaux kelley — copyleft,
+        share alike
+      </p>
       <ul className="ml-auto flex flex-wrap gap-x-4">
         {externalLinks().map((link) => (
           <li key={link.label}>
@@ -45,22 +48,23 @@ export const SiteFooter = () => (
                 data-driven so socials can carry rel="me"; every literal in the
                 candidates list above includes "noopener noreferrer". */}
             <a
-              className="hover:text-fg transition-colors"
+              className="link-draw hover:text-fg transition-colors"
               href={link.href}
               rel={link.rel}
               target="_blank"
             >
               {link.label}
+              <span className="sr-only"> (opens in new tab)</span>
             </a>
           </li>
         ))}
         <li>
-          <Link className="hover:text-fg transition-colors" href="/uses">
+          <Link className="link-draw hover:text-fg transition-colors" href="/uses">
             uses
           </Link>
         </li>
         <li>
-          <a className="hover:text-fg transition-colors" href="/feed.xml">
+          <a className="link-draw hover:text-fg transition-colors" href="/feed.xml">
             rss
           </a>
         </li>

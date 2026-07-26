@@ -13,6 +13,7 @@ export const OpenSourceBeat = () => (
             target="_blank"
           >
             this-site/
+            <span className="sr-only"> (opens in new tab)</span>
           </a>
         ) : (
           <span className="text-phosphor font-mono text-sm">this-site/</span>
@@ -30,6 +31,7 @@ export const OpenSourceBeat = () => (
           target="_blank"
         >
           boudreaux/
+          <span className="sr-only"> (opens in new tab)</span>
         </a>
         <p className="text-fg-muted mt-1 text-sm leading-relaxed">
           MPL 2.0 music marketplace for Fake Four Records — founding engineer. Streaming, downloads,

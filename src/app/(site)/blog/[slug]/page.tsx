@@ -54,17 +54,22 @@ export default async function PostPage({ params }: PageProps) {
   return (
     <article className="mx-auto w-full max-w-5xl px-5 py-16 sm:py-20">
       <p className="text-fg-muted font-mono text-sm">
-        <span className="text-phosphor">$</span> cat ./blog/{slug}.mdx
+        <span aria-hidden="true" className="text-phosphor">
+          $
+        </span>{' '}
+        cat ./blog/{slug}.mdx
       </p>
       <h1 className="mt-4 font-mono text-3xl font-bold tracking-tight sm:text-4xl">
-        # {post.title}
+        <span aria-hidden="true"># </span>
+        {post.title}
       </h1>
       <p className="text-fg-muted mt-3 flex flex-wrap gap-x-4 font-mono text-xs">
         <time dateTime={post.publishedAt}>{post.publishedAt.slice(0, 10)}</time>
         {typeof post.readTime === 'number' ? <span>{post.readTime} min read</span> : null}
         {(post.tags ?? []).map((tag) => (
           <span className="text-phosphor" key={tag}>
-            #{tag}
+            <span aria-hidden="true">#</span>
+            {tag}
           </span>
         ))}
       </p>

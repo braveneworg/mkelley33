@@ -83,9 +83,14 @@ export default function UsesPage() {
   return (
     <div className="mx-auto w-full max-w-5xl px-5 py-16 sm:py-20">
       <p className="text-fg-muted font-mono text-sm">
-        <span className="text-phosphor">$</span> cat ./uses.md
+        <span aria-hidden="true" className="text-phosphor">
+          $
+        </span>{' '}
+        cat ./uses.md
       </p>
-      <h1 className="mt-4 font-mono text-3xl font-bold tracking-tight sm:text-4xl"># Uses</h1>
+      <h1 className="mt-4 font-mono text-3xl font-bold tracking-tight sm:text-4xl">
+        <span aria-hidden="true"># </span>uses
+      </h1>
       <p className="text-fg-muted mt-3 max-w-2xl leading-relaxed">
         The hardware, software, and AI tooling behind the work.
       </p>
@@ -104,7 +109,7 @@ export default function UsesPage() {
       ))}
       {siteConfig.repoUrl ? (
         <p className="text-fg-muted mt-12 font-mono text-sm">
-          #{' '}
+          <span aria-hidden="true"># </span>
           <a
             className="text-phosphor underline underline-offset-4"
             href={siteConfig.repoUrl}
@@ -112,6 +117,7 @@ export default function UsesPage() {
             target="_blank"
           >
             view source on github
+            <span className="sr-only"> (opens in new tab)</span>
           </a>
         </p>
       ) : null}

@@ -33,4 +33,25 @@ describe('ThemeColorSync', () => {
     expect(meta.getAttribute('content')).toBe('#f4f7f5');
     meta.remove();
   });
+
+  it('falls back to the light value while the theme is unresolved', () => {
+    const meta = document.createElement('meta');
+    meta.setAttribute('name', 'theme-color');
+    document.head.append(meta);
+    themeState.resolvedTheme = undefined;
+    render(<ThemeColorSync />);
+    expect(meta.getAttribute('content')).toBe('#f4f7f5');
+    meta.remove();
+  });
+
+  it('leaves the meta untouched for an unknown theme value', () => {
+    const meta = document.createElement('meta');
+    meta.setAttribute('name', 'theme-color');
+    meta.setAttribute('content', '#123456');
+    document.head.append(meta);
+    themeState.resolvedTheme = 'sepia';
+    render(<ThemeColorSync />);
+    expect(meta.getAttribute('content')).toBe('#123456');
+    meta.remove();
+  });
 });

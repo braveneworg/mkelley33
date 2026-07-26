@@ -25,9 +25,14 @@ describe('ThemeToggle', () => {
   });
 
   it('labels the toggle with the destination theme', async () => {
-    render(<ThemeToggle />);
+    render(
+      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+        <ThemeToggle />
+      </ThemeProvider>
+    );
+    // Resolved dark must advertise the opposite direction — pins the ternary.
     expect(
-      await screen.findByRole('button', { name: /switch to (light|dark) theme/i })
+      await screen.findByRole('button', { name: 'Switch to light theme' })
     ).toBeInTheDocument();
   });
 

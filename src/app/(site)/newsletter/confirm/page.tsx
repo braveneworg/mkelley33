@@ -17,18 +17,25 @@ export default async function ConfirmPage({
   return (
     <div className="mx-auto w-full max-w-5xl px-5 py-16 sm:py-20">
       <p className="text-fg-muted font-mono text-sm">
-        <span className="text-phosphor">$</span> ./confirm-subscription
+        <span aria-hidden="true" className="text-phosphor">
+          $
+        </span>{' '}
+        ./confirm-subscription
       </p>
       {confirmed ? (
         <>
-          <h1 className="mt-4 font-mono text-3xl font-bold tracking-tight"># subscribed ✓</h1>
+          <h1 className="mt-4 font-mono text-3xl font-bold tracking-tight">
+            <span aria-hidden="true"># </span>subscribed ✓
+          </h1>
           <p className="text-fg-muted mt-3 max-w-2xl leading-relaxed">
             you&apos;re in — new posts land in your inbox. unsubscribe anytime from any email.
           </p>
         </>
       ) : (
         <>
-          <h1 className="mt-4 font-mono text-3xl font-bold tracking-tight"># invalid token</h1>
+          <h1 className="mt-4 font-mono text-3xl font-bold tracking-tight">
+            <span aria-hidden="true"># </span>invalid token
+          </h1>
           <p className="text-fg-muted mt-3 max-w-2xl leading-relaxed">
             this confirmation link is invalid or was replaced by a newer one — subscribe again to
             get a fresh link.

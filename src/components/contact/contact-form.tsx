@@ -84,7 +84,10 @@ export const ContactForm = ({ services }: { services: ContactServiceOption[] }) 
     return (
       <div role="status">
         <p className="text-fg-muted font-mono text-sm">
-          <span className="text-phosphor">$</span> ./send-message
+          <span aria-hidden="true" className="text-phosphor">
+            $
+          </span>{' '}
+          ./send-message
         </p>
         <p className="text-phosphor mt-2 font-mono text-lg">message queued ✓</p>
         <p className="text-fg-muted mt-2 text-sm">
@@ -254,7 +257,13 @@ export const ContactForm = ({ services }: { services: ContactServiceOption[] }) 
         disabled={isPending}
         type="submit"
       >
-        {isPending ? 'sending…' : '$ ./send-message'}
+        {isPending ? (
+          'sending…'
+        ) : (
+          <>
+            <span aria-hidden="true">$ </span>./send-message
+          </>
+        )}
       </button>
     </form>
   );

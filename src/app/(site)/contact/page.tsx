@@ -22,9 +22,14 @@ export default async function ContactPage() {
   return (
     <div className="mx-auto w-full max-w-5xl px-5 py-16 sm:py-20">
       <p className="text-fg-muted font-mono text-sm">
-        <span className="text-phosphor">$</span> cat ./contact.md
+        <span aria-hidden="true" className="text-phosphor">
+          $
+        </span>{' '}
+        cat ./contact.md
       </p>
-      <h1 className="mt-4 font-mono text-3xl font-bold tracking-tight sm:text-4xl"># Contact</h1>
+      <h1 className="mt-4 font-mono text-3xl font-bold tracking-tight sm:text-4xl">
+        <span aria-hidden="true"># </span>contact
+      </h1>
       <p className="text-fg-muted mt-3 max-w-2xl leading-relaxed">
         Request services, ask a question, or just say hi — this lands straight in my inbox.
       </p>
@@ -35,7 +40,10 @@ export default async function ContactPage() {
       </div>
       <section className="border-edge mt-16 border-t pt-10">
         <p className="text-fg-muted font-mono text-sm">
-          <span className="text-phosphor">$</span> subscribe --newsletter
+          <span aria-hidden="true" className="text-phosphor">
+            $
+          </span>{' '}
+          subscribe --newsletter
         </p>
         <div className="mt-5">
           <NewsletterForm />

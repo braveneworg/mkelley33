@@ -36,7 +36,8 @@
 }
 
 @utility bg-blueprint {
-  background-image: linear-gradient(var(--grid-line) 1px, transparent 1px),
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
     linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
   background-size: 28px 28px;
 }
@@ -164,5 +165,15 @@ body {
   .cv-document a {
     color: #000000;
     text-decoration: none;
+  }
+  .shiki,
+  .shiki span,
+  .dark .shiki,
+  .dark .shiki span {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    font-style: normal !important;
+    font-weight: normal !important;
+    text-decoration: none !important;
   }
 }

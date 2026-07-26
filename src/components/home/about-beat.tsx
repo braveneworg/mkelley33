@@ -21,7 +21,7 @@ export const AboutBeat = ({
           />
         ) : (
           <div className="border-edge text-fg-muted flex size-30 items-center justify-center rounded-full border border-dashed p-2 text-center font-mono text-xs">
-            # headshot: pending
+            <span aria-hidden="true"># </span>headshot: pending
           </div>
         )}
       </div>
