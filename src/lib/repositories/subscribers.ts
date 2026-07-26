@@ -1,4 +1,4 @@
-import { getPayload } from 'payload';
+import { getPayload, ValidationError } from 'payload';
 
 import config from '@payload-config';
 
@@ -11,6 +11,37 @@ export interface UpsertPendingResult {
 }
 
 const client = async () => getPayload({ config });
+
+/**
+ * Detects a unique-email (duplicate key) collision raised by `create`, in
+ * both shapes it can reach us: `@payloadcms/db-mongodb` converts the driver's
+ * E11000 error into a Payload `ValidationError` on the failing field (its
+ * `handleError`), while a raw driver error still carries `E11000` in its
+ * message.
+ */
+export const isDuplicateEmailError = (error: unknown): boolean => {
+  if (error instanceof ValidationError) {
+    return error.data.errors.some((fieldError) => fieldError.path === 'email');
+  }
+  return error instanceof Error && error.message.includes('E11000');
+};
+
+/**
+ * Loads the subscriber that won a create race. If the lookup itself fails,
+ * throws an `AggregateError` carrying both the original create error and the
+ * lookup failure, so a failed recovery still diagnoses the race.
+ */
+const findRaceWinner = async (email: string, createError: unknown): Promise<null | Subscriber> => {
+  try {
+    return await findByEmail(email);
+  } catch (lookupError) {
+    throw new AggregateError(
+      [createError, lookupError],
+      'duplicate-email race recovery failed: could not load the winning subscriber',
+      { cause: lookupError }
+    );
+  }
+};
 
 const findByEmail = async (email: string): Promise<null | Subscriber> => {
   const payload = await client();
@@ -68,10 +99,7 @@ export const upsertPendingSubscriber = async (email: string): Promise<UpsertPend
     } catch (error) {
       // Unique-index race: another request created this email between our
       // find and create. Re-arm the existing doc instead of failing the user.
-      const raced =
-        error instanceof Error && error.message.includes('E11000')
-          ? await findByEmail(normalized)
-          : null;
+      const raced = isDuplicateEmailError(error) ? await findRaceWinner(normalized, error) : null;
       if (!raced) {
         throw error;
       }

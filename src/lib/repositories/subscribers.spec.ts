@@ -1,8 +1,10 @@
 // @vitest-environment node
+import { ValidationError } from 'payload';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   confirmSubscriber,
+  isDuplicateEmailError,
   unsubscribeSubscriber,
   upsertPendingSubscriber,
 } from '@/lib/repositories/subscribers';
@@ -11,7 +13,15 @@ const create = vi.fn();
 const find = vi.fn();
 const update = vi.fn();
 
-vi.mock('payload', () => ({ getPayload: vi.fn(async () => ({ create, find, update })) }));
+// `ValidationError` must be the real class: the repository detects the
+// duplicate-key race with `instanceof`, exactly as the mongodb adapter throws.
+vi.mock('payload', async (importOriginal) => {
+  const actual = await importOriginal<{ ValidationError: typeof ValidationError }>();
+  return {
+    getPayload: vi.fn(async () => ({ create, find, update })),
+    ValidationError: actual.ValidationError,
+  };
+});
 vi.mock('@payload-config', () => ({ default: {} }));
 
 /** Payload's `find` returns a paginated envelope; only `docs` is read here. */
@@ -20,10 +30,44 @@ const docs = (...found: unknown[]) => ({ docs: found });
 const duplicateKeyError = () =>
   new Error('E11000 duplicate key error collection: test.subscribers index: email_1');
 
+/**
+ * The error `@payloadcms/db-mongodb` actually throws for an E11000 collision:
+ * its `handleError` converts the driver error into a Payload `ValidationError`
+ * on the failing field, so the raw `E11000` message never reaches callers.
+ */
+const uniqueEmailValidationError = () =>
+  new ValidationError({
+    collection: 'subscribers',
+    errors: [{ message: 'Value must be unique', path: 'email' }],
+  });
+
 beforeEach(() => {
   create.mockReset();
   find.mockReset();
   update.mockReset();
+});
+
+describe('isDuplicateEmailError', () => {
+  it("accepts the adapter's ValidationError for the unique email index", () => {
+    expect(isDuplicateEmailError(uniqueEmailValidationError())).toBe(true);
+  });
+
+  it('accepts a raw driver error carrying the E11000 marker', () => {
+    expect(isDuplicateEmailError(duplicateKeyError())).toBe(true);
+  });
+
+  it('rejects a ValidationError for a different field', () => {
+    const other = new ValidationError({
+      collection: 'subscribers',
+      errors: [{ message: 'Value must be unique', path: 'confirmToken' }],
+    });
+    expect(isDuplicateEmailError(other)).toBe(false);
+  });
+
+  it('rejects unrelated errors and non-errors', () => {
+    expect(isDuplicateEmailError(new Error('disk full'))).toBe(false);
+    expect(isDuplicateEmailError('E11000')).toBe(false);
+  });
 });
 
 describe('upsertPendingSubscriber', () => {
@@ -92,6 +136,33 @@ describe('upsertPendingSubscriber', () => {
 
     expect(update).toHaveBeenCalledWith(expect.objectContaining({ id: 'raced' }));
     expect(result).toEqual({ alreadyActive: false, rawToken: expect.any(String) });
+  });
+
+  it('re-arms the winning document when the adapter reports the race as a ValidationError', async () => {
+    find
+      .mockResolvedValueOnce(docs())
+      .mockResolvedValueOnce(docs({ id: 'raced-validated', status: 'pending' }));
+    create.mockRejectedValue(uniqueEmailValidationError());
+
+    const result = await upsertPendingSubscriber('race@b.com');
+
+    expect(update).toHaveBeenCalledWith(expect.objectContaining({ id: 'raced-validated' }));
+    expect(result).toEqual({ alreadyActive: false, rawToken: expect.any(String) });
+  });
+
+  it('preserves both the create error and the lookup failure when recovery fails', async () => {
+    const createError = uniqueEmailValidationError();
+    const lookupError = new Error('lookup offline');
+    find.mockResolvedValueOnce(docs()).mockRejectedValueOnce(lookupError);
+    create.mockRejectedValue(createError);
+
+    const rejection: unknown = await upsertPendingSubscriber('down@b.com').catch(
+      (error: unknown) => error
+    );
+
+    expect(rejection).toBeInstanceOf(AggregateError);
+    expect((rejection as AggregateError).errors).toEqual([createError, lookupError]);
+    expect(update).not.toHaveBeenCalled();
   });
 
   it('rethrows a duplicate-key error when the racing document cannot be found', async () => {
