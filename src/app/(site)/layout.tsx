@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 
 import { Inter, JetBrains_Mono } from 'next/font/google';
 
+import { PaletteMount } from '@/components/palette/palette-mount';
 import { SiteFooter } from '@/components/site/site-footer';
 import { SiteNav } from '@/components/site/site-nav';
 import { ThemeProvider } from '@/components/site/theme-provider';
@@ -62,6 +63,7 @@ export default function RootLayout({
             <main className="flex-1">{children}</main>
             <SiteFooter />
           </div>
+          <PaletteMount />
         </ThemeProvider>
         <script
           dangerouslySetInnerHTML={{ __html: serializeJsonLd(personJsonLd) }}

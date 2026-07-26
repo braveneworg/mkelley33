@@ -44,10 +44,15 @@ export function SiteNav() {
               </Link>
             </li>
           ))}
-          <li aria-hidden="true" className="hidden sm:block">
-            <kbd className="rounded border border-edge px-1.5 py-0.5 text-xs text-fg-muted">
+          <li className="hidden sm:block">
+            <button
+              aria-label="Open command palette"
+              className="rounded border border-edge px-1.5 py-0.5 text-xs text-fg-muted transition-colors hover:border-phosphor hover:text-fg"
+              onClick={() => window.dispatchEvent(new Event('palette:open'))}
+              type="button"
+            >
               ⌘K
-            </kbd>
+            </button>
           </li>
           <li>
             <ThemeToggle />
