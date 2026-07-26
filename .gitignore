@@ -16,3 +16,8 @@ public/swe-worker-*.js.map
 
 # macOS Finder metadata
 .DS_Store
+
+# playwright artifacts
+test-results/
+playwright-report/
+e2e-server.log
