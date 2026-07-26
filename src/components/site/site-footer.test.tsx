@@ -29,9 +29,6 @@ describe('SiteFooter', () => {
     expect(
       screen.queryByRole('link', { name: 'bluesky' }),
     ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole('link', { name: 'source' }),
-    ).not.toBeInTheDocument();
   });
 
   it('marks external links as safe new-tab links', () => {
@@ -46,5 +43,13 @@ describe('SiteFooter', () => {
     const rss = screen.getByRole('link', { name: 'rss' });
     expect(rss).toHaveAttribute('href', '/feed.xml');
     expect(rss).not.toHaveAttribute('target');
+  });
+
+  it('links the repo source now that repoUrl is set', () => {
+    render(<SiteFooter />);
+    expect(screen.getByRole('link', { name: 'source' })).toHaveAttribute(
+      'href',
+      'https://github.com/braveneworg/mkelley33',
+    );
   });
 });
