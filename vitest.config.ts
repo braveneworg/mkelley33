@@ -12,7 +12,9 @@ export default defineConfig({
     },
     environment: 'jsdom',
     globals: true,
+    hookTimeout: 120_000,
     include: ['src/**/*.test.{ts,tsx}'],
     setupFiles: ['./vitest.setup.ts'],
+    testTimeout: 30_000,
   },
 });

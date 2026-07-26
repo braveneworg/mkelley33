@@ -54,6 +54,11 @@ export function SiteFooter() {
               </a>
             </li>
           ))}
+          <li>
+            <a className="transition-colors hover:text-fg" href="/feed.xml">
+              rss
+            </a>
+          </li>
         </ul>
       </div>
     </footer>

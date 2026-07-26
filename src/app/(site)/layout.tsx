@@ -16,6 +16,9 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  alternates: {
+    types: { 'application/rss+xml': '/feed.xml' },
+  },
   description: siteConfig.description,
   metadataBase: new URL(siteConfig.url),
   title: {
