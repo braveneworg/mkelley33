@@ -1,0 +1,69 @@
+import type { ForwardedRef } from 'react';
+import { forwardRef, useImperativeHandle } from 'react';
+
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { vi } from 'vitest';
+
+import { NewsletterForm } from '@/components/newsletter/newsletter-form';
+import { subscribeNewsletter } from '@/lib/actions/newsletter';
+
+const resetSpy = vi.hoisted(() => vi.fn());
+
+vi.mock('@marsidev/react-turnstile', () => ({
+  Turnstile: forwardRef(function Turnstile(
+    { onSuccess }: { onSuccess?: (token: string) => void },
+    ref: ForwardedRef<{ reset: () => void }>
+  ) {
+    useImperativeHandle(ref, () => ({ reset: resetSpy }));
+    return (
+      <button onClick={() => onSuccess?.('test-token')} type="button">
+        solve turnstile
+      </button>
+    );
+  }),
+}));
+vi.mock('@/lib/actions/newsletter', () => ({
+  subscribeNewsletter: vi.fn().mockResolvedValue({ success: true }),
+}));
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+
+describe('NewsletterForm', () => {
+  it('submits and shows the check-your-inbox state', async () => {
+    const user = userEvent.setup();
+    render(<NewsletterForm />);
+    await user.type(screen.getByLabelText('email'), 'a@b.com');
+    await user.click(screen.getByRole('button', { name: 'solve turnstile' }));
+    await user.click(screen.getByRole('button', { name: /subscribe/ }));
+    expect(await screen.findByText(/check your inbox to confirm/)).toBeInTheDocument();
+    expect(subscribeNewsletter).toHaveBeenCalledWith(
+      expect.objectContaining({ email: 'a@b.com', turnstileToken: 'test-token' })
+    );
+  });
+
+  it('shows a validation error for a bad email without calling the action', async () => {
+    const user = userEvent.setup();
+    render(<NewsletterForm />);
+    await user.type(screen.getByLabelText('email'), 'nope');
+    await user.click(screen.getByRole('button', { name: /subscribe/ }));
+    expect(await screen.findByText(/enter a valid email/)).toBeInTheDocument();
+    expect(subscribeNewsletter).not.toHaveBeenCalled();
+  });
+
+  it('surfaces server errors', async () => {
+    vi.mocked(subscribeNewsletter).mockResolvedValueOnce({
+      error: 'something broke — retry in a bit',
+      success: false,
+    });
+    const user = userEvent.setup();
+    render(<NewsletterForm />);
+    await user.type(screen.getByLabelText('email'), 'a@b.com');
+    await user.click(screen.getByRole('button', { name: 'solve turnstile' }));
+    await user.click(screen.getByRole('button', { name: /subscribe/ }));
+    expect(await screen.findByText(/something broke/)).toBeInTheDocument();
+    expect(resetSpy).toHaveBeenCalled();
+  });
+});
