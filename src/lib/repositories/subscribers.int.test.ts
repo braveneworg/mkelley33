@@ -72,4 +72,21 @@ describe('subscribers repository', () => {
     expect(again.rawToken).toMatch(/^[0-9a-f]{64}$/);
     expect(await unsubscribeSubscriber('0'.repeat(64))).toBe(false);
   });
+
+  it('rejects a stale confirm link after unsubscribing', async () => {
+    const {
+      confirmSubscriber,
+      unsubscribeSubscriber,
+      upsertPendingSubscriber,
+    } = await import('@/lib/repositories/subscribers');
+    const fresh = await upsertPendingSubscriber('three@example.com');
+    expect(await confirmSubscriber(fresh.rawToken ?? '')).toBe(true);
+    expect(await unsubscribeSubscriber(fresh.rawToken ?? '')).toBe(true);
+    expect(await confirmSubscriber(fresh.rawToken ?? '')).toBe(false);
+    const found = await payload.find({
+      collection: 'subscribers',
+      where: { email: { equals: 'three@example.com' } },
+    });
+    expect(found.docs[0]?.status).toBe('unsubscribed');
+  });
 });

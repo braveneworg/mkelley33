@@ -1,16 +1,27 @@
+import type { ForwardedRef } from 'react';
+
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { forwardRef, useImperativeHandle } from 'react';
 import { vi } from 'vitest';
 
 import { NewsletterForm } from '@/components/newsletter/newsletter-form';
 import { subscribeNewsletter } from '@/lib/actions/newsletter';
 
+const resetSpy = vi.hoisted(() => vi.fn());
+
 vi.mock('@marsidev/react-turnstile', () => ({
-  Turnstile: ({ onSuccess }: { onSuccess?: (token: string) => void }) => (
-    <button onClick={() => onSuccess?.('test-token')} type="button">
-      solve turnstile
-    </button>
-  ),
+  Turnstile: forwardRef(function Turnstile(
+    { onSuccess }: { onSuccess?: (token: string) => void },
+    ref: ForwardedRef<{ reset: () => void }>,
+  ) {
+    useImperativeHandle(ref, () => ({ reset: resetSpy }));
+    return (
+      <button onClick={() => onSuccess?.('test-token')} type="button">
+        solve turnstile
+      </button>
+    );
+  }),
 }));
 vi.mock('@/lib/actions/newsletter', () => ({
   subscribeNewsletter: vi.fn().mockResolvedValue({ success: true }),
@@ -55,5 +66,6 @@ describe('NewsletterForm', () => {
     await user.click(screen.getByRole('button', { name: 'solve turnstile' }));
     await user.click(screen.getByRole('button', { name: /subscribe/ }));
     expect(await screen.findByText(/something broke/)).toBeInTheDocument();
+    expect(resetSpy).toHaveBeenCalled();
   });
 });

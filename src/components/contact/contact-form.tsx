@@ -1,9 +1,11 @@
 'use client';
 
+import type { TurnstileInstance } from '@marsidev/react-turnstile';
+
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Turnstile } from '@marsidev/react-turnstile';
 import { useSearchParams } from 'next/navigation';
-import { useState, useTransition } from 'react';
+import { useRef, useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 
 import type { ContactFormValues, ContactReason } from '@/lib/validation/contact';
@@ -49,6 +51,7 @@ export function ContactForm({
   const [submitted, setSubmitted] = useState(false);
   const [serverError, setServerError] = useState<null | string>(null);
   const [isPending, startTransition] = useTransition();
+  const turnstileRef = useRef<TurnstileInstance | null>(null);
   const form = useForm<ContactFormValues>({
     defaultValues: {
       email: '',
@@ -80,6 +83,8 @@ export function ContactForm({
         setSubmitted(true);
       } else {
         setServerError(result.error ?? 'something broke — retry in a bit');
+        turnstileRef.current?.reset();
+        form.setValue('turnstileToken', '', { shouldValidate: false });
       }
     });
   }
@@ -260,9 +265,13 @@ export function ContactForm({
         />
       </div>
       <Turnstile
+        onExpire={() =>
+          form.setValue('turnstileToken', '', { shouldValidate: false })
+        }
         onSuccess={(token) =>
           form.setValue('turnstileToken', token, { shouldValidate: true })
         }
+        ref={turnstileRef}
         siteKey={turnstileSiteKey()}
       />
       {errors.turnstileToken ? (

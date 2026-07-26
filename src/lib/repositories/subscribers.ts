@@ -79,6 +79,9 @@ export async function confirmSubscriber(rawToken: string): Promise<boolean> {
   if (subscriber.status === 'active') {
     return true;
   }
+  if (subscriber.status !== 'pending') {
+    return false;
+  }
   const payload = await client();
   await payload.update({
     collection: 'subscribers',

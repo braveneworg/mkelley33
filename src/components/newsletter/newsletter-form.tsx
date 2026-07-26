@@ -1,8 +1,10 @@
 'use client';
 
+import type { TurnstileInstance } from '@marsidev/react-turnstile';
+
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Turnstile } from '@marsidev/react-turnstile';
-import { useState, useTransition } from 'react';
+import { useRef, useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 
 import type { NewsletterFormValues } from '@/lib/validation/newsletter';
@@ -15,6 +17,7 @@ export function NewsletterForm() {
   const [done, setDone] = useState(false);
   const [serverError, setServerError] = useState<null | string>(null);
   const [isPending, startTransition] = useTransition();
+  const turnstileRef = useRef<TurnstileInstance | null>(null);
   const form = useForm<NewsletterFormValues>({
     defaultValues: { email: '', turnstileToken: '', website: '' },
     resolver: zodResolver(newsletterSchema),
@@ -29,6 +32,8 @@ export function NewsletterForm() {
         setDone(true);
       } else {
         setServerError(result.error ?? 'something broke — retry in a bit');
+        turnstileRef.current?.reset();
+        form.setValue('turnstileToken', '', { shouldValidate: false });
       }
     });
   }
@@ -45,6 +50,10 @@ export function NewsletterForm() {
     <form
       className="max-w-md space-y-3"
       noValidate
+      // turnstileRef.current is only read inside the async submit handler
+      // (never during render); the compiler can't see through RHF's
+      // handleSubmit to confirm that.
+      // eslint-disable-next-line react-hooks/refs
       onSubmit={form.handleSubmit(onSubmit)}
     >
       <div className="flex gap-2">
@@ -66,6 +75,9 @@ export function NewsletterForm() {
           />
         </div>
         <button
+          aria-describedby={
+            errors.turnstileToken ? 'newsletter-turnstile-error' : undefined
+          }
           className="rounded border border-phosphor px-4 py-2 font-mono text-sm text-phosphor transition-colors hover:bg-phosphor hover:text-canvas disabled:opacity-50"
           disabled={isPending}
           type="submit"
@@ -93,13 +105,17 @@ export function NewsletterForm() {
         />
       </div>
       <Turnstile
+        onExpire={() =>
+          form.setValue('turnstileToken', '', { shouldValidate: false })
+        }
         onSuccess={(token) =>
           form.setValue('turnstileToken', token, { shouldValidate: true })
         }
+        ref={turnstileRef}
         siteKey={turnstileSiteKey()}
       />
       {errors.turnstileToken ? (
-        <p className="font-mono text-xs text-fg-muted">
+        <p className="font-mono text-xs text-fg-muted" id="newsletter-turnstile-error">
           <span aria-hidden="true"># </span>
           {errors.turnstileToken.message}
         </p>

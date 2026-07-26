@@ -1,21 +1,31 @@
+import type { ForwardedRef } from 'react';
+
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { forwardRef, useImperativeHandle } from 'react';
 import { vi } from 'vitest';
 
 import { ContactForm } from '@/components/contact/contact-form';
 import { submitContact } from '@/lib/actions/contact';
 
 const searchParams = { value: new URLSearchParams() };
+const resetSpy = vi.hoisted(() => vi.fn());
 
 vi.mock('next/navigation', () => ({
   useSearchParams: () => searchParams.value,
 }));
 vi.mock('@marsidev/react-turnstile', () => ({
-  Turnstile: ({ onSuccess }: { onSuccess?: (token: string) => void }) => (
-    <button onClick={() => onSuccess?.('test-token')} type="button">
-      solve turnstile
-    </button>
-  ),
+  Turnstile: forwardRef(function Turnstile(
+    { onSuccess }: { onSuccess?: (token: string) => void },
+    ref: ForwardedRef<{ reset: () => void }>,
+  ) {
+    useImperativeHandle(ref, () => ({ reset: resetSpy }));
+    return (
+      <button onClick={() => onSuccess?.('test-token')} type="button">
+        solve turnstile
+      </button>
+    );
+  }),
 }));
 vi.mock('@/lib/actions/contact', () => ({
   submitContact: vi.fn().mockResolvedValue({ success: true }),
@@ -113,6 +123,27 @@ describe('ContactForm', () => {
       await screen.findByText(/verification failed/),
     ).toBeInTheDocument();
     expect(screen.getByLabelText('name')).toHaveValue('Ada');
+  });
+
+  it('resets the turnstile widget after a failed submit', async () => {
+    vi.mocked(submitContact).mockResolvedValueOnce({
+      error: 'verification failed — give it a beat and retry',
+      success: false,
+    });
+    const user = userEvent.setup();
+    render(<ContactForm services={services} />);
+    await user.type(screen.getByLabelText('name'), 'Ada');
+    await user.type(screen.getByLabelText('email'), 'ada@example.com');
+    await user.type(
+      screen.getByLabelText('message'),
+      'Help my team adopt AI-assisted development.',
+    );
+    await user.click(screen.getByRole('button', { name: 'solve turnstile' }));
+    await user.click(screen.getByRole('button', { name: /send-message/ }));
+    expect(
+      await screen.findByText(/verification failed/),
+    ).toBeInTheDocument();
+    expect(resetSpy).toHaveBeenCalled();
   });
 
   it('associates picker and turnstile errors with their controls', async () => {

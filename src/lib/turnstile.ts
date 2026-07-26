@@ -11,9 +11,13 @@ export function turnstileSiteKey(): string {
 export async function verifyTurnstileToken(token: string): Promise<boolean> {
   const secret = process.env.TURNSTILE_SECRET_KEY ?? TURNSTILE_TEST_SECRET_KEY;
   if (!process.env.TURNSTILE_SECRET_KEY) {
-    console.warn(
-      'TURNSTILE_SECRET_KEY unset — using Cloudflare test secret (always passes)',
-    );
+    const message =
+      'TURNSTILE_SECRET_KEY unset — using Cloudflare test secret (always passes)';
+    if (process.env.NODE_ENV === 'production') {
+      console.error(message);
+    } else {
+      console.warn(message);
+    }
   }
   try {
     const response = await fetch(VERIFY_URL, {

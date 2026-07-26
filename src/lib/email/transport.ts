@@ -13,12 +13,16 @@ let transporter: null | Transporter<unknown> = null;
 function createTransport(): Transporter<unknown> {
   const host = process.env.SMTP_HOST;
   if (!host) {
-    console.warn(
-      'SMTP_HOST unset — email disabled, using JSON transport (logged only)',
-    );
+    const message =
+      'SMTP_HOST unset — email disabled, using JSON transport (logged only)';
+    if (process.env.NODE_ENV === 'production') {
+      console.error(message);
+    } else {
+      console.warn(message);
+    }
     return nodemailer.createTransport({ jsonTransport: true });
   }
-  const port = Number(process.env.SMTP_PORT ?? 587);
+  const port = Number(process.env.SMTP_PORT || 587);
   return nodemailer.createTransport({
     auth: {
       pass: process.env.SMTP_PASS ?? '',
