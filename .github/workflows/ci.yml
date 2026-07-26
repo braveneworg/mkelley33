@@ -28,7 +28,13 @@ jobs:
           key: mongodb-binaries-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: |
             mongodb-binaries-${{ runner.os }}-
-      - run: pnpm install --frozen-lockfile
+      # --trust-lockfile skips pnpm 11's supply-chain re-verification of every
+      # lockfile entry. The lockfile is reviewed in the PR diff before it lands,
+      # so it is part of the trusted base here; local installs keep the full
+      # minimumReleaseAge quarantine, which is where an unreviewed new version
+      # would actually appear. Without this, CI fails whenever any locked
+      # dependency was published within the last 24h.
+      - run: pnpm install --frozen-lockfile --trust-lockfile
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test:coverage
