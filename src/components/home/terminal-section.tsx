@@ -1,3 +1,5 @@
+import { Reveal } from '@/components/motion/reveal';
+
 export function TerminalSection({
   children,
   command,
@@ -10,7 +12,9 @@ export function TerminalSection({
       <p className="font-mono text-sm text-fg-muted">
         <span className="text-phosphor">$</span> {command}
       </p>
-      <div className="mt-6">{children}</div>
+      <Reveal>
+        <div className="mt-6">{children}</div>
+      </Reveal>
     </section>
   );
 }

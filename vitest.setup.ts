@@ -18,4 +18,16 @@ if (typeof window !== 'undefined') {
     })),
     writable: true,
   });
+
+  // jsdom does not implement IntersectionObserver, which motion's
+  // `whileInView` arms on mount — stub it for every jsdom test file.
+  class MockIntersectionObserver {
+    disconnect() {}
+    observe() {}
+    unobserve() {}
+  }
+  Object.defineProperty(window, 'IntersectionObserver', {
+    configurable: true,
+    value: MockIntersectionObserver,
+  });
 }
