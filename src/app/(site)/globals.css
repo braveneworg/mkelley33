@@ -66,3 +66,22 @@ body {
   font-weight: var(--shiki-dark-font-weight) !important;
   text-decoration: var(--shiki-dark-text-decoration) !important;
 }
+
+@media print {
+  nav,
+  footer {
+    display: none !important;
+  }
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  .cv-document {
+    max-width: none;
+    padding: 0;
+  }
+  .cv-document a {
+    color: #000000;
+    text-decoration: none;
+  }
+}
