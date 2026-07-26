@@ -1,3 +1,4 @@
+import { BUTTON_LINK_CLASSES } from '@/components/ui/button-link';
 import {
   CV_EDUCATION,
   CV_EXPERIENCE,
@@ -34,7 +35,7 @@ export function CvDocument({
       </p>
       {resumePdf ? (
         <a
-          className="mt-5 inline-block rounded border border-phosphor px-4 py-2 font-mono text-sm text-phosphor transition-colors hover:bg-phosphor hover:text-canvas print:hidden"
+          className={`${BUTTON_LINK_CLASSES} mt-5 print:hidden`}
           download
           href={resumePdf}
         >

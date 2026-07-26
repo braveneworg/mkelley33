@@ -1,6 +1,6 @@
-import Link from 'next/link';
-
 import type { ServiceContent } from '@/lib/services-content';
+
+import { ButtonLink } from '@/components/ui/button-link';
 
 export function ServiceSection({ service }: { service: ServiceContent }) {
   return (
@@ -28,12 +28,12 @@ export function ServiceSection({ service }: { service: ServiceContent }) {
       <p className="mt-4 max-w-2xl font-mono text-xs text-fg-muted">
         <span aria-hidden="true">#</span> {service.credibility}
       </p>
-      <Link
-        className="mt-5 inline-block rounded border border-phosphor px-4 py-2 font-mono text-sm text-phosphor transition-colors hover:bg-phosphor hover:text-canvas"
+      <ButtonLink
+        className="mt-5"
         href={`/contact?reason=services&service=${service.slug}`}
       >
         Request a quote →
-      </Link>
+      </ButtonLink>
     </section>
   );
 }
