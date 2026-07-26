@@ -52,4 +52,11 @@ describe('SiteFooter', () => {
       'https://github.com/braveneworg/mkelley33',
     );
   });
+
+  it('links the uses page internally', () => {
+    render(<SiteFooter />);
+    const uses = screen.getByRole('link', { name: 'uses' });
+    expect(uses).toHaveAttribute('href', '/uses');
+    expect(uses).not.toHaveAttribute('target');
+  });
 });
