@@ -1,10 +1,12 @@
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { spawnSync } from 'node:child_process';
 
-// CI runners have ~7GB RAM shared between mongod and Next's build workers.
-// mongod's WiredTiger cache defaults to ~50% of RAM, which starves the build
-// and has caused mid-build server-selection timeouts — cap it, and retry once
-// with a fresh mongod in case the instance still dies under pressure.
+// Cold Turbopack builds intermittently hang forever while prerendering the
+// heavy Payload routes (/blog, /feed.xml) — connections to mongod sit idle
+// and every in-process attempt times out (known Next 16 build-hang class;
+// `next build --webpack` is the upstream escape hatch if this worsens).
+// Attempt 1 leaves a warm .next cache, and a fresh `pnpm build` then renders
+// those routes instantly, so one full retry is the effective mitigation.
 const MAX_ATTEMPTS = 2;
 
 // Prerender workers can freeze >30s on cold-cache module evaluation; give the
