@@ -77,8 +77,9 @@ describe('sendEmail', () => {
     vi.doUnmock('nodemailer');
   });
 
-  it('logs the JSON-transport message for link scraping when SMTP_HOST is unset', async () => {
+  it('logs the JSON-transport message for link scraping when EMAIL_LOG_UNSENT opts in', async () => {
     vi.stubEnv('SMTP_HOST', '');
+    vi.stubEnv('EMAIL_LOG_UNSENT', 'true');
     const info = vi.spyOn(console, 'info').mockImplementation(() => {});
     vi.spyOn(console, 'warn').mockImplementation(() => {});
 
@@ -86,5 +87,31 @@ describe('sendEmail', () => {
     await expect(sendEmail({ subject: 's', text: 't', to: 'a@b.com' })).resolves.toBe(true);
 
     expect(info).toHaveBeenCalledWith('email (not sent):', expect.any(String));
+  });
+
+  it('logs the JSON-transport message in development without the flag', async () => {
+    vi.stubEnv('SMTP_HOST', '');
+    vi.stubEnv('NODE_ENV', 'development');
+    const info = vi.spyOn(console, 'info').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const { sendEmail } = await import('@/lib/email/transport');
+    await expect(sendEmail({ subject: 's', text: 't', to: 'a@b.com' })).resolves.toBe(true);
+
+    expect(info).toHaveBeenCalledWith('email (not sent):', expect.any(String));
+  });
+
+  it('never logs message content without the opt-in outside development', async () => {
+    vi.stubEnv('SMTP_HOST', '');
+    vi.stubEnv('EMAIL_LOG_UNSENT', '');
+    vi.stubEnv('NODE_ENV', 'production');
+    const info = vi.spyOn(console, 'info').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const { sendEmail } = await import('@/lib/email/transport');
+    await expect(sendEmail({ subject: 's', text: 't', to: 'a@b.com' })).resolves.toBe(true);
+
+    expect(info).not.toHaveBeenCalled();
   });
 });
