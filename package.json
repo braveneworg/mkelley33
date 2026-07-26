@@ -21,6 +21,8 @@
     "seed:services": "tsx --env-file-if-exists=.env.local scripts/seed-services.ts"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.5.7",
+    "@marsidev/react-turnstile": "^1.5.3",
     "@payloadcms/db-mongodb": "^3.86.0",
     "@payloadcms/next": "^3.86.0",
     "@payloadcms/richtext-lexical": "^3.86.0",
@@ -34,6 +36,7 @@
     "payload": "^3.86.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
+    "react-hook-form": "^7.83.0",
     "sharp": "^0.34.5",
     "shiki": "^4.3.1",
     "zod": "^4.4.3"

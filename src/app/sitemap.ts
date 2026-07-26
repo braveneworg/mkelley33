@@ -11,6 +11,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${siteConfig.url}/services` },
     { url: `${siteConfig.url}/cv` },
     { url: `${siteConfig.url}/uses` },
+    { url: `${siteConfig.url}/contact` },
     ...posts.map((post) => ({
       lastModified: post.updatedAt,
       url: `${siteConfig.url}/blog/${post.slug}`,

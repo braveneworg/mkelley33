@@ -1,0 +1,117 @@
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { vi } from 'vitest';
+
+import { ContactForm } from '@/components/contact/contact-form';
+import { submitContact } from '@/lib/actions/contact';
+
+const searchParams = { value: new URLSearchParams() };
+
+vi.mock('next/navigation', () => ({
+  useSearchParams: () => searchParams.value,
+}));
+vi.mock('@marsidev/react-turnstile', () => ({
+  Turnstile: ({ onSuccess }: { onSuccess?: (token: string) => void }) => (
+    <button onClick={() => onSuccess?.('test-token')} type="button">
+      solve turnstile
+    </button>
+  ),
+}));
+vi.mock('@/lib/actions/contact', () => ({
+  submitContact: vi.fn().mockResolvedValue({ success: true }),
+}));
+
+const services = [
+  { name: 'AI enablement', slug: 'ai-enablement' },
+  { name: 'Product development', slug: 'product-dev' },
+];
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  searchParams.value = new URLSearchParams();
+});
+
+describe('ContactForm', () => {
+  it('renders the core fields and no services picker for general reason', () => {
+    render(<ContactForm services={services} />);
+    expect(screen.getByLabelText('name')).toBeInTheDocument();
+    expect(screen.getByLabelText('email')).toBeInTheDocument();
+    expect(screen.getByLabelText('reason')).toHaveValue('general');
+    expect(screen.getByLabelText('message')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /select services/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('shows field errors on empty submit', async () => {
+    const user = userEvent.setup();
+    render(<ContactForm services={services} />);
+    await user.click(screen.getByRole('button', { name: /send-message/ }));
+    expect(await screen.findByText('name is required')).toBeInTheDocument();
+    expect(submitContact).not.toHaveBeenCalled();
+  });
+
+  it('picks services in the dialog and renders removable chips', async () => {
+    const user = userEvent.setup();
+    render(<ContactForm services={services} />);
+    await user.selectOptions(screen.getByLabelText('reason'), 'services');
+    await user.click(screen.getByRole('button', { name: /select services/ }));
+    await user.click(screen.getByRole('checkbox', { name: 'AI enablement' }));
+    await user.click(screen.getByRole('button', { name: 'done' }));
+    expect(screen.getByText('AI enablement')).toBeInTheDocument();
+    await user.click(
+      screen.getByRole('button', { name: 'remove AI enablement' }),
+    );
+    expect(screen.queryByText('AI enablement')).not.toBeInTheDocument();
+  });
+
+  it('submits the happy path and shows the queued confirmation', async () => {
+    const user = userEvent.setup();
+    render(<ContactForm services={services} />);
+    await user.type(screen.getByLabelText('name'), 'Ada');
+    await user.type(screen.getByLabelText('email'), 'ada@example.com');
+    await user.type(
+      screen.getByLabelText('message'),
+      'Help my team adopt AI-assisted development.',
+    );
+    await user.click(screen.getByRole('button', { name: 'solve turnstile' }));
+    await user.click(screen.getByRole('button', { name: /send-message/ }));
+    expect(await screen.findByText(/message queued/)).toBeInTheDocument();
+    expect(submitContact).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: 'ada@example.com',
+        turnstileToken: 'test-token',
+      }),
+    );
+  });
+
+  it('pre-selects reason and service from the deep link', () => {
+    searchParams.value = new URLSearchParams(
+      'reason=services&service=ai-enablement',
+    );
+    render(<ContactForm services={services} />);
+    expect(screen.getByLabelText('reason')).toHaveValue('services');
+    expect(screen.getByText('AI enablement')).toBeInTheDocument();
+  });
+
+  it('surfaces a server error without clearing the form', async () => {
+    vi.mocked(submitContact).mockResolvedValueOnce({
+      error: 'verification failed — give it a beat and retry',
+      success: false,
+    });
+    const user = userEvent.setup();
+    render(<ContactForm services={services} />);
+    await user.type(screen.getByLabelText('name'), 'Ada');
+    await user.type(screen.getByLabelText('email'), 'ada@example.com');
+    await user.type(
+      screen.getByLabelText('message'),
+      'Help my team adopt AI-assisted development.',
+    );
+    await user.click(screen.getByRole('button', { name: 'solve turnstile' }));
+    await user.click(screen.getByRole('button', { name: /send-message/ }));
+    expect(
+      await screen.findByText(/verification failed/),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText('name')).toHaveValue('Ada');
+  });
+});
