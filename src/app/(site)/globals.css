@@ -68,6 +68,16 @@ body {
 }
 
 @media print {
+  :root,
+  .dark {
+    --bg: #ffffff;
+    --surface: #ffffff;
+    --border: #cccccc;
+    --text: #000000;
+    --text-muted: #333333;
+    --accent: #000000;
+    --grid-line: transparent;
+  }
   nav,
   footer {
     display: none !important;

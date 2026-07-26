@@ -16,6 +16,11 @@ describe('AboutBeat', () => {
     expect(screen.queryByRole('img')).not.toBeInTheDocument();
   });
 
+  it('defaults the headshot to siteConfig.headshot when no prop is passed', () => {
+    render(<AboutBeat />);
+    expect(screen.getByText('# headshot: pending')).toBeInTheDocument();
+  });
+
   it('renders the headshot image when supplied', () => {
     render(<AboutBeat headshotSrc="/headshot.jpg" />);
     expect(
