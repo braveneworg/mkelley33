@@ -77,7 +77,9 @@
   background-position: 0 100%;
   background-repeat: no-repeat;
   background-size: 0% 1px;
-  transition: background-size 0.25s ease;
+  transition:
+    background-size 0.25s ease,
+    color 0.15s ease;
 }
 
 .link-draw:hover,

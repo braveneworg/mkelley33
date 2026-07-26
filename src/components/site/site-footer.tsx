@@ -47,24 +47,19 @@ export const SiteFooter = () => (
             {/* eslint-disable-next-line react/jsx-no-target-blank -- rel is
                 data-driven so socials can carry rel="me"; every literal in the
                 candidates list above includes "noopener noreferrer". */}
-            <a
-              className="link-draw hover:text-fg transition-colors"
-              href={link.href}
-              rel={link.rel}
-              target="_blank"
-            >
+            <a className="link-draw hover:text-fg" href={link.href} rel={link.rel} target="_blank">
               {link.label}
               <span className="sr-only"> (opens in new tab)</span>
             </a>
           </li>
         ))}
         <li>
-          <Link className="link-draw hover:text-fg transition-colors" href="/uses">
+          <Link className="link-draw hover:text-fg" href="/uses">
             uses
           </Link>
         </li>
         <li>
-          <a className="link-draw hover:text-fg transition-colors" href="/feed.xml">
+          <a className="link-draw hover:text-fg" href="/feed.xml">
             rss
           </a>
         </li>

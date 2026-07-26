@@ -37,7 +37,7 @@ export const SiteNav = () => {
             <li key={link.href}>
               <Link
                 aria-current={isActive(pathname, link.href) ? 'page' : undefined}
-                className="link-draw text-fg-muted hover:text-fg aria-[current=page]:text-fg transition-colors"
+                className="link-draw text-fg-muted hover:text-fg aria-[current=page]:text-fg"
                 href={link.href}
               >
                 {link.label}
