@@ -1824,3 +1824,14 @@ All pass; `build:ci` prerenders `/blog` (empty DB → empty index) and the four 
 git add scripts/ci-build.mjs package.json .github/workflows/ci.yml
 git commit -m "chore: build against in-memory mongodb in CI"
 ```
+
+---
+
+## As-built amendments (execution record)
+
+Deviations from the task snippets above, each authorized during subagent-driven execution and verified in review. The code on the branch is the source of truth.
+
+- **Task 4 (e8f8f1a, e78b2d5):** `editorConfigFactory.default` ignores the payload config's features, so markdown fences survived `convertMarkdownToLexical` as literal paragraphs, and `stripMdxArtifacts` corrupted import/export lines inside fences. Replaced the single-pass conversion with a fence-aware pipeline: `splitFences` (CRLF-normalized first) extracts fenced blocks, prose segments go through strip+convert, fences become hand-built `type: 'block'` code nodes. See `src/lib/migration/migrate-posts.ts`.
+- **Task 6 (6a1021c):** `@testing-library/user-event@14.6.1` `setup()` unconditionally replaces `navigator.clipboard` with a getter-only stub, so the CopyButton test mocks the clipboard *after* `setup()` via `Object.defineProperty` (not the brief's pre-setup `Object.assign`). `JSXConvertersFunction` required the typed-generic form with `DefaultNodeTypes | SerializedBlockNode<CodeBlockFields>` (pre-authorized).
+- **Task 6 fix passes (c849bce, c3bc4c7):** JSON-LD serialization escapes `<` to prevent `</script` breakout, extracted to `serializeJsonLd` in `src/lib/json-ld.ts` with its own test file. `post-body.test.tsx` gained a code-block converter test (async-RSC rendered under `<Suspense>` with `await act(...)`, `@/lib/highlight` mocked).
+- **Task 8 (bb3bbce, 312dca8, 50c56d9):** The CI coverage gate exposed a pre-existing branch-coverage gap (73.21% vs 90%) accumulated across Tasks 5–7; closed with targeted tests (92.85%), no threshold changes. `scripts/ci-build.mjs` imports are sorted per repo lint rules and `mongod.stop()` runs in a `try/finally`; the workflow cache key is `mongodb-binaries-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}` with a `restore-keys` prefix fallback.
