@@ -21,8 +21,9 @@ child lives. Use async `spawn` and `await` a close-promise so the event
 loop keeps draining. `scripts/e2e.mjs` does this correctly — keep it that
 way.
 
-**Known remaining instance:** `scripts/ci-build.mjs` still wraps its
-build in `spawnSync` while owning a `MongoMemoryServer` — this is the
+**History:** `scripts/ci-build.mjs` carried the same pattern and was the
 likely root cause of the historical `build:ci` prerender-hang flake class
-(the reason the "retry once" flake protocol exists). Converting it to
-async spawn should end that flake family.
+(the reason the "retry once" flake protocol exists). It was converted to
+async spawn in 18f23ab, the same day this lesson was learned — both
+scripts now drain correctly. Watch for the pattern in any new script that
+owns a memory server.
