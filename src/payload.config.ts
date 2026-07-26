@@ -6,9 +6,11 @@ import { buildConfig } from 'payload';
 import sharp from 'sharp';
 import { fileURLToPath } from 'url';
 
+import { ContactSubmissions } from '@/collections/contact-submissions';
 import { Media } from '@/collections/media';
 import { Posts } from '@/collections/posts';
 import { Services } from '@/collections/services';
+import { Subscribers } from '@/collections/subscribers';
 import { Users } from '@/collections/users';
 
 const filename = fileURLToPath(import.meta.url);
@@ -16,7 +18,7 @@ const dirname = path.dirname(filename);
 
 export default buildConfig({
   admin: { user: 'users' },
-  collections: [Users, Media, Posts, Services],
+  collections: [Users, Media, Posts, Services, ContactSubmissions, Subscribers],
   db: mongooseAdapter({ url: process.env.DATABASE_URL ?? '' }),
   editor: lexicalEditor(),
   plugins: [

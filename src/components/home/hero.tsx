@@ -1,5 +1,6 @@
 import Link from 'next/link';
 
+import { ButtonLink } from '@/components/ui/button-link';
 import { siteConfig } from '@/lib/site-config';
 
 export function Hero() {
@@ -18,12 +19,7 @@ export function Hero() {
           with Claude Code, MCP &amp; friends
         </p>
         <div className="mt-8 flex flex-wrap gap-4 font-mono text-sm">
-          <Link
-            className="rounded border border-phosphor px-4 py-2 text-phosphor transition-colors hover:bg-phosphor hover:text-canvas"
-            href="/blog"
-          >
-            Read the blog →
-          </Link>
+          <ButtonLink href="/blog">Read the blog →</ButtonLink>
           <Link
             className="rounded border border-edge px-4 py-2 text-fg-muted transition-colors hover:text-fg"
             href="/contact"

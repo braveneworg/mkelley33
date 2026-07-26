@@ -1,0 +1,45 @@
+import type { Metadata } from 'next';
+
+import { confirmSubscriber } from '@/lib/repositories/subscribers';
+
+export const metadata: Metadata = {
+  robots: { follow: false, index: false },
+  title: 'confirm subscription',
+};
+
+export default async function ConfirmPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ token?: string }>;
+}) {
+  const { token } = await searchParams;
+  const confirmed = token ? await confirmSubscriber(token) : false;
+  return (
+    <div className="mx-auto w-full max-w-5xl px-5 py-16 sm:py-20">
+      <p className="font-mono text-sm text-fg-muted">
+        <span className="text-phosphor">$</span> ./confirm-subscription
+      </p>
+      {confirmed ? (
+        <>
+          <h1 className="mt-4 font-mono text-3xl font-bold tracking-tight">
+            # subscribed ✓
+          </h1>
+          <p className="mt-3 max-w-2xl leading-relaxed text-fg-muted">
+            you&apos;re in — new posts land in your inbox. unsubscribe anytime
+            from any email.
+          </p>
+        </>
+      ) : (
+        <>
+          <h1 className="mt-4 font-mono text-3xl font-bold tracking-tight">
+            # invalid token
+          </h1>
+          <p className="mt-3 max-w-2xl leading-relaxed text-fg-muted">
+            this confirmation link is invalid or was replaced by a newer one —
+            subscribe again to get a fresh link.
+          </p>
+        </>
+      )}
+    </div>
+  );
+}

@@ -3,6 +3,7 @@ import { AiToolboxBeat } from '@/components/home/ai-toolbox-beat';
 import { CareerBeat } from '@/components/home/career-beat';
 import { Hero } from '@/components/home/hero';
 import { LatestPostsBeat } from '@/components/home/latest-posts-beat';
+import { NewsletterBeat } from '@/components/home/newsletter-beat';
 import { OpenSourceBeat } from '@/components/home/open-source-beat';
 import { ServicesBeat } from '@/components/home/services-beat';
 import { listPublishedPosts } from '@/lib/repositories/posts';
@@ -10,7 +11,7 @@ import { listPublishedPosts } from '@/lib/repositories/posts';
 export const revalidate = 300;
 
 export default async function HomePage() {
-  const posts = (await listPublishedPosts().catch(() => [])).slice(0, 3);
+  const posts = (await listPublishedPosts()).slice(0, 3);
   return (
     <>
       <Hero />
@@ -20,6 +21,7 @@ export default async function HomePage() {
       <CareerBeat />
       <OpenSourceBeat />
       <LatestPostsBeat posts={posts} />
+      <NewsletterBeat />
     </>
   );
 }

@@ -1,0 +1,47 @@
+import { z } from 'zod';
+
+export const CONTACT_REASONS = [
+  'services',
+  'general',
+  'speaking-writing',
+  'mentoring',
+  'other',
+] as const;
+
+export type ContactReason = (typeof CONTACT_REASONS)[number];
+
+export const CONTACT_REASON_LABELS: Record<ContactReason, string> = {
+  general: 'general inquiry',
+  mentoring: 'mentoring',
+  other: 'other',
+  services: 'request services',
+  'speaking-writing': 'speaking & writing',
+};
+
+export const contactSchema = z
+  .object({
+    email: z.email('enter a valid email').max(254),
+    message: z
+      .string()
+      .trim()
+      .min(10, 'a little more detail — 10 characters minimum')
+      .max(5000, 'keep it under 5000 characters'),
+    name: z.string().trim().min(1, 'name is required').max(120),
+    reason: z.enum(CONTACT_REASONS),
+    requestedServices: z.array(z.string().min(1)).max(5),
+    turnstileToken: z
+      .string()
+      .min(1, 'verification incomplete — give it a beat and retry'),
+    website: z.literal(''),
+  })
+  .superRefine((data, ctx) => {
+    if (data.reason === 'services' && data.requestedServices.length === 0) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'select at least one service',
+        path: ['requestedServices'],
+      });
+    }
+  });
+
+export type ContactFormValues = z.infer<typeof contactSchema>;
