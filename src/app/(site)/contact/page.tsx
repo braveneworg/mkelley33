@@ -5,6 +5,7 @@ import { Suspense } from 'react';
 import type { ContactServiceOption } from '@/components/contact/contact-form';
 
 import { ContactForm } from '@/components/contact/contact-form';
+import { NewsletterForm } from '@/components/newsletter/newsletter-form';
 import { listServices } from '@/lib/repositories/services';
 
 export const revalidate = 300;
@@ -36,6 +37,14 @@ export default async function ContactPage() {
           <ContactForm services={services} />
         </Suspense>
       </div>
+      <section className="mt-16 border-t border-edge pt-10">
+        <p className="font-mono text-sm text-fg-muted">
+          <span className="text-phosphor">$</span> subscribe --newsletter
+        </p>
+        <div className="mt-5">
+          <NewsletterForm />
+        </div>
+      </section>
     </div>
   );
 }
