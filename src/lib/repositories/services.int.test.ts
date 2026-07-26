@@ -1,6 +1,6 @@
+// @vitest-environment node
 import type { Payload } from 'payload';
 
-// @vitest-environment node
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { SERVICES } from '@/lib/services-content';

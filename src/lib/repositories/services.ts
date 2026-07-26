@@ -25,8 +25,9 @@ export const listServices = cache(async (): Promise<ServiceContent[]> => {
       pitch: doc.pitch,
       slug: doc.slug,
     }));
-  } catch {
+  } catch (error) {
     // DB unreachable (e.g. CI build) — serve the canonical static list.
+    console.error('listServices falling back to static content:', error);
     return SERVICES;
   }
 });
