@@ -2,14 +2,13 @@ import react from '@vitejs/plugin-react';
 import { defineConfig, type ViteUserConfig } from 'vitest/config';
 import * as path from 'node:path';
 
-
 export default defineConfig((): ViteUserConfig => {
   const withCoverage = process.argv.includes('--coverage');
 
   return {
     plugins: [react()],
     resolve: {
-      tsconfigPaths: true,  // Keep only next/server alias - let vi.mock handle next/navigation
+      tsconfigPaths: true, // Keep only next/server alias - let vi.mock handle next/navigation
       alias: [
         {
           find: 'next/server',
@@ -147,6 +146,6 @@ export default defineConfig((): ViteUserConfig => {
       'process.env.NODE_ENV': JSON.stringify('test'),
       'process.env.AUTH_SECRET': JSON.stringify('test-secret-key-for-testing-purposes-only'),
       'process.env.AUTH_URL': JSON.stringify('http://localhost:3000'),
-    }
+    },
   };
 });

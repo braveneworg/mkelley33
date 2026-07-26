@@ -47,9 +47,9 @@ never preload everything.
 
 Before working under a directory, read its `AGENTS.md`:
 
-| File                                     | Covers                                                              |
-| ---------------------------------------- | ------------------------------------------------------------------- |
-| [`src/AGENTS.md`](src/AGENTS.md)         | Architecture, TypeScript rules, data fetching, unit testing, naming |
+| File                             | Covers                                                              |
+| -------------------------------- | ------------------------------------------------------------------- |
+| [`src/AGENTS.md`](src/AGENTS.md) | Architecture, TypeScript rules, data fetching, unit testing, naming |
 
 ## Lessons (load on demand)
 
@@ -58,9 +58,9 @@ per lesson. Never preload them all. Before starting work that matches a
 category, read every file in that category's directory, recursing into any
 subdirectories:
 
-| Category          | Load before                                                 |
-| ----------------- | ----------------------------------------------------------- |
-| `git-workflow/`   | branching, committing, pushing, PRs, code review            |
+| Category        | Load before                                      |
+| --------------- | ------------------------------------------------ |
+| `git-workflow/` | branching, committing, pushing, PRs, code review |
 
 When corrected — or when you catch your own mistake — add the lesson as a new
 file in the matching category (create a new category directory if none fits)

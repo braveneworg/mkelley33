@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 
 import { OpenSourceBeat } from '@/components/home/open-source-beat';
+import type * as SiteConfigModule from '@/lib/site-config';
 
 describe('OpenSourceBeat', () => {
   it('renders this site, boudreaux, and contributions entries', () => {
@@ -16,5 +17,20 @@ describe('OpenSourceBeat', () => {
     );
     expect(screen.getByText(/react-starter-kit/)).toBeInTheDocument();
     expect(screen.getByText(/mean\.io/)).toBeInTheDocument();
+  });
+
+  it('renders this-site as plain text when no repo url is configured', async () => {
+    vi.resetModules();
+    vi.doMock('@/lib/site-config', async (importOriginal) => {
+      const actual = await importOriginal<typeof SiteConfigModule>();
+      return { siteConfig: { ...actual.siteConfig, repoUrl: null } };
+    });
+    const { OpenSourceBeat: Unlinked } = await import('@/components/home/open-source-beat');
+
+    render(<Unlinked />);
+
+    expect(screen.queryByRole('link', { name: /this-site\// })).not.toBeInTheDocument();
+    expect(screen.getByText('this-site/')).toBeInTheDocument();
+    vi.doUnmock('@/lib/site-config');
   });
 });

@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { extractLexicalText, readTimeMinutes } from '@/collections/hooks/compute-read-time';
+import {
+  computeReadTime,
+  extractLexicalText,
+  readTimeMinutes,
+} from '@/collections/hooks/compute-read-time';
 
 const lexicalWithText = (words: string[]): Record<string, unknown> => ({
   root: {
@@ -33,5 +37,19 @@ describe('readTimeMinutes', () => {
   it('computes ceil(words/200)', () => {
     const words = Array.from({ length: 401 }, (_, i) => `w${i}`);
     expect(readTimeMinutes(lexicalWithText(words))).toBe(3);
+  });
+});
+
+describe('computeReadTime hook', () => {
+  it('sets readTime when the body is present', () => {
+    const data = { body: lexicalWithText(Array.from({ length: 400 }, () => 'word')) };
+
+    expect(computeReadTime({ data } as never)).toMatchObject({ readTime: 2 });
+  });
+
+  it('leaves data untouched when the body is absent', () => {
+    const data = { title: 'no body here' };
+
+    expect(computeReadTime({ data } as never)).toEqual({ title: 'no body here' });
   });
 });
