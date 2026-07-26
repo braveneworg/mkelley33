@@ -1,13 +1,14 @@
-import type { Metadata, Viewport } from 'next';
-
 import { Inter, JetBrains_Mono } from 'next/font/google';
 
 import { PaletteMount } from '@/components/palette/palette-mount';
+import { SerwistRegister } from '@/components/site/serwist-register';
 import { SiteFooter } from '@/components/site/site-footer';
 import { SiteNav } from '@/components/site/site-nav';
 import { ThemeProvider } from '@/components/site/theme-provider';
 import { serializeJsonLd } from '@/lib/json-ld';
 import { siteConfig } from '@/lib/site-config';
+
+import type { Metadata, Viewport } from 'next';
 
 import './globals.css';
 
@@ -49,26 +50,24 @@ const personJsonLd = {
   url: siteConfig.url,
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}
-      >
-        <ThemeProvider>
-          <div className="flex min-h-dvh flex-col">
-            <SiteNav />
-            <main className="flex-1">{children}</main>
-            <SiteFooter />
-          </div>
-          <PaletteMount />
-        </ThemeProvider>
-        <script
-          dangerouslySetInnerHTML={{ __html: serializeJsonLd(personJsonLd) }}
-          type="application/ld+json"
-        />
+      <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
+        <SerwistRegister>
+          <ThemeProvider>
+            <div className="flex min-h-dvh flex-col">
+              <SiteNav />
+              <main className="flex-1">{children}</main>
+              <SiteFooter />
+            </div>
+            <PaletteMount />
+          </ThemeProvider>
+          <script
+            dangerouslySetInnerHTML={{ __html: serializeJsonLd(personJsonLd) }}
+            type="application/ld+json"
+          />
+        </SerwistRegister>
       </body>
     </html>
   );
