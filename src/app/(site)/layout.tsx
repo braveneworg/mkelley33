@@ -28,6 +28,7 @@ export const metadata: Metadata = {
     default: siteConfig.title,
     template: '%s · mkelley33',
   },
+  twitter: { card: 'summary_large_image' },
 };
 
 export const viewport: Viewport = {
