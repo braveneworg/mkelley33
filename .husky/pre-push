@@ -55,7 +55,14 @@ exec 3>&2
 # available so progress is visible live during an interactive CLI push.
 exec >>"$log_file" 2>&1
 tty_shown=0
-if [ -e /dev/tty ] && { : >>/dev/tty; } 2>/dev/null; then
+# The writability probe runs in a SUBSHELL, not a brace group. `:` is a POSIX
+# special builtin, and a redirection failure on one is fatal to a
+# non-interactive shell — dash enforces that, bash does not. /dev/tty exists
+# but cannot be opened when there is no controlling terminal (a hook spawned
+# by a GUI client, a CI runner, a test harness), so the brace-group form
+# killed the hook outright with status 2 and an empty log on any dash system.
+# A subshell confines the failure to itself.
+if [ -e /dev/tty ] && ( : >>/dev/tty ) 2>/dev/null; then
   tail -f "$log_file" >/dev/tty 2>/dev/null &
   tail_pid=$!
   tty_shown=1
@@ -96,12 +103,50 @@ trap cleanup EXIT INT TERM
 echo ""
 echo "===== pre-push hook started at $(date) ====="
 
-# Prevent pushing directly to main or master branches
+# Prevent pushing to main or master — judged by the refs actually being
+# pushed, which git supplies on stdin, NOT by whichever branch happens to be
+# checked out. The old test read HEAD, so routine post-merge cleanup from main
+# (`git push origin --delete <merged-branch>`) was rejected as if it were a
+# push to main, while the same command from any other branch sailed through.
 stage="branch protection"
 branch_name=$(git rev-parse --abbrev-ref HEAD)
-if [ "$branch_name" = "main" ] || [ "$branch_name" = "master" ]; then
-  echo "🚫 You are on the '$branch_name' branch. Pushing directly to this branch is not allowed."
-  exit 1
+
+is_protected_ref() {
+  case "$1" in
+    refs/heads/main | refs/heads/master) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+if [ -n "$push_refs" ]; then
+  # Heredoc (not a pipe) so the loop body runs in THIS shell and the flag below
+  # survives it — same reason as the force-push scan above.
+  deletions_only=1
+  while read -r _local_ref local_sha remote_ref _remote_sha; do
+    [ -n "$remote_ref" ] || continue
+    # Checked before the deletion test on purpose: deleting main is itself
+    # something to refuse, not to wave through as "just a deletion".
+    if is_protected_ref "$remote_ref"; then
+      echo "🚫 Refusing to push to '${remote_ref#refs/heads/}'. Open a pull request instead."
+      exit 1
+    fi
+    # An all-zero local sha is a deletion: no commits are being sent.
+    case "$local_sha" in *[!0]*) deletions_only=0 ;; esac
+  done <<EOF
+$push_refs
+EOF
+
+  if [ "$deletions_only" = "1" ]; then
+    echo "✅ Only ref deletions in this push — no commits to validate."
+    exit 0
+  fi
+else
+  # No ref list on stdin, so the hook was invoked by hand rather than by git.
+  # The checked-out branch is the only signal left; keep the old behaviour.
+  if [ "$branch_name" = "main" ] || [ "$branch_name" = "master" ]; then
+    echo "🚫 You are on the '$branch_name' branch. Pushing directly to this branch is not allowed."
+    exit 1
+  fi
 fi
 
 # Resolve the branch's configured upstream (e.g. "origin/feature-x"). If the
