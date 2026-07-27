@@ -455,28 +455,13 @@ const eslintConfig = [
       'better-tailwindcss/no-conflicting-classes': 'error',
       'better-tailwindcss/no-duplicate-classes': 'error',
       'better-tailwindcss/no-deprecated-classes': 'error',
-      // Catches invalid/typo'd utilities that compile to nothing. `ignore` is a
-      // list of anchored regexes for genuine non-Tailwind classes the resolver
-      // can't know about: video.js skin classes (`vjs-*`) and its player-container
-      // hook, sonner's wrapper, the banner animation marker (keyframes live in
-      // globals.css), and the bio figure markers (`bio-figure`, its float
-      // modifiers, and the caption classes) that mirror the sanitizer's figure
-      // contract for stable selectors (parsed by bio-figure-extension.ts and
-      // rendered by the NodeView). Test placeholder classNames are handled by
-      // the spec override below. See
-      // docs/auto-generated/BETTER_TAILWINDCSS_FINDINGS.md.
-      'better-tailwindcss/no-unknown-classes': [
-        'error',
-        {
-          ignore: [
-            '^vjs-',
-            '^audio-player-wrapper$',
-            '^toaster$',
-            '^banner-strip-slide$',
-            '^bio-figure(--(left|right|center)|-(caption|title|subtitle|attribution))?$',
-          ],
-        },
-      ],
+      // Catches invalid/typo'd utilities that compile to nothing. No `ignore`
+      // list: every custom class this site uses is a real Tailwind v4
+      // `@utility` or `@theme` token declared in src/app/(site)/globals.css,
+      // which the plugin resolves through `entryPoint` below — so anything it
+      // cannot resolve is a genuine typo. Test placeholder classNames are
+      // handled by the spec override below.
+      'better-tailwindcss/no-unknown-classes': 'error',
     },
   },
   {
