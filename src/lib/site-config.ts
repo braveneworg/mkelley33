@@ -27,7 +27,7 @@ export const siteConfig: SiteConfig = {
   description:
     'Production React, Next.js, and Node.js engineering — and AI-assisted development, deployed forward into teams.',
   handle: 'mkelley33',
-  headshot: null,
+  headshot: '/headshot.webp',
   name: 'Michaux Kelley',
   repoUrl: 'https://github.com/braveneworg/mkelley33',
   resumePdf: null,

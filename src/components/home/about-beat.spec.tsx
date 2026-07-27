@@ -23,7 +23,9 @@ describe('AboutBeat', () => {
 
   it('defaults the headshot to siteConfig.headshot when no prop is passed', () => {
     render(<AboutBeat />);
-    expect(screen.getByText('headshot: pending')).toBeInTheDocument();
+    const image = screen.getByRole('img', { name: 'Michaux Kelley' });
+    expect(image).toHaveAttribute('src', expect.stringContaining('headshot.webp'));
+    expect(screen.queryByText('headshot: pending')).not.toBeInTheDocument();
   });
 
   it('renders the headshot image when supplied', () => {
