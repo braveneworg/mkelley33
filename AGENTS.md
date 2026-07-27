@@ -47,9 +47,9 @@ never preload everything.
 
 Before working under a directory, read its `AGENTS.md`:
 
-| File                                     | Covers                                                              |
-| ---------------------------------------- | ------------------------------------------------------------------- |
-| [`src/AGENTS.md`](src/AGENTS.md)         | Architecture, TypeScript rules, data fetching, unit testing, naming |
+| File                             | Covers                                                              |
+| -------------------------------- | ------------------------------------------------------------------- |
+| [`src/AGENTS.md`](src/AGENTS.md) | Architecture, TypeScript rules, data fetching, unit testing, naming |
 
 ## Lessons (load on demand)
 
@@ -58,9 +58,10 @@ per lesson. Never preload them all. Before starting work that matches a
 category, read every file in that category's directory, recursing into any
 subdirectories:
 
-| Category          | Load before                                                 |
-| ----------------- | ----------------------------------------------------------- |
-| `git-workflow/`   | branching, committing, pushing, PRs, code review            |
+| Category        | Load before                                                 |
+| --------------- | ----------------------------------------------------------- |
+| `git-workflow/` | branching, committing, pushing, PRs, code review            |
+| `testing/`      | test harnesses, E2E, mongodb-memory-server, child processes |
 
 When corrected — or when you catch your own mistake — add the lesson as a new
 file in the matching category (create a new category directory if none fits)
@@ -91,8 +92,11 @@ pnpm run format               # Prettier write (format:check = no write)
   `type(scope): ` prefix and gitmoji (counts as 2); body/footer lines ≤72.
   Format `type(scope): <gitmoji> subject` — `feat: ✨`, `fix: 🐛`,
   `refactor: ♻️`, `perf: ⚡`, `docs: 📝`, `test: ✅`, `chore: 🔧`, `style: 🎨`.
-  The type drives the automated version bump + `CHANGELOG.md` — pick it
-  accurately.
+  Pick the type accurately: commitlint enforces the format, and the type is
+  what a release tool would read to compute a version bump and `CHANGELOG.md`.
+  No such tool is wired up yet — there is no semantic-release, changesets, or
+  release workflow — so today the type buys readable history and a clean
+  changelog whenever one is generated.
 - Never commit or push to `main`; never bypass hooks with `--no-verify`; never
   add AI attribution / `Co-authored-by` lines. Atomic commits when working
   autonomously.
@@ -110,9 +114,18 @@ pnpm run format               # Prettier write (format:check = no write)
   storage only for non-sensitive client state.
 - Dependencies: reuse an existing one before adding (check `package.json`);
   weigh bundle size, maintenance, security, and MPL-2.0 compatibility.
-- Add the MPL header from `HEADER.txt` to every new source file. AI-generated
-  markdown goes in `docs/auto-generated/`; never author docs from files
-  outside this repo. Never commit generated files or build artifacts.
+- Add the MPL header from `HEADER.txt` to every new source file, above any
+  `'use client'` directive or `@vitest-environment` docblock and below a
+  shebang. `src/license-header.spec.ts` enforces this across every tracked
+  source file, so a missing header fails the suite rather than going
+  unnoticed; generated files are exempted by name there. Markdown headers are
+  not required — no `.md` in this repo carries one.
+- Agent-authored markdown goes where its kind belongs: lessons in
+  `docs/lessons/<category>/`, plans in `docs/superpowers/plans/`, specs in
+  `docs/superpowers/specs/`, skill config in `docs/agents/`. Only output with
+  no such home belongs in `docs/auto-generated/`, which is created on first
+  use. Never author docs from files outside this repo, and never commit
+  generated files or build artifacts.
 - When editing a line, confirm nearby comments are still accurate.
 - Refactor with confidence — tests, types, and review catch mistakes. Update
   or remove tests to match the new structure; no orphaned tests or code.
@@ -136,4 +149,7 @@ See `docs/agents/triage-labels.md`.
 ### Domain docs
 
 Single-context: `CONTEXT.md` at the root is the glossary; decisions live in
-`docs/adr/`. See `docs/agents/domain.md`.
+`docs/adr/`. Neither exists yet, and that is expected — `/domain-modeling`
+creates them lazily when a term or decision is actually resolved, so proceed
+silently rather than treating their absence as a gap. See
+`docs/agents/domain.md`.

@@ -1,6 +1,10 @@
-import type { Metadata } from 'next';
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 import { unsubscribeSubscriber } from '@/lib/repositories/subscribers';
+
+import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   robots: { follow: false, index: false },
@@ -16,27 +20,29 @@ export default async function UnsubscribePage({
   const unsubscribed = token ? await unsubscribeSubscriber(token) : false;
   return (
     <div className="mx-auto w-full max-w-5xl px-5 py-16 sm:py-20">
-      <p className="font-mono text-sm text-fg-muted">
-        <span className="text-phosphor">$</span> ./unsubscribe
+      <p className="text-fg-muted font-mono text-sm">
+        <span aria-hidden="true" className="text-phosphor">
+          $
+        </span>{' '}
+        ./unsubscribe
       </p>
       {unsubscribed ? (
         <>
           <h1 className="mt-4 font-mono text-3xl font-bold tracking-tight">
-            # unsubscribed
+            <span aria-hidden="true"># </span>unsubscribed
           </h1>
-          <p className="mt-3 max-w-2xl leading-relaxed text-fg-muted">
-            done — no more email from here. resubscribe anytime if you change
-            your mind.
+          <p className="text-fg-muted mt-3 max-w-2xl leading-relaxed">
+            done — no more email from here. resubscribe anytime if you change your mind.
           </p>
         </>
       ) : (
         <>
           <h1 className="mt-4 font-mono text-3xl font-bold tracking-tight">
-            # invalid token
+            <span aria-hidden="true"># </span>invalid token
           </h1>
-          <p className="mt-3 max-w-2xl leading-relaxed text-fg-muted">
-            this unsubscribe link is invalid — reply to any newsletter email
-            and I&apos;ll remove you by hand.
+          <p className="text-fg-muted mt-3 max-w-2xl leading-relaxed">
+            this unsubscribe link is invalid — reply to any newsletter email and I&apos;ll remove
+            you by hand.
           </p>
         </>
       )}

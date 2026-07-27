@@ -1,8 +1,13 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
 /* THIS FILE WAS GENERATED AUTOMATICALLY BY PAYLOAD. */
 /* DO NOT MODIFY IT BECAUSE IT COULD BE REWRITTEN AT ANY TIME. */
-import config from '@payload-config'
-import { GRAPHQL_POST, REST_OPTIONS } from '@payloadcms/next/routes'
+import { GRAPHQL_POST, REST_OPTIONS } from '@payloadcms/next/routes';
 
-export const POST = GRAPHQL_POST(config)
+import config from '@payload-config';
 
-export const OPTIONS = REST_OPTIONS(config)
+export const POST = GRAPHQL_POST(config);
+
+export const OPTIONS = REST_OPTIONS(config);

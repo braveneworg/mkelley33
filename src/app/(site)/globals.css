@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
 @import 'tailwindcss';
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -36,9 +40,83 @@
 }
 
 @utility bg-blueprint {
-  background-image: linear-gradient(var(--grid-line) 1px, transparent 1px),
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
     linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
   background-size: 28px 28px;
+}
+
+@utility typewriter {
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  border-right: 0.5em solid var(--accent);
+  width: 8ch;
+  animation:
+    typing 1.2s steps(8, end),
+    caret-blink 1s step-end infinite;
+}
+
+@utility scanlines {
+  position: relative;
+}
+
+.scanlines::after {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 3px,
+    var(--grid-line) 3px,
+    var(--grid-line) 4px
+  );
+  opacity: 0.5;
+}
+
+@utility link-draw {
+  background-image: linear-gradient(var(--accent), var(--accent));
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  background-size: 0% 1px;
+  transition:
+    background-size 0.25s ease,
+    color 0.15s ease;
+}
+
+.link-draw:hover,
+.link-draw:focus-visible {
+  background-size: 100% 1px;
+}
+
+@keyframes typing {
+  from {
+    width: 0;
+  }
+  to {
+    width: 8ch;
+  }
+}
+
+@keyframes caret-blink {
+  50% {
+    border-color: transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .typewriter {
+    animation: none;
+    border-right-color: transparent;
+  }
+  .scanlines::after {
+    content: none;
+  }
+  .link-draw {
+    transition: none;
+  }
 }
 
 body {
@@ -93,5 +171,15 @@ body {
   .cv-document a {
     color: #000000;
     text-decoration: none;
+  }
+  .shiki,
+  .shiki span,
+  .dark .shiki,
+  .dark .shiki span {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    font-style: normal !important;
+    font-weight: normal !important;
+    text-decoration: none !important;
   }
 }

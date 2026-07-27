@@ -1,8 +1,12 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
 'use client';
 
 import { useState } from 'react';
 
-export function CopyButton({ code }: { code: string }) {
+export const CopyButton = ({ code }: { code: string }) => {
   const [copied, setCopied] = useState(false);
 
   const copy = async (): Promise<void> => {
@@ -18,11 +22,11 @@ export function CopyButton({ code }: { code: string }) {
   return (
     <button
       aria-label="Copy code"
-      className="font-mono text-xs text-fg-muted transition-colors hover:text-phosphor"
+      className="text-fg-muted hover:text-phosphor font-mono text-xs transition-colors"
       onClick={() => void copy()}
       type="button"
     >
       {copied ? 'copied ✓' : 'copy'}
     </button>
   );
-}
+};

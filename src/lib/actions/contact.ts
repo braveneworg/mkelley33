@@ -1,27 +1,24 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
 'use server';
 
 import type { ActionResult } from '@/lib/actions/types';
-
 import { contactNotificationEmail } from '@/lib/email/templates';
 import { sendEmail } from '@/lib/email/transport';
-import {
-  findServiceIdsBySlugs,
-  listServices,
-} from '@/lib/repositories/services';
+import { findServiceIdsBySlugs, listServices } from '@/lib/repositories/services';
 import { createSubmission } from '@/lib/repositories/submissions';
 import { verifyTurnstileToken } from '@/lib/turnstile';
 import { contactSchema } from '@/lib/validation/contact';
 
-function honeypotFilled(input: unknown): boolean {
-  return (
-    typeof input === 'object' &&
-    input !== null &&
-    'website' in input &&
-    Boolean((input as { website?: unknown }).website)
-  );
-}
+const honeypotFilled = (input: unknown): boolean =>
+  typeof input === 'object' &&
+  input !== null &&
+  'website' in input &&
+  Boolean((input as { website?: unknown }).website);
 
-export async function submitContact(input: unknown): Promise<ActionResult> {
+export const submitContact = async (input: unknown): Promise<ActionResult> => {
   if (honeypotFilled(input)) {
     return { success: true };
   }
@@ -37,9 +34,7 @@ export async function submitContact(input: unknown): Promise<ActionResult> {
     };
   }
   try {
-    const requestedServiceIds = await findServiceIdsBySlugs(
-      data.requestedServices,
-    );
+    const requestedServiceIds = await findServiceIdsBySlugs(data.requestedServices);
     await createSubmission({
       email: data.email,
       message: data.message,
@@ -67,4 +62,4 @@ export async function submitContact(input: unknown): Promise<ActionResult> {
       success: false,
     };
   }
-}
+};

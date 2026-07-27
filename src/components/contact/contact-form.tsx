@@ -1,14 +1,16 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
 'use client';
 
-import type { TurnstileInstance } from '@marsidev/react-turnstile';
+import { useRef, useState, useTransition } from 'react';
+
+import { useSearchParams } from 'next/navigation';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Turnstile } from '@marsidev/react-turnstile';
-import { useSearchParams } from 'next/navigation';
-import { useRef, useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
-
-import type { ContactFormValues, ContactReason } from '@/lib/validation/contact';
 
 import {
   Dialog,
@@ -17,13 +19,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { describedBy, ErrorText, FieldError, fieldMessage } from '@/components/ui/error-text';
 import { submitContact } from '@/lib/actions/contact';
 import { turnstileSiteKey } from '@/lib/turnstile';
-import {
-  CONTACT_REASON_LABELS,
-  CONTACT_REASONS,
-  contactSchema,
-} from '@/lib/validation/contact';
+import type { ContactFormValues, ContactReason } from '@/lib/validation/contact';
+import { CONTACT_REASONS, contactSchema, labelForReason } from '@/lib/validation/contact';
+
+import type { TurnstileInstance } from '@marsidev/react-turnstile';
 
 export interface ContactServiceOption {
   name: string;
@@ -33,21 +35,14 @@ export interface ContactServiceOption {
 const INPUT_CLASSES =
   'w-full rounded border border-edge bg-surface px-3 py-2 font-mono text-sm text-fg focus:border-phosphor focus:outline-none';
 
-function isContactReason(value: null | string): value is ContactReason {
-  return CONTACT_REASONS.includes(value as ContactReason);
-}
+const isContactReason = (value: null | string): value is ContactReason =>
+  CONTACT_REASONS.includes(value as ContactReason);
 
-export function ContactForm({
-  services,
-}: {
-  services: ContactServiceOption[];
-}) {
+export const ContactForm = ({ services }: { services: ContactServiceOption[] }) => {
   const searchParams = useSearchParams();
   const validSlugs = new Set(services.map((service) => service.slug));
   const reasonParam = searchParams.get('reason');
-  const initialServices = searchParams
-    .getAll('service')
-    .filter((slug) => validSlugs.has(slug));
+  const initialServices = searchParams.getAll('service').filter((slug) => validSlugs.has(slug));
   const [submitted, setSubmitted] = useState(false);
   const [serverError, setServerError] = useState<null | string>(null);
   const [isPending, startTransition] = useTransition();
@@ -68,14 +63,14 @@ export function ContactForm({
   const selectedSlugs = form.watch('requestedServices');
   const errors = form.formState.errors;
 
-  function toggleService(slug: string) {
+  const toggleService = (slug: string) => {
     const next = selectedSlugs.includes(slug)
       ? selectedSlugs.filter((current) => current !== slug)
       : [...selectedSlugs, slug];
     form.setValue('requestedServices', next, { shouldValidate: true });
-  }
+  };
 
-  function onSubmit(values: ContactFormValues) {
+  const onSubmit = (values: ContactFormValues) => {
     setServerError(null);
     startTransition(async () => {
       const result = await submitContact(values);
@@ -87,18 +82,19 @@ export function ContactForm({
         form.setValue('turnstileToken', '', { shouldValidate: false });
       }
     });
-  }
+  };
 
   if (submitted) {
     return (
       <div role="status">
-        <p className="font-mono text-sm text-fg-muted">
-          <span className="text-phosphor">$</span> ./send-message
+        <p className="text-fg-muted font-mono text-sm">
+          <span aria-hidden="true" className="text-phosphor">
+            $
+          </span>{' '}
+          ./send-message
         </p>
-        <p className="mt-2 font-mono text-lg text-phosphor">
-          message queued ✓
-        </p>
-        <p className="mt-2 text-sm text-fg-muted">
+        <p className="text-phosphor mt-2 font-mono text-lg">message queued ✓</p>
+        <p className="text-fg-muted mt-2 text-sm">
           I read everything and reply within a couple of days.
         </p>
       </div>
@@ -106,17 +102,13 @@ export function ContactForm({
   }
 
   return (
-    <form
-      className="max-w-xl space-y-5"
-      noValidate
-      onSubmit={form.handleSubmit(onSubmit)}
-    >
+    <form className="max-w-xl space-y-5" noValidate onSubmit={form.handleSubmit(onSubmit)}>
       <div>
-        <label className="font-mono text-sm text-fg" htmlFor="contact-name">
+        <label className="text-fg font-mono text-sm" htmlFor="contact-name">
           name
         </label>
         <input
-          aria-describedby={errors.name ? 'contact-name-error' : undefined}
+          aria-describedby={describedBy(Boolean(errors.name), 'contact-name-error')}
           aria-invalid={Boolean(errors.name)}
           autoComplete="name"
           className={`mt-1 ${INPUT_CLASSES}`}
@@ -124,22 +116,14 @@ export function ContactForm({
           type="text"
           {...form.register('name')}
         />
-        {errors.name ? (
-          <p
-            className="mt-1 font-mono text-xs text-fg-muted"
-            id="contact-name-error"
-          >
-            <span aria-hidden="true"># </span>
-            {errors.name.message}
-          </p>
-        ) : null}
+        <FieldError className="mt-1" id="contact-name-error" message={fieldMessage(errors.name)} />
       </div>
       <div>
-        <label className="font-mono text-sm text-fg" htmlFor="contact-email">
+        <label className="text-fg font-mono text-sm" htmlFor="contact-email">
           email
         </label>
         <input
-          aria-describedby={errors.email ? 'contact-email-error' : undefined}
+          aria-describedby={describedBy(Boolean(errors.email), 'contact-email-error')}
           aria-invalid={Boolean(errors.email)}
           autoComplete="email"
           className={`mt-1 ${INPUT_CLASSES}`}
@@ -147,28 +131,32 @@ export function ContactForm({
           type="email"
           {...form.register('email')}
         />
-        {errors.email ? (
-          <p
-            className="mt-1 font-mono text-xs text-fg-muted"
-            id="contact-email-error"
-          >
-            <span aria-hidden="true"># </span>
-            {errors.email.message}
-          </p>
-        ) : null}
+        <FieldError
+          className="mt-1"
+          id="contact-email-error"
+          message={fieldMessage(errors.email)}
+        />
       </div>
       <div>
-        <label className="font-mono text-sm text-fg" htmlFor="contact-reason">
+        <label className="text-fg font-mono text-sm" htmlFor="contact-reason">
           reason
         </label>
         <select
           className={`mt-1 ${INPUT_CLASSES}`}
           id="contact-reason"
-          {...form.register('reason')}
+          {...form.register('reason', {
+            onChange: (event) => {
+              if (event.target.value !== 'services') {
+                form.setValue('requestedServices', [], {
+                  shouldValidate: false,
+                });
+              }
+            },
+          })}
         >
           {CONTACT_REASONS.map((value) => (
             <option key={value} value={value}>
-              {CONTACT_REASON_LABELS[value]}
+              {labelForReason(value)}
             </option>
           ))}
         </select>
@@ -176,7 +164,13 @@ export function ContactForm({
       {reason === 'services' ? (
         <div>
           <Dialog>
-            <DialogTrigger aria-describedby={errors.requestedServices ? 'contact-services-error' : undefined} className="rounded border border-edge px-3 py-2 font-mono text-sm text-fg transition-colors hover:border-phosphor">
+            <DialogTrigger
+              aria-describedby={describedBy(
+                Boolean(errors.requestedServices),
+                'contact-services-error'
+              )}
+              className="border-edge text-fg hover:border-phosphor rounded border px-3 py-2 font-mono text-sm transition-colors"
+            >
               select services…
             </DialogTrigger>
             <DialogContent aria-describedby={undefined}>
@@ -184,7 +178,7 @@ export function ContactForm({
               <ul className="mt-4 space-y-3">
                 {services.map((service) => (
                   <li key={service.slug}>
-                    <label className="flex items-center gap-3 font-mono text-sm text-fg">
+                    <label className="text-fg flex items-center gap-3 font-mono text-sm">
                       <input
                         checked={selectedSlugs.includes(service.slug)}
                         className="size-4 accent-(--accent)"
@@ -196,7 +190,7 @@ export function ContactForm({
                   </li>
                 ))}
               </ul>
-              <DialogClose className="mt-6 rounded border border-phosphor px-4 py-2 font-mono text-sm text-phosphor transition-colors hover:bg-phosphor hover:text-canvas">
+              <DialogClose className="border-phosphor text-phosphor hover:bg-phosphor hover:text-canvas mt-6 rounded border px-4 py-2 font-mono text-sm transition-colors">
                 done
               </DialogClose>
             </DialogContent>
@@ -207,13 +201,13 @@ export function ContactForm({
                 .filter((service) => selectedSlugs.includes(service.slug))
                 .map((service) => (
                   <li
-                    className="flex items-center gap-2 rounded border border-edge bg-surface px-2 py-1 font-mono text-xs text-fg"
+                    className="border-edge bg-surface text-fg flex items-center gap-2 rounded border px-2 py-1 font-mono text-xs"
                     key={service.slug}
                   >
                     {service.name}
                     <button
                       aria-label={`remove ${service.name}`}
-                      className="text-fg-muted transition-colors hover:text-phosphor"
+                      className="text-fg-muted hover:text-phosphor transition-colors"
                       onClick={() => toggleService(service.slug)}
                       type="button"
                     >
@@ -223,36 +217,29 @@ export function ContactForm({
                 ))}
             </ul>
           ) : null}
-          {errors.requestedServices ? (
-            <p className="mt-1 font-mono text-xs text-fg-muted" id="contact-services-error">
-              <span aria-hidden="true"># </span>
-              {errors.requestedServices.message}
-            </p>
-          ) : null}
+          <FieldError
+            className="mt-1"
+            id="contact-services-error"
+            message={fieldMessage(errors.requestedServices)}
+          />
         </div>
       ) : null}
       <div>
-        <label className="font-mono text-sm text-fg" htmlFor="contact-message">
+        <label className="text-fg font-mono text-sm" htmlFor="contact-message">
           message
         </label>
         <textarea
-          aria-describedby={
-            errors.message ? 'contact-message-error' : undefined
-          }
+          aria-describedby={describedBy(Boolean(errors.message), 'contact-message-error')}
           aria-invalid={Boolean(errors.message)}
           className={`mt-1 min-h-32 ${INPUT_CLASSES}`}
           id="contact-message"
           {...form.register('message')}
         />
-        {errors.message ? (
-          <p
-            className="mt-1 font-mono text-xs text-fg-muted"
-            id="contact-message-error"
-          >
-            <span aria-hidden="true"># </span>
-            {errors.message.message}
-          </p>
-        ) : null}
+        <FieldError
+          className="mt-1"
+          id="contact-message-error"
+          message={fieldMessage(errors.message)}
+        />
       </div>
       <div className="hidden">
         <label htmlFor="contact-website">website</label>
@@ -265,35 +252,31 @@ export function ContactForm({
         />
       </div>
       <Turnstile
-        onExpire={() =>
-          form.setValue('turnstileToken', '', { shouldValidate: false })
-        }
-        onSuccess={(token) =>
-          form.setValue('turnstileToken', token, { shouldValidate: true })
-        }
+        onExpire={() => form.setValue('turnstileToken', '', { shouldValidate: false })}
+        onSuccess={(token) => form.setValue('turnstileToken', token, { shouldValidate: true })}
         ref={turnstileRef}
         siteKey={turnstileSiteKey()}
       />
-      {errors.turnstileToken ? (
-        <p className="font-mono text-xs text-fg-muted" id="contact-turnstile-error">
-          <span aria-hidden="true"># </span>
-          {errors.turnstileToken.message}
-        </p>
-      ) : null}
+      <FieldError id="contact-turnstile-error" message={fieldMessage(errors.turnstileToken)} />
       {serverError ? (
-        <p className="font-mono text-sm text-fg-muted" role="alert">
-          <span aria-hidden="true"># </span>
+        <ErrorText role="alert" size="sm">
           {serverError}
-        </p>
+        </ErrorText>
       ) : null}
       <button
-        aria-describedby={errors.turnstileToken ? 'contact-turnstile-error' : undefined}
-        className="rounded border border-phosphor px-4 py-2 font-mono text-sm text-phosphor transition-colors hover:bg-phosphor hover:text-canvas disabled:opacity-50"
+        aria-describedby={describedBy(Boolean(errors.turnstileToken), 'contact-turnstile-error')}
+        className="border-phosphor text-phosphor hover:bg-phosphor hover:text-canvas rounded border px-4 py-2 font-mono text-sm transition-colors disabled:opacity-50"
         disabled={isPending}
         type="submit"
       >
-        {isPending ? 'sending…' : '$ ./send-message'}
+        {isPending ? (
+          'sending…'
+        ) : (
+          <>
+            <span aria-hidden="true">$ </span>./send-message
+          </>
+        )}
       </button>
     </form>
   );
-}
+};

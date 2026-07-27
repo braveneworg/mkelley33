@@ -1,6 +1,9 @@
-import type { ContactReason } from '@/lib/validation/contact';
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-import { CONTACT_REASON_LABELS } from '@/lib/validation/contact';
+import type { ContactReason } from '@/lib/validation/contact';
+import { labelForReason } from '@/lib/validation/contact';
 
 export interface EmailContent {
   subject: string;
@@ -15,22 +18,16 @@ export interface ContactNotificationInput {
   serviceNames: string[];
 }
 
-export function contactNotificationEmail(
-  input: ContactNotificationInput,
-): EmailContent {
+export const contactNotificationEmail = (input: ContactNotificationInput): EmailContent => {
   const servicesLine =
-    input.serviceNames.length > 0
-      ? `\nservices:  ${input.serviceNames.join(', ')}`
-      : '';
+    input.serviceNames.length > 0 ? `\nservices:  ${input.serviceNames.join(', ')}` : '';
   return {
-    subject: `[mkelley33.com] ${CONTACT_REASON_LABELS[input.reason]} — ${input.name}`,
-    text: `$ cat ./inbox/new-message\n\nfrom:      ${input.name} <${input.email}>\nreason:    ${CONTACT_REASON_LABELS[input.reason]}${servicesLine}\n\n${input.message}\n`,
+    subject: `[mkelley33.com] ${labelForReason(input.reason)} — ${input.name}`,
+    text: `$ cat ./inbox/new-message\n\nfrom:      ${input.name} <${input.email}>\nreason:    ${labelForReason(input.reason)}${servicesLine}\n\n${input.message}\n`,
   };
-}
+};
 
-export function newsletterConfirmEmail(confirmUrl: string): EmailContent {
-  return {
-    subject: 'confirm your subscription — mkelley33.com',
-    text: `$ subscribe --newsletter\n\nalmost there — confirm your subscription:\n\n${confirmUrl}\n\nif you didn't request this, ignore this email and nothing happens.\n`,
-  };
-}
+export const newsletterConfirmEmail = (confirmUrl: string): EmailContent => ({
+  subject: 'confirm your subscription — mkelley33.com',
+  text: `$ subscribe --newsletter\n\nalmost there — confirm your subscription:\n\n${confirmUrl}\n\nif you didn't request this, ignore this email and nothing happens.\n`,
+});

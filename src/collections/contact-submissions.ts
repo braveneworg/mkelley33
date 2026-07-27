@@ -1,9 +1,10 @@
-import type { CollectionConfig } from 'payload';
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-import {
-  CONTACT_REASON_LABELS,
-  CONTACT_REASONS,
-} from '@/lib/validation/contact';
+import { CONTACT_REASONS, labelForReason } from '@/lib/validation/contact';
+
+import type { CollectionConfig } from 'payload';
 
 export const ContactSubmissions: CollectionConfig = {
   access: {
@@ -23,7 +24,7 @@ export const ContactSubmissions: CollectionConfig = {
       admin: { readOnly: true },
       name: 'reason',
       options: CONTACT_REASONS.map((reason) => ({
-        label: CONTACT_REASON_LABELS[reason],
+        label: labelForReason(reason),
         value: reason,
       })),
       required: true,

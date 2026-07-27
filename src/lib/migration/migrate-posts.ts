@@ -1,16 +1,17 @@
-import type { Payload } from 'payload';
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-import {
-  convertMarkdownToLexical,
-  editorConfigFactory,
-} from '@payloadcms/richtext-lexical';
 import { promises as fs } from 'fs';
-import matter from 'gray-matter';
 import path from 'path';
 
+import { convertMarkdownToLexical, editorConfigFactory } from '@payloadcms/richtext-lexical';
+import matter from 'gray-matter';
+
+import type { CODE_LANGUAGES } from '@/collections/blocks/code-block';
 import type { Post } from '@/payload-types';
 
-import { CODE_LANGUAGES } from '@/collections/blocks/code-block';
+import type { Payload } from 'payload';
 
 export interface MigrationResult {
   created: string[];
@@ -32,16 +33,14 @@ export type Segment = FenceSegment | ProseSegment;
 
 /** Drop MDX-only lines (imports/exports/JSX component tags) that the
  * markdown converter cannot represent. */
-export function stripMdxArtifacts(markdown: string): string {
-  return markdown
+export const stripMdxArtifacts = (markdown: string): string =>
+  markdown
     .split('\n')
     .filter(
       (line) =>
-        !/^\s*(import\s.+from\s.+|export\s)/.test(line) &&
-        !/^\s*<\/?[A-Z][A-Za-z]*/.test(line),
+        !/^\s*(import\s.+from\s.+|export\s)/.test(line) && !/^\s*<\/?[A-Z][A-Za-z]*/.test(line)
     )
     .join('\n');
-}
 
 /** Convert inline `<a href="...">text</a>` HTML anchors found in prose
  * markdown into standard markdown links (`[text](url)`).
@@ -57,8 +56,8 @@ export function stripMdxArtifacts(markdown: string): string {
  * Only ever applied to prose segments: `splitFences` extracts fenced code
  * blocks before prose processing runs, so literal HTML inside a code
  * sample (e.g. a JSX `<div>`) is never passed through this function. */
-export function convertInlineAnchors(markdown: string): string {
-  return markdown.replace(
+export const convertInlineAnchors = (markdown: string): string =>
+  markdown.replace(
     /<a\s+[^<>]*?href\s*=\s*(["'])([^"']*)\1[^<>]*?>([\s\S]*?)<\/a>/gi,
     (_match, _quote: string, href: string, text: string) => {
       // Markdown link destinations don't reliably survive literal,
@@ -69,34 +68,38 @@ export function convertInlineAnchors(markdown: string): string {
       // carry them through.
       const safeHref = href.replace(/\(/g, '%28').replace(/\)/g, '%29');
       return `[${text.replace(/\s+/g, ' ').trim()}](${safeHref})`;
-    },
+    }
   );
-}
 
-export function normalizeLanguage(info: string): CodeLanguage {
+// A Map rather than an object literal: the token comes from arbitrary markdown
+// fence info, and a plain-object lookup would resolve inherited keys such as
+// `constructor` or `__proto__` to Object internals instead of falling through
+// to the `text` default.
+const LANGUAGE_ALIASES = new Map<string, CodeLanguage>([
+  ['bash', 'bash'],
+  ['css', 'css'],
+  ['html', 'html'],
+  ['javascript', 'js'],
+  ['js', 'js'],
+  ['json', 'json'],
+  ['jsx', 'jsx'],
+  ['markdown', 'md'],
+  ['md', 'md'],
+  ['sh', 'bash'],
+  ['shell', 'bash'],
+  ['text', 'text'],
+  ['ts', 'ts'],
+  ['tsx', 'tsx'],
+  ['typescript', 'ts'],
+  ['zsh', 'bash'],
+]);
+
+export const normalizeLanguage = (info: string): CodeLanguage => {
   const token = info.trim().split(/\s+/)[0]?.toLowerCase() ?? '';
-  const map: Record<string, CodeLanguage> = {
-    bash: 'bash',
-    css: 'css',
-    html: 'html',
-    javascript: 'js',
-    js: 'js',
-    json: 'json',
-    jsx: 'jsx',
-    markdown: 'md',
-    md: 'md',
-    sh: 'bash',
-    shell: 'bash',
-    text: 'text',
-    ts: 'ts',
-    tsx: 'tsx',
-    typescript: 'ts',
-    zsh: 'bash',
-  };
-  return map[token] ?? 'text';
-}
+  return LANGUAGE_ALIASES.get(token) ?? 'text';
+};
 
-export function splitFences(markdown: string): Segment[] {
+export const splitFences = (markdown: string): Segment[] => {
   const normalized = markdown.replace(/\r\n/g, '\n');
   const segments: Segment[] = [];
   const fence = /^```([^\n]*)\n([\s\S]*?)^```[ \t]*$/gm;
@@ -117,40 +120,37 @@ export function splitFences(markdown: string): Segment[] {
     segments.push({ markdown: normalized.slice(last), type: 'prose' });
   }
   return segments;
-}
+};
 
-function fenceId(): string {
-  return Array.from({ length: 24 }, () =>
-    Math.floor(Math.random() * 16).toString(16),
-  ).join('');
-}
+const fenceId = (): string =>
+  Array.from({ length: 24 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
 
-function fenceToBlockNode(segment: FenceSegment): Record<string, unknown> {
-  return {
-    fields: {
-      blockName: '',
-      blockType: 'code',
-      code: segment.code,
-      id: fenceId(),
-      language: segment.language,
-    },
-    format: '',
-    type: 'block',
-    version: 2,
-  };
-}
+const fenceToBlockNode = (segment: FenceSegment): Record<string, unknown> => ({
+  fields: {
+    blockName: '',
+    blockType: 'code',
+    code: segment.code,
+    id: fenceId(),
+    language: segment.language,
+  },
+  format: '',
+  type: 'block',
+  version: 2,
+});
 
-export async function migratePosts(
+export const migratePosts = async (
   payload: Payload,
-  contentDir: string,
-): Promise<MigrationResult> {
+  contentDir: string
+): Promise<MigrationResult> => {
   const result: MigrationResult = { created: [], updated: [] };
   const editorConfig = await editorConfigFactory.default({
     config: payload.config,
   });
-  const files = (await fs.readdir(contentDir)).filter((f) =>
-    f.endsWith('.mdx'),
-  );
+  // `contentDir` is an operator-supplied path from the `migrate:posts` script,
+  // never request input — reading it dynamically is this function's entire job.
+  // `security/detect-non-literal-fs-filename` is scoped off for this directory
+  // in eslint.config.mjs for exactly that reason.
+  const files = (await fs.readdir(contentDir)).filter((f) => f.endsWith('.mdx'));
 
   for (const file of files.sort()) {
     const slug = path.basename(file, '.mdx');
@@ -183,15 +183,11 @@ export async function migratePosts(
       },
     } as Post['body'];
 
-    const title =
-      typeof front.title === 'string' ? front.title : slug;
+    const title = typeof front.title === 'string' ? front.title : slug;
     const publishedAt = new Date(
-      typeof front.date === 'string' || front.date instanceof Date
-        ? front.date
-        : Date.now(),
+      typeof front.date === 'string' || front.date instanceof Date ? front.date : Date.now()
     ).toISOString();
-    const excerpt =
-      typeof front.description === 'string' ? front.description : undefined;
+    const excerpt = typeof front.description === 'string' ? front.description : undefined;
 
     const existing = await payload.find({
       collection: 'posts',
@@ -220,4 +216,4 @@ export async function migratePosts(
     }
   }
   return result;
-}
+};

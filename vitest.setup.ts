@@ -1,5 +1,81 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
 import '@testing-library/jest-dom/vitest';
-import { vi } from 'vitest';
+import { afterEach, vi } from 'vitest';
+
+// vmThreads runs every file in a fresh VM context that lacks Node's
+// web-stream globals; undici (pulled in by payload/fetch consumers) reads
+// ReadableStream at module-load time, so restore the trio before any test
+// module is imported.
+if (typeof globalThis.ReadableStream === 'undefined') {
+  const { ReadableStream, TransformStream, WritableStream } = await import('node:stream/web');
+  Object.assign(globalThis, { ReadableStream, TransformStream, WritableStream });
+}
+
+// Pristine snapshot of the environment captured at setup-file load. Restored
+// after every test so per-test env mutations — `vi.stubEnv`, raw
+// `process.env.X = …`, or `delete process.env.X` — can't bleed into a later
+// test. vmThreads already isolates `process.env` across files, so this guards
+// the in-file, cross-test case (e.g. specs that set `CDN_DOMAIN` inside `it`
+// blocks without cleanup), keeping shuffled test order deterministic.
+const PRISTINE_ENV = { ...process.env };
+
+// Mock server-only module to allow testing server-side code
+vi.mock('server-only', () => ({}));
+
+// Pure stub for next/server — extends the native Node.js Request so route handlers get a
+// fully-functional headers/json()/text() API without loading any real Next.js module.
+vi.mock('next/server', () => {
+  class MockNextRequest extends Request {
+    nextUrl: URL;
+    constructor(url: string | URL, options?: RequestInit) {
+      super(url, options);
+      this.nextUrl = new URL(url);
+    }
+  }
+  // Class (not plain object) so `new NextResponse(null, { status: 204 })` works too.
+  // Statics are attached via Object.assign because their simplified return
+  // shapes are intentionally narrower than the native Response statics.
+  class MockNextResponse extends Response {}
+  Object.assign(MockNextResponse, {
+    json: vi.fn((data: unknown, init?: { status?: number; headers?: HeadersInit }) => ({
+      json: async () => data,
+      status: init?.status ?? 200,
+      headers: new Headers(init?.headers),
+    })),
+    next: vi.fn(() => ({ type: 'next' })),
+    redirect: vi.fn((url: string | URL, init?: { status?: number }) => ({
+      headers: new Headers({ Location: String(url) }),
+      status: init?.status ?? 307,
+    })),
+  });
+  return {
+    NextRequest: MockNextRequest,
+    NextResponse: MockNextResponse,
+  };
+});
+
+// Pure stub for next/navigation — avoids loading the real Next.js module in every test context.
+vi.mock('next/navigation', () => ({
+  notFound: vi.fn(),
+  permanentRedirect: vi.fn(),
+  redirect: vi.fn(),
+  useParams: vi.fn(() => ({})),
+  usePathname: vi.fn(() => '/'),
+  useRouter: vi.fn(() => ({
+    back: vi.fn(),
+    forward: vi.fn(),
+    prefetch: vi.fn(),
+    push: vi.fn(),
+    refresh: vi.fn(),
+    replace: vi.fn(),
+  })),
+  useSearchParams: vi.fn(() => new URLSearchParams()),
+  useSelectedLayoutSegment: vi.fn(() => null),
+  useSelectedLayoutSegments: vi.fn(() => []),
+}));
 
 // This setup file runs for every test file, including `@vitest-environment
 // node` integration tests where `window` does not exist — guard the jsdom-only
@@ -18,4 +94,127 @@ if (typeof window !== 'undefined') {
     })),
     writable: true,
   });
+
+  // jsdom does not implement IntersectionObserver, which motion's
+  // `whileInView` arms on mount — stub it for every jsdom test file.
+  class MockIntersectionObserver {
+    disconnect() {}
+    observe() {}
+    unobserve() {}
+  }
+  Object.defineProperty(window, 'IntersectionObserver', {
+    configurable: true,
+    value: MockIntersectionObserver,
+  });
 }
+
+// React, jest-dom matchers, cleanup, and window polyfills are only needed in jsdom.
+// node-env tests (*.spec.ts — server actions, API routes, repos, services, utils, schemas)
+// skip this block entirely, avoiding ~0.4–0.6s of import overhead per file across
+// the ~150 server-side spec files that never touch the DOM.
+let cleanupFn: () => void = () => {};
+
+if (typeof window !== 'undefined') {
+  // Load React, jest-dom, and testing-library in parallel to minimize startup latency.
+  // @testing-library/jest-dom/vitest is a side-effect import that registers all
+  // DOM matchers on vitest's expect — no explicit expect.extend() needed.
+  const [{ default: React }, { cleanup }] = await Promise.all([
+    import('react'),
+    import('@testing-library/react'),
+    import('@testing-library/jest-dom/vitest'), // side effect: registers all DOM matchers
+  ]);
+
+  // Make React available globally for tests
+  // This is required by vitest when testing React components
+  globalThis.React = React;
+
+  cleanupFn = cleanup;
+
+  // Suppress noisy jsdom "Not implemented" jsdomErrors for APIs jsdom lacks but
+  // that unit tests don't meaningfully exercise:
+  //   - navigation: window.location.href assignments / anchor target="_blank".
+  //   - HTMLFormElement.prototype.requestSubmit: fired when a submit <button>
+  //     inside a <form> is clicked. jsdom routes this through its internal impl
+  //     (_doRequestSubmit), which throws and bypasses the prototype polyfill below.
+  // These spam stderr and can fail CI with a non-zero exit; every other message
+  // still surfaces. jsdom emits them via both console.error and the virtualConsole
+  // (process.stderr), so guard both channels with one shared matcher.
+  const SUPPRESSED_JSDOM_ERRORS = [
+    'Not implemented: navigation',
+    'Not implemented: HTMLFormElement.prototype.requestSubmit',
+  ];
+  const isSuppressedJsdomError = (text: string): boolean =>
+    SUPPRESSED_JSDOM_ERRORS.some((needle) => text.includes(needle));
+
+  const originalConsoleError = console.error;
+  console.error = (...args: unknown[]) => {
+    const message = typeof args[0] === 'string' ? args[0] : String(args[0]);
+    if (isSuppressedJsdomError(message)) {
+      return;
+    }
+    originalConsoleError.call(console, ...args);
+  };
+
+  // Mock window.open to prevent jsdom navigation errors from anchor clicks with target="_blank"
+  window.open = vi.fn();
+
+  // jsdom fires the errors above via _virtualConsole.emit("jsdomError"), which
+  // bypasses the console.error override (its listener was bound before ours).
+  // Catch that channel by filtering process.stderr.write for the same messages.
+  const originalStderrWrite = process.stderr.write.bind(process.stderr);
+  process.stderr.write = ((...args: Parameters<typeof process.stderr.write>) => {
+    const chunk = args[0];
+    if (typeof chunk === 'string' && isSuppressedJsdomError(chunk)) {
+      return true;
+    }
+    return originalStderrWrite(...args);
+  }) as typeof process.stderr.write;
+
+  // Mock scrollTo for scroll-based components
+  Object.defineProperty(window, 'scrollTo', {
+    writable: true,
+    value: vi.fn(),
+  });
+
+  // Mock scrollIntoView for JSDOM
+  Element.prototype.scrollIntoView = vi.fn();
+
+  // Override HTMLFormElement.requestSubmit for jsdom (jsdom@26 defines it but throws
+  // "Not implemented" when called). Use Object.defineProperty because jsdom may
+  // define the property as non-writable, making plain assignment silently fail.
+  Object.defineProperty(HTMLFormElement.prototype, 'requestSubmit', {
+    configurable: true,
+    writable: true,
+    value: function requestSubmit(submitter?: HTMLElement) {
+      if (submitter) {
+        const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
+        this.dispatchEvent(submitEvent);
+      } else {
+        this.submit();
+      }
+    },
+  });
+}
+
+// Clean up the DOM after each test to ensure isolation.
+// Mock call history is cleared automatically by clearMocks: true in vitest.config.ts.
+afterEach(() => {
+  cleanupFn();
+
+  // Local/session storage (and any direct storage writes) must not leak
+  // between tests. node-env specs have no window, hence the guard.
+  if (typeof window !== 'undefined') {
+    window.sessionStorage.clear();
+    window.localStorage.clear();
+  }
+
+  // Restore any `vi.stubEnv` calls, then reset `process.env` to the pristine
+  // snapshot so raw assignments / deletes in one test cannot leak into the next.
+  vi.unstubAllEnvs();
+  for (const key of Object.keys(process.env)) {
+    if (!(key in PRISTINE_ENV)) {
+      Reflect.deleteProperty(process.env, key);
+    }
+  }
+  Object.assign(process.env, PRISTINE_ENV);
+});

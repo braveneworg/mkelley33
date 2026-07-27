@@ -1,39 +1,39 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
 import Link from 'next/link';
 
+import { TerminalSection } from '@/components/home/terminal-section';
 import type { Post } from '@/payload-types';
 
-import { TerminalSection } from '@/components/home/terminal-section';
-
-export function LatestPostsBeat({ posts }: { posts: Post[] }) {
-  return (
-    <TerminalSection command="tail -3 ./blog">
-      {posts.length === 0 ? (
-        <p className="font-mono text-sm text-fg-muted"># no posts yet</p>
-      ) : (
-        <ul className="max-w-2xl space-y-4">
-          {posts.map((post) => (
-            <li key={post.slug}>
-              <Link
-                className="group block"
-                href={`/blog/${post.slug}`}
-              >
-                <span className="font-mono text-sm text-fg transition-colors group-hover:text-phosphor">
-                  {post.title}
-                </span>
-                <span className="ml-3 font-mono text-xs text-fg-muted">
-                  {post.publishedAt.slice(0, 10)}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-      <Link
-        className="mt-6 inline-block font-mono text-sm text-phosphor underline underline-offset-4 transition-colors hover:text-fg"
-        href="/blog"
-      >
-        all posts: ./blog →
-      </Link>
-    </TerminalSection>
-  );
-}
+export const LatestPostsBeat = ({ posts }: { posts: Post[] }) => (
+  <TerminalSection command="tail -3 ./blog">
+    {posts.length === 0 ? (
+      <p className="text-fg-muted font-mono text-sm">
+        <span aria-hidden="true"># </span>no posts yet
+      </p>
+    ) : (
+      <ul className="max-w-2xl space-y-4">
+        {posts.map((post) => (
+          <li key={post.slug}>
+            <Link className="group block" href={`/blog/${post.slug}`}>
+              <span className="text-fg group-hover:text-phosphor font-mono text-sm transition-colors">
+                {post.title}
+              </span>
+              <span className="text-fg-muted ml-3 font-mono text-xs">
+                {post.publishedAt.slice(0, 10)}
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    )}
+    <Link
+      className="text-phosphor hover:text-fg mt-6 inline-block font-mono text-sm underline underline-offset-4 transition-colors"
+      href="/blog"
+    >
+      all posts: ./blog →
+    </Link>
+  </TerminalSection>
+);

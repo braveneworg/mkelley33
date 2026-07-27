@@ -1,11 +1,15 @@
-import type { Payload } from 'payload';
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 import { SERVICES } from '@/lib/services-content';
 
+import type { Payload } from 'payload';
+
 /** Idempotent upsert of the canonical services list, keyed by slug. */
-export async function seedServices(
-  payload: Payload,
-): Promise<{ created: string[]; updated: string[] }> {
+export const seedServices = async (
+  payload: Payload
+): Promise<{ created: string[]; updated: string[] }> => {
   const created: string[] = [];
   const updated: string[] = [];
   for (const [index, service] of SERVICES.entries()) {
@@ -32,4 +36,4 @@ export async function seedServices(
     }
   }
   return { created, updated };
-}
+};

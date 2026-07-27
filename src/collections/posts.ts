@@ -1,22 +1,19 @@
-import type { CollectionConfig } from 'payload';
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-import {
-  BlocksFeature,
-  lexicalEditor,
-} from '@payloadcms/richtext-lexical';
+import { BlocksFeature, lexicalEditor } from '@payloadcms/richtext-lexical';
 
 import { CodeBlock } from '@/collections/blocks/code-block';
 import { computeReadTime } from '@/collections/hooks/compute-read-time';
-import {
-  revalidateAfterChange,
-  revalidateAfterDelete,
-} from '@/collections/hooks/revalidate-post';
+import { revalidateAfterChange, revalidateAfterDelete } from '@/collections/hooks/revalidate-post';
+
+import type { CollectionConfig } from 'payload';
 
 export const Posts: CollectionConfig = {
   slug: 'posts',
   access: {
-    read: ({ req }) =>
-      req.user ? true : { status: { equals: 'published' } },
+    read: ({ req }) => (req.user ? true : { status: { equals: 'published' } }),
   },
   admin: { defaultColumns: ['title', 'status', 'publishedAt'], useAsTitle: 'title' },
   fields: [

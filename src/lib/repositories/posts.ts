@@ -1,12 +1,16 @@
-import config from '@payload-config';
-import { getPayload } from 'payload';
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
 import { cache } from 'react';
+
+import { getPayload } from 'payload';
+
+import config from '@payload-config';
 
 import type { Post } from '@/payload-types';
 
-async function client() {
-  return getPayload({ config });
-}
+const client = async () => getPayload({ config });
 
 export const listPublishedPosts = cache(async (): Promise<Post[]> => {
   try {
@@ -25,22 +29,20 @@ export const listPublishedPosts = cache(async (): Promise<Post[]> => {
   }
 });
 
-export const getPostBySlug = cache(
-  async (slug: string): Promise<Post | null> => {
-    try {
-      const payload = await client();
-      const result = await payload.find({
-        collection: 'posts',
-        limit: 1,
-        overrideAccess: false,
-        where: {
-          and: [{ slug: { equals: slug } }, { status: { equals: 'published' } }],
-        },
-      });
-      return result.docs[0] ?? null;
-    } catch (error) {
-      console.error(`getPostBySlug(${slug}) failed:`, error);
-      return null;
-    }
-  },
-);
+export const getPostBySlug = cache(async (slug: string): Promise<Post | null> => {
+  try {
+    const payload = await client();
+    const result = await payload.find({
+      collection: 'posts',
+      limit: 1,
+      overrideAccess: false,
+      where: {
+        and: [{ slug: { equals: slug } }, { status: { equals: 'published' } }],
+      },
+    });
+    return result.docs[0] ?? null;
+  } catch (error) {
+    console.error(`getPostBySlug(${slug}) failed:`, error);
+    return null;
+  }
+});

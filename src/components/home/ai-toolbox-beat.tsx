@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
 import { TerminalSection } from '@/components/home/terminal-section';
 
 const CHIPS = [
@@ -15,22 +19,20 @@ const CHIPS = [
   'skills: mattpocock',
 ];
 
-export function AiToolboxBeat() {
-  return (
-    <TerminalSection command="cat ./ai-toolbox">
-      <p className="max-w-2xl leading-relaxed text-fg">
-        I don&apos;t just use AI tools — I deploy them into teams.
-      </p>
-      <ul className="mt-6 flex max-w-3xl flex-wrap gap-2">
-        {CHIPS.map((chip) => (
-          <li
-            className="rounded border border-edge bg-surface px-3 py-1 font-mono text-xs text-fg-muted"
-            key={chip}
-          >
-            {chip}
-          </li>
-        ))}
-      </ul>
-    </TerminalSection>
-  );
-}
+export const AiToolboxBeat = () => (
+  <TerminalSection command="cat ./ai-toolbox">
+    <p className="text-fg max-w-2xl leading-relaxed">
+      I don&apos;t just use AI tools — I deploy them into teams.
+    </p>
+    <ul className="mt-6 flex max-w-3xl flex-wrap gap-2">
+      {CHIPS.map((chip) => (
+        <li
+          className="border-edge bg-surface text-fg-muted rounded border px-3 py-1 font-mono text-xs"
+          key={chip}
+        >
+          {chip}
+        </li>
+      ))}
+    </ul>
+  </TerminalSection>
+);

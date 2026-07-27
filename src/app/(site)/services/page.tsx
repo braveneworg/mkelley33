@@ -1,7 +1,11 @@
-import type { Metadata } from 'next';
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 import { ServiceSection } from '@/components/services/service-section';
 import { listServices } from '@/lib/repositories/services';
+
+import type { Metadata } from 'next';
 
 export const revalidate = 300;
 
@@ -15,15 +19,18 @@ export default async function ServicesPage() {
   const services = await listServices();
   return (
     <div className="mx-auto w-full max-w-5xl px-5 py-16 sm:py-20">
-      <p className="font-mono text-sm text-fg-muted">
-        <span className="text-phosphor">$</span> ls ./services
+      <p className="text-fg-muted font-mono text-sm">
+        <span aria-hidden="true" className="text-phosphor">
+          $
+        </span>{' '}
+        ls ./services
       </p>
       <h1 className="mt-4 font-mono text-3xl font-bold tracking-tight sm:text-4xl">
-        # Services
+        <span aria-hidden="true"># </span>services
       </h1>
-      <p className="mt-3 max-w-2xl leading-relaxed text-fg-muted">
-        Five ways I can help your team ship. Every engagement starts with a
-        conversation — request a quote and tell me where it hurts.
+      <p className="text-fg-muted mt-3 max-w-2xl leading-relaxed">
+        Five ways I can help your team ship. Every engagement starts with a conversation — request a
+        quote and tell me where it hurts.
       </p>
       <div className="mt-10">
         {services.map((service) => (

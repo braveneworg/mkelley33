@@ -22,3 +22,24 @@ allowBuilds:
   mongodb-memory-server: true
   sharp: true
   unrs-resolver: true
+
+# Written by pnpm itself when `pnpm install --trust-lockfile` resolved the
+# merge of origin/main into feature/phase-5-polish: these four were published
+# within the 24h minimumReleaseAge window at that moment. Each is pinned to an
+# exact version and each already appeared in a lockfile reviewed on main or on
+# this branch, so nothing unreviewed was admitted — the merged lockfile
+# contains no package version absent from both parents. Prune an entry once
+# the version ages out; the quarantine still applies to everything else.
+minimumReleaseAgeExclude:
+  - '@hookform/resolvers@5.5.7'
+  - conventional-commits-parser@7.1.1
+  - globals@17.8.0
+  - yargs@18.1.0
+
+# Moved here from package.json's "pnpm" field, which pnpm 11 no longer reads
+# (it warns and ignores the keys). Both plugins declare a peer range stopping
+# at ESLint 9 but work correctly on the 10 this repo uses.
+peerDependencyRules:
+  allowedVersions:
+    eslint-plugin-jsx-a11y>eslint: '10'
+    eslint-plugin-react>eslint: '10'

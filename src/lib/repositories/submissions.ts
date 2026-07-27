@@ -1,5 +1,10 @@
-import config from '@payload-config';
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
 import { getPayload } from 'payload';
+
+import config from '@payload-config';
 
 import type { ContactReason } from '@/lib/validation/contact';
 import type { ContactSubmission } from '@/payload-types';
@@ -13,9 +18,9 @@ export interface CreateSubmissionInput {
 }
 
 /** Mutation — the Server Action is the gatekeeper, so access is overridden. */
-export async function createSubmission(
-  input: CreateSubmissionInput,
-): Promise<ContactSubmission> {
+export const createSubmission = async (
+  input: CreateSubmissionInput
+): Promise<ContactSubmission> => {
   const payload = await getPayload({ config });
   return payload.create({
     collection: 'contact-submissions',
@@ -29,4 +34,4 @@ export async function createSubmission(
     },
     overrideAccess: true,
   });
-}
+};

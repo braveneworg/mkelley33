@@ -1,0 +1,36 @@
+#!/bin/sh
+# Post-merge: keep local environment in sync after `git pull` / `git merge`.
+# - Reinstall deps when the lockfile or package.json changed.
+# - Regenerate Prisma client when the schema changed.
+#
+# Skipped when the merge head can't be determined (e.g. unrelated histories).
+
+set -e
+
+if ! git rev-parse --verify -q HEAD@{1} >/dev/null 2>&1; then
+  exit 0
+fi
+
+changed=$(git diff --name-only HEAD@{1} HEAD)
+
+if printf '%s\n' "$changed" | grep -qE '^(pnpm-lock\.yaml|package\.json)$'; then
+  echo "📦 Lockfile or package.json changed — running pnpm install..."
+  pnpm install
+fi
+
+# The lambdas are standalone pnpm projects; the root install above never
+# touches them, so their node_modules go stale when a merge changes their
+# lockfiles.
+for lambda_dir in bio-generator stripe-webhook; do
+  if printf '%s\n' "$changed" | grep -qE "^$lambda_dir/(pnpm-lock\.yaml|package\.json)$"; then
+    echo "📦 $lambda_dir lockfile or package.json changed — running pnpm install..."
+    pnpm install --dir "$lambda_dir"
+  fi
+done
+
+if printf '%s\n' "$changed" | grep -q '^prisma/schema\.prisma$'; then
+  echo "🗄  Prisma schema changed — running pnpm exec prisma generate..."
+  pnpm exec prisma generate
+fi
+
+exit 0
