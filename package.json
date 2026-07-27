@@ -3,7 +3,11 @@
   "version": "1.0.0",
   "private": true,
   "license": "ISC",
-  "packageManager": "pnpm@10.12.4",
+  "packageManager": "pnpm@11.17.0",
+  "engines": {
+    "node": ">=24.18.0",
+    "pnpm": ">=11.17.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build && serwist build serwist.config.ts",
@@ -103,7 +107,7 @@
     "tailwindcss": "^4.3.3",
     "tsc-files": "^1.1.4",
     "tsx": "4.22.4",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.3",
     "typescript-eslint": "^8.65.0",
     "vitest": "^4.1.10"
   },
@@ -116,13 +120,5 @@
     "*.{json,css,md}": [
       "prettier --write"
     ]
-  },
-  "pnpm": {
-    "peerDependencyRules": {
-      "allowedVersions": {
-        "eslint-plugin-jsx-a11y>eslint": "10",
-        "eslint-plugin-react>eslint": "10"
-      }
-    }
   }
 }
