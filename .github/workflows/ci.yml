@@ -77,3 +77,41 @@ jobs:
           name: playwright-traces
           path: test-results/
           if-no-files-found: ignore
+
+  # Production deploy to Vercel — push-to-main only, after both gates.
+  #
+  # GitHub secrets required (repo Settings → Secrets and variables → Actions):
+  #   VERCEL_TOKEN       personal token from vercel.com/account/tokens
+  #   VERCEL_ORG_ID      "orgId" in .vercel/project.json after `vercel link`
+  #   VERCEL_PROJECT_ID  "projectId" in the same file
+  #
+  # App runtime/build env (DATABASE_URL, SMTP_*, Turnstile keys, …) lives in
+  # the Vercel project env, NOT here — serverless functions read it at
+  # runtime, so GitHub secrets cannot carry it. The preflight step audits the
+  # pulled env against src/lib/deploy/env-manifest.ts and fails the deploy
+  # naming anything missing or forbidden. See docs/deploy.md.
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [ci, e2e]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --trust-lockfile
+      - name: Pull Vercel project settings and production env
+        run: pnpm exec vercel pull --yes --environment=production --token "${{ secrets.VERCEL_TOKEN }}"
+      - name: Audit production env against the manifest
+        run: pnpm exec tsx scripts/check-deploy-env.ts .vercel/.env.production.local
+      - name: Build
+        run: pnpm exec vercel build --prod --token "${{ secrets.VERCEL_TOKEN }}"
+      - name: Deploy prebuilt output
+        run: pnpm exec vercel deploy --prebuilt --prod --token "${{ secrets.VERCEL_TOKEN }}"
