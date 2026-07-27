@@ -11,7 +11,9 @@ export default defineConfig({
   testDir: 'e2e',
   timeout: 60_000,
   use: {
-    baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:3000',
+    // Fallback matches the harness's dedicated port (scripts/e2e.mjs) —
+    // never Next's default 3000, where a stray dev server could listen.
+    baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:4310',
     trace: 'retain-on-failure',
   },
   // Single worker: the specs share one server + database, and the dev/CI

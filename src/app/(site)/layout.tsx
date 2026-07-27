@@ -6,6 +6,7 @@ import { Inter, JetBrains_Mono } from 'next/font/google';
 
 import { Analytics } from '@vercel/analytics/next';
 
+import { PaletteHotkey } from '@/components/palette/palette-hotkey';
 import { PaletteMount } from '@/components/palette/palette-mount';
 import { SerwistRegister } from '@/components/site/serwist-register';
 import { SiteFooter } from '@/components/site/site-footer';
@@ -62,6 +63,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
+        <PaletteHotkey />
         <a
           className="focus:border-phosphor focus:bg-surface sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:rounded-sm focus:border focus:px-3 focus:py-2 focus:font-mono focus:text-sm"
           href="#main"
@@ -72,7 +74,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <ThemeProvider>
             <div className="flex min-h-dvh flex-col">
               <SiteNav />
-              <main className="flex-1" id="main">
+              {/* tabIndex={-1}: older Safari won't move sequential focus past
+                  the skip link's target unless it is programmatically
+                  focusable. */}
+              <main className="flex-1" id="main" tabIndex={-1}>
                 {children}
               </main>
               <SiteFooter />

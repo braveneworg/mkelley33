@@ -90,6 +90,10 @@ const PaletteDialog = () => {
     };
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('palette:open', onOpenEvent);
+    // Hand off from the pre-hydration inline hotkey bridge (see
+    // palette-hotkey.tsx): with the listeners attached, announce readiness
+    // so a press buffered before this chunk hydrated replays as an open.
+    window.dispatchEvent(new Event('palette:ready'));
     return () => {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('palette:open', onOpenEvent);

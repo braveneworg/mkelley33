@@ -713,6 +713,21 @@ git commit -m "feat: command palette with post search and nav hint"
 **Interfaces:**
 - Produces: service worker with precache + `defaultCache` runtime caching (visited posts readable offline) + `/~offline` document fallback; installable manifest.
 
+> **Executed as (post-execution sync note):** Task 3 shipped in Serwist's
+> **configurator mode**, not the webpack-mode wiring Step 5 below plans.
+> Shipped reality: a root `serwist.config.ts` (swSrc `src/sw.ts`, swDest
+> `public/sw.js`) consumed by `serwist build serwist.config.ts`, which
+> `pnpm build` runs after `next build`; `next.config.ts` was left untouched
+> (no `withSerwistInit`). Registration happens in the root layout via
+> `SerwistRegister` (`src/components/site/serwist-register.tsx`), which
+> wraps the app in `SerwistProvider` from `@serwist/next/react`
+> (`swUrl: '/sw.js'`, disabled outside production). `.gitignore` covers only
+> `public/sw.js`(+`.map`) — configurator mode never emits `swe-worker-*`
+> files. Emission of the worker is verified by `scripts/ci-build.mjs`, which
+> fails the CI build when `public/sw.js` is missing. The steps below are
+> preserved as originally planned; Step 5 and the `swe-worker-*` ignore
+> lines were NOT executed as written.
+
 - [ ] **Step 1: Install**
 
 ```bash
@@ -832,6 +847,9 @@ serwist.addEventListeners();
 (If eslint flags the triple-slash reference, add a scoped disable comment. If `tsc` complains about the webworker lib, that reference line is the fix — do not modify tsconfig lib globally.)
 
 - [ ] **Step 5: Wire `next.config.ts`**
+
+> **Not executed as written** — superseded by configurator mode; see the
+> "Executed as" note at the top of this task. `next.config.ts` is untouched.
 
 ```ts
 import type { NextConfig } from 'next';

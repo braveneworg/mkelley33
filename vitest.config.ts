@@ -4,7 +4,6 @@
 
 import react from '@vitejs/plugin-react';
 import { defineConfig, type ViteUserConfig } from 'vitest/config';
-import * as path from 'node:path';
 
 export default defineConfig((): ViteUserConfig => {
   const withCoverage = process.argv.includes('--coverage');
@@ -12,13 +11,7 @@ export default defineConfig((): ViteUserConfig => {
   return {
     plugins: [react()],
     resolve: {
-      tsconfigPaths: true, // Keep only next/server alias - let vi.mock handle next/navigation
-      alias: [
-        {
-          find: 'next/server',
-          replacement: path.resolve(process.cwd(), './__mocks__/next/server.js'),
-        },
-      ],
+      tsconfigPaths: true, // No aliases — vi.mock in vitest.setup.ts handles next/* modules
       conditions: ['import', 'module', 'browser', 'default'],
       extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json'],
     },

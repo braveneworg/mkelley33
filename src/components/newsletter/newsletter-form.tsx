@@ -10,7 +10,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Turnstile } from '@marsidev/react-turnstile';
 import { useForm } from 'react-hook-form';
 
-import { ErrorText, FieldError, fieldMessage } from '@/components/ui/error-text';
+import { describedBy, ErrorText, FieldError, fieldMessage } from '@/components/ui/error-text';
 import { subscribeNewsletter } from '@/lib/actions/newsletter';
 import { turnstileSiteKey } from '@/lib/turnstile';
 import type { NewsletterFormValues } from '@/lib/validation/newsletter';
@@ -52,22 +52,14 @@ export const NewsletterForm = () => {
   }
 
   return (
-    <form
-      className="max-w-md space-y-3"
-      noValidate
-      // turnstileRef.current is only read inside the async submit handler
-      // (never during render); the compiler can't see through RHF's
-      // handleSubmit to confirm that.
-
-      onSubmit={form.handleSubmit(onSubmit)}
-    >
+    <form className="max-w-md space-y-3" noValidate onSubmit={form.handleSubmit(onSubmit)}>
       <div className="flex gap-2">
         <div className="flex-1">
           <label className="sr-only" htmlFor="newsletter-email">
             email
           </label>
           <input
-            aria-describedby={errors.email ? 'newsletter-email-error' : undefined}
+            aria-describedby={describedBy(Boolean(errors.email), 'newsletter-email-error')}
             aria-invalid={Boolean(errors.email)}
             autoComplete="email"
             className="border-edge bg-surface text-fg focus:border-phosphor w-full rounded border px-3 py-2 font-mono text-sm focus:outline-none"
@@ -78,7 +70,10 @@ export const NewsletterForm = () => {
           />
         </div>
         <button
-          aria-describedby={errors.turnstileToken ? 'newsletter-turnstile-error' : undefined}
+          aria-describedby={describedBy(
+            Boolean(errors.turnstileToken),
+            'newsletter-turnstile-error'
+          )}
           className="border-phosphor text-phosphor hover:bg-phosphor hover:text-canvas rounded border px-4 py-2 font-mono text-sm transition-colors disabled:opacity-50"
           disabled={isPending}
           type="submit"

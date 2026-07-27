@@ -6,6 +6,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { CommandPalette } from '@/components/palette/command-palette';
+import { installPaletteHotkey } from '@/components/palette/palette-hotkey';
 
 const push = vi.fn();
 const setTheme = vi.fn();
@@ -153,6 +154,25 @@ describe('CommandPalette', () => {
     await user.type(screen.getByPlaceholderText('type a command or search…'), 'next');
 
     expect(await screen.findByText(/nothing found/)).toBeInTheDocument();
+  });
+
+  it('announces readiness for the pre-hydration hotkey bridge', async () => {
+    const ready = vi.fn();
+    window.addEventListener('palette:ready', ready);
+    render(<CommandPalette />);
+    await waitFor(() => {
+      expect(ready).toHaveBeenCalled();
+    });
+    window.removeEventListener('palette:ready', ready);
+  });
+
+  it('opens from a press the inline hotkey script buffered before mount', async () => {
+    installPaletteHotkey();
+    window.dispatchEvent(
+      new KeyboardEvent('keydown', { cancelable: true, key: 'k', metaKey: true })
+    );
+    render(<CommandPalette />);
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
   });
 
   it('opens the feed from the rss entry', async () => {
