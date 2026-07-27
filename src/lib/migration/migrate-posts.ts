@@ -147,15 +147,13 @@ export const migratePosts = async (
     config: payload.config,
   });
   // `contentDir` is an operator-supplied path from the `migrate:posts` script,
-  // not request input — reading it dynamically is this function's entire job,
-  // so the non-literal-path warnings here are expected rather than suppressible
-  // by restructuring.
-  // eslint-disable-next-line security/detect-non-literal-fs-filename
+  // never request input — reading it dynamically is this function's entire job.
+  // `security/detect-non-literal-fs-filename` is scoped off for this directory
+  // in eslint.config.mjs for exactly that reason.
   const files = (await fs.readdir(contentDir)).filter((f) => f.endsWith('.mdx'));
 
   for (const file of files.sort()) {
     const slug = path.basename(file, '.mdx');
-    // eslint-disable-next-line security/detect-non-literal-fs-filename
     const raw = await fs.readFile(path.join(contentDir, file), 'utf8');
     const { content, data: front } = matter(raw);
 

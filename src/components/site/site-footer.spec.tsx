@@ -38,6 +38,13 @@ describe('SiteFooter', () => {
     expect(github).toHaveAttribute('rel', 'me noopener noreferrer');
   });
 
+  it('omits rel="me" on links that are not identity profiles', () => {
+    render(<SiteFooter />);
+    const source = screen.getByRole('link', { name: /^source/ });
+    expect(source).toHaveAttribute('target', '_blank');
+    expect(source).toHaveAttribute('rel', 'noopener noreferrer');
+  });
+
   it('extends every new-tab link name with an opens-in-new-tab note', () => {
     render(<SiteFooter />);
     for (const name of [/^github/, /^linkedin/, /^source/]) {

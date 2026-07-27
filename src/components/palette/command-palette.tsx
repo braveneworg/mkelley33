@@ -130,9 +130,12 @@ const PaletteDialog = () => {
             className="[&_[cmdk-group-heading]]:text-fg-muted font-mono text-sm [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs"
             label="command palette"
           >
+            {/* No autoFocus attribute: Radix moves focus into the dialog
+                content on open, and the input is its first focusable child,
+                so the palette is typeable immediately without the page-load
+                focus-stealing that jsx-a11y/no-autofocus guards against.
+                Covered by the "lands focus in the search input" spec. */}
             <Command.Input
-              // eslint-disable-next-line jsx-a11y/no-autofocus -- dialog pattern: focus must land in the palette's input when the dialog opens, not remain behind it
-              autoFocus
               className="border-edge bg-canvas text-fg placeholder:text-fg-muted focus:border-phosphor w-full rounded border px-3 py-2 focus:outline-none"
               onValueChange={setQuery}
               placeholder="type a command or search…"

@@ -17,3 +17,17 @@ test('command palette navigates to services', async ({ page }) => {
   await expect(page).toHaveURL(/\/services$/);
   await expect(page.getByRole('heading', { name: /services/ })).toBeVisible();
 });
+
+test('palette input holds focus on open, so typing filters immediately', async ({ page }) => {
+  await page.goto('/');
+  const dialog = page.getByRole('dialog');
+  await page.keyboard.press('ControlOrMeta+k');
+  await expect(dialog).toBeVisible();
+  // The input carries no autoFocus attribute — Radix moves focus into the
+  // dialog content and the input is its first focusable child. Typing without
+  // clicking first is the only way to prove that in a real browser; jsdom's
+  // focus emulation in the unit spec cannot stand in for it.
+  await page.keyboard.type('uses');
+  await expect(dialog.getByPlaceholder(/type a command or search/)).toHaveValue('uses');
+  await expect(dialog.getByText('./uses')).toBeVisible();
+});

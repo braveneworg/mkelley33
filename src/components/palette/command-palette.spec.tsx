@@ -66,6 +66,16 @@ describe('CommandPalette', () => {
     expect(screen.getByText('./uses')).toBeInTheDocument();
   });
 
+  it('lands focus in the search input when it opens', async () => {
+    const user = userEvent.setup();
+    render(<CommandPalette />);
+    await user.keyboard('{Meta>}k{/Meta}');
+    await screen.findByRole('dialog');
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText(/type a command or search/)).toHaveFocus();
+    });
+  });
+
   it('opens on the palette:open window event', async () => {
     render(<CommandPalette />);
     window.dispatchEvent(new Event('palette:open'));

@@ -8,31 +8,38 @@ import { siteConfig } from '@/lib/site-config';
 
 interface FooterLink {
   href: string;
+  /**
+   * A profile this site claims as its own, so the link carries `rel="me"`
+   * for Mastodon / IndieAuth verification. A boolean rather than the `rel`
+   * string itself: it lets the anchor pick between two spelled-out literals,
+   * which is what keeps `react/jsx-no-target-blank` able to verify that
+   * `noopener noreferrer` is always present.
+   */
+  identity: boolean;
   label: string;
-  rel: string;
 }
 
 const externalLinks = (): FooterLink[] => {
-  const candidates: { href: string | null; label: string; rel: string }[] = [
+  const candidates: { href: null | string; identity: boolean; label: string }[] = [
     {
       href: siteConfig.socials.github,
+      identity: true,
       label: 'github',
-      rel: 'me noopener noreferrer',
     },
     {
       href: siteConfig.socials.linkedin,
+      identity: true,
       label: 'linkedin',
-      rel: 'me noopener noreferrer',
     },
     {
       href: siteConfig.socials.bluesky,
+      identity: true,
       label: 'bluesky',
-      rel: 'me noopener noreferrer',
     },
     {
       href: siteConfig.repoUrl,
+      identity: false,
       label: 'source',
-      rel: 'noopener noreferrer',
     },
   ];
   return candidates.filter((candidate): candidate is FooterLink => candidate.href !== null);
@@ -48,10 +55,16 @@ export const SiteFooter = () => (
       <ul className="ml-auto flex flex-wrap gap-x-4">
         {externalLinks().map((link) => (
           <li key={link.label}>
-            {/* eslint-disable-next-line react/jsx-no-target-blank -- rel is
-                data-driven so socials can carry rel="me"; every literal in the
-                candidates list above includes "noopener noreferrer". */}
-            <a className="link-draw hover:text-fg" href={link.href} rel={link.rel} target="_blank">
+            {/* Both rel values are written out in full rather than composed
+                from a shared constant: the lint rule reads the attribute
+                statically, so a computed string would leave it unable to
+                confirm "noreferrer" is there. */}
+            <a
+              className="link-draw hover:text-fg"
+              href={link.href}
+              rel={link.identity ? 'me noopener noreferrer' : 'noopener noreferrer'}
+              target="_blank"
+            >
               {link.label}
               <span className="sr-only"> (opens in new tab)</span>
             </a>
