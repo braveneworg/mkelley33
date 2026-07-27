@@ -3,7 +3,6 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 // @vitest-environment node
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import type * as postsRepo from '@/lib/repositories/posts';
 import type { Post } from '@/payload-types';

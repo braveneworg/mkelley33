@@ -7,8 +7,6 @@ import { promises as fs } from 'fs';
 import os from 'os';
 import path from 'path';
 
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-
 import { migratePosts } from '@/lib/migration/migrate-posts';
 import type { TestPayload } from '@/test/payload-harness';
 import { createTestPayload } from '@/test/payload-harness';

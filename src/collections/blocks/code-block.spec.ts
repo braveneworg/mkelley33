@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-import { describe, expect, it } from 'vitest';
-
 import { CODE_LANGUAGES, CodeBlock } from '@/collections/blocks/code-block';
 
 const jsx = CodeBlock.jsx;

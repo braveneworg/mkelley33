@@ -3,7 +3,6 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 // @vitest-environment node
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { subscribeNewsletter } from '@/lib/actions/newsletter';
 import { sendEmail } from '@/lib/email/transport';

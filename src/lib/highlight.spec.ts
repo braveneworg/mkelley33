@@ -3,7 +3,6 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 // @vitest-environment node
-import { describe, expect, it } from 'vitest';
 
 import { highlightCode } from '@/lib/highlight';
 

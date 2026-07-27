@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-import { describe, expect, it } from 'vitest';
-
 import { ContactSubmissions } from '@/collections/contact-submissions';
 import { Media } from '@/collections/media';
 import { Posts } from '@/collections/posts';

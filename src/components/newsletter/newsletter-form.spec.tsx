@@ -7,7 +7,6 @@ import { forwardRef, useImperativeHandle } from 'react';
 
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { vi } from 'vitest';
 
 import { NewsletterForm } from '@/components/newsletter/newsletter-form';
 import { subscribeNewsletter } from '@/lib/actions/newsletter';

@@ -354,6 +354,36 @@ const eslintConfig = [
       // Test files render raw <a> elements to assert component class behavior, not
       // to navigate — the no-html-link-for-pages rule is inapplicable here.
       '@next/next/no-html-link-for-pages': 'off',
+      // `globals: true` (vitest.config.ts) injects the test primitives and
+      // `types/vitest.d.ts` types them, so importing the same names shadows a
+      // global with an identical binding and drifts from src/AGENTS.md. Types
+      // are exempt: the globals cover values only, so `import type { Mock }`
+      // stays the correct way to reach Vitest's types.
+      '@typescript-eslint/no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              allowTypeImports: true,
+              importNames: [
+                'afterAll',
+                'afterEach',
+                'beforeAll',
+                'beforeEach',
+                'describe',
+                'expect',
+                'it',
+                'suite',
+                'test',
+                'vi',
+              ],
+              message:
+                'Use the Vitest global instead — vitest.config.ts sets `globals: true`, so importing it adds nothing (src/AGENTS.md).',
+              name: 'vitest',
+            },
+          ],
+        },
+      ],
     },
     languageOptions: {
       globals: {

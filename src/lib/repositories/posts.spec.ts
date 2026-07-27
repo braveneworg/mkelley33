@@ -3,7 +3,6 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 // @vitest-environment node
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const find = vi.fn();
 

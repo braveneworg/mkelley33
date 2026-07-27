@@ -5,7 +5,6 @@
 import { act, Suspense } from 'react';
 
 import { render, screen } from '@testing-library/react';
-import { vi } from 'vitest';
 
 import { PostBody } from '@/components/blog/post-body';
 import type { Post } from '@/payload-types';

@@ -3,7 +3,6 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 import { render, screen } from '@testing-library/react';
-import { vi } from 'vitest';
 
 import { NewsletterBeat } from '@/components/home/newsletter-beat';
 

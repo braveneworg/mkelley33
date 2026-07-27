@@ -3,7 +3,6 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 // @vitest-environment node
-import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { TURNSTILE_TEST_SITE_KEY, turnstileSiteKey, verifyTurnstileToken } from '@/lib/turnstile';
 

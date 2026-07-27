@@ -5,7 +5,6 @@
 import type { ReactNode } from 'react';
 
 import { render, screen } from '@testing-library/react';
-import { vi } from 'vitest';
 
 import { SerwistRegister } from '@/components/site/serwist-register';
 

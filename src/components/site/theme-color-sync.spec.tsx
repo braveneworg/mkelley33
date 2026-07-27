@@ -3,7 +3,6 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 import { render } from '@testing-library/react';
-import { vi } from 'vitest';
 
 import { ThemeColorSync } from '@/components/site/theme-color-sync';
 

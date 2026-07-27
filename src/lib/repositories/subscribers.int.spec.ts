@@ -4,8 +4,6 @@
 
 // @vitest-environment node
 
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-
 import { createTestPayload } from '@/test/payload-harness';
 
 import type { Payload } from 'payload';

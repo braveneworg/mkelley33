@@ -4,7 +4,6 @@
 
 // @vitest-environment node
 import { ValidationError } from 'payload';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   confirmSubscriber,
