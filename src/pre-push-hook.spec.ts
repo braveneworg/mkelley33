@@ -5,7 +5,7 @@
 // @vitest-environment node
 
 import { execFileSync, spawn } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 
 /**
  * Repo-policy check for `.husky/pre-push`, not a unit test. The branch guard
@@ -30,9 +30,20 @@ interface HookRun {
   log: string;
 }
 
-const runHook = (refLine: string): Promise<HookRun> =>
+/**
+ * Both shells, because the two disagree in ways that silently break hooks.
+ * macOS `/bin/sh` is bash in POSIX mode and forgives a redirection failure on
+ * a special builtin; dash — `/bin/sh` on Debian and on the CI runners — treats
+ * it as fatal and kills the script with status 2 and no output. A `/dev/tty`
+ * probe written as a brace group did exactly that, so the hook died before it
+ * logged anything anywhere without a controlling terminal. Testing only the
+ * shebang's shell would leave that whole class invisible on a Mac.
+ */
+const SHELLS = ['/bin/sh', '/bin/dash'].filter((shell) => existsSync(shell));
+
+const runHook = (shell: string, refLine: string): Promise<HookRun> =>
   new Promise((resolve) => {
-    const child = spawn('.husky/pre-push', [], { stdio: ['pipe', 'pipe', 'pipe'] });
+    const child = spawn(shell, ['.husky/pre-push'], { stdio: ['pipe', 'pipe', 'pipe'] });
     child.stdout.resume();
     child.stderr.resume();
     child.stdin.end(`${refLine}\n`);
@@ -41,9 +52,10 @@ const runHook = (refLine: string): Promise<HookRun> =>
     });
   });
 
-describe('pre-push branch guard', () => {
+describe.each(SHELLS)('pre-push branch guard under %s', (shell) => {
   it('allows deleting a merged feature branch', async () => {
     const { code, log } = await runHook(
+      shell,
       `(delete) ${ZERO} refs/heads/feature/already-merged ${HEAD_SHA}`
     );
     expect(code).toBe(0);
@@ -52,6 +64,7 @@ describe('pre-push branch guard', () => {
 
   it.each(['main', 'master'])('refuses commits pushed to %s', async (branch) => {
     const { code, log } = await runHook(
+      shell,
       `refs/heads/${branch} ${HEAD_SHA} refs/heads/${branch} ${ZERO}`
     );
     expect(code).toBe(1);
@@ -59,7 +72,7 @@ describe('pre-push branch guard', () => {
   });
 
   it('refuses to delete main, rather than waving it through as a deletion', async () => {
-    const { code, log } = await runHook(`(delete) ${ZERO} refs/heads/main ${HEAD_SHA}`);
+    const { code, log } = await runHook(shell, `(delete) ${ZERO} refs/heads/main ${HEAD_SHA}`);
     expect(code).toBe(1);
     expect(log).toContain("Refusing to push to 'main'");
   });
