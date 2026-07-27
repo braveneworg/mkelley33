@@ -398,38 +398,40 @@ const eslintConfig = [
       },
     },
   },
-  // Security linting (full recommended rule set, applied everywhere).
-  security.configs.recommended,
+  // Security linting: thirteen of the plugin's fourteen recommended rules,
+  // enabled everywhere as errors, with no per-file or per-directory exemption
+  // anywhere in this config. Listed explicitly rather than spread from
+  // `security.configs.recommended` so that omitting one is a visible decision
+  // instead of an override buried further down.
+  //
+  // `security/detect-non-literal-fs-filename` is the omission. It is purely
+  // syntactic — it flags any `fs` call whose path argument is not a string
+  // literal — and all six places this repo reads files are legitimately
+  // dynamic: `src/lib/migration/` walks an operator-supplied content directory
+  // handed to it by the `migrate:posts` CLI, its integration spec writes
+  // fixtures into a `mkdtemp` directory, and `src/license-header.spec.ts`
+  // reads every path `git ls-files` reports. None takes a path from a request,
+  // and nothing short of renaming the `fs` binding to evade detection would
+  // satisfy the rule. Running it would mean carrying permanent exemptions for
+  // code that was never the hazard it describes, so it is not run at all.
+  // Revisit if this codebase ever opens a file from user input.
   {
-    // `detect-object-injection` flags every computed member access, including
-    // the ones TypeScript already proves safe — a `Record<Union, T>` read with
-    // a key of that same union type. Every occurrence in this codebase is that
-    // pattern, so the rule is pure noise here and, under `--max-warnings=0`,
-    // would break the build on correct code. Genuinely dynamic lookups keyed by
-    // untrusted strings use a `Map` instead (see `normalizeLanguage`), which is
-    // safe by construction rather than by lint.
-    rules: { 'security/detect-object-injection': 'off' },
-  },
-  {
-    // Tests are not an attack surface: they build file paths from `mkdtemp`
-    // fixtures and regexes from their own fixture data. The plugin's threat
-    // model (untrusted runtime input reaching `fs`/`RegExp`) does not apply.
-    files: ['**/*.spec.{js,jsx,ts,tsx}', '**/*.int.spec.{js,jsx,ts,tsx}'],
+    plugins: { security },
     rules: {
-      'security/detect-non-literal-fs-filename': 'off',
-      'security/detect-non-literal-regexp': 'off',
+      'security/detect-bidi-characters': 'error',
+      'security/detect-buffer-noassert': 'error',
+      'security/detect-child-process': 'error',
+      'security/detect-disable-mustache-escape': 'error',
+      'security/detect-eval-with-expression': 'error',
+      'security/detect-new-buffer': 'error',
+      'security/detect-no-csrf-before-method-override': 'error',
+      'security/detect-non-literal-regexp': 'error',
+      'security/detect-non-literal-require': 'error',
+      'security/detect-object-injection': 'error',
+      'security/detect-possible-timing-attacks': 'error',
+      'security/detect-pseudoRandomBytes': 'error',
+      'security/detect-unsafe-regex': 'error',
     },
-  },
-  {
-    // The migration module's entire purpose is to walk an operator-supplied
-    // content directory handed to it by the `migrate:posts` CLI script — never
-    // a request parameter — so every `fs` call here takes a computed path by
-    // definition. The rule is syntactic: it flags any non-literal argument, and
-    // no restructuring can satisfy it without renaming the binding to evade
-    // detection, which would hide the pattern rather than fix it. Scoped here
-    // rather than suppressed inline, per src/AGENTS.md.
-    files: ['src/lib/migration/**/*.ts'],
-    rules: { 'security/detect-non-literal-fs-filename': 'off' },
   },
   eslintPluginPrettierRecommended,
   ...pluginQuery.configs['flat/recommended'],

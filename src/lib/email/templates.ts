@@ -3,7 +3,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 import type { ContactReason } from '@/lib/validation/contact';
-import { CONTACT_REASON_LABELS } from '@/lib/validation/contact';
+import { labelForReason } from '@/lib/validation/contact';
 
 export interface EmailContent {
   subject: string;
@@ -22,8 +22,8 @@ export const contactNotificationEmail = (input: ContactNotificationInput): Email
   const servicesLine =
     input.serviceNames.length > 0 ? `\nservices:  ${input.serviceNames.join(', ')}` : '';
   return {
-    subject: `[mkelley33.com] ${CONTACT_REASON_LABELS[input.reason]} — ${input.name}`,
-    text: `$ cat ./inbox/new-message\n\nfrom:      ${input.name} <${input.email}>\nreason:    ${CONTACT_REASON_LABELS[input.reason]}${servicesLine}\n\n${input.message}\n`,
+    subject: `[mkelley33.com] ${labelForReason(input.reason)} — ${input.name}`,
+    text: `$ cat ./inbox/new-message\n\nfrom:      ${input.name} <${input.email}>\nreason:    ${labelForReason(input.reason)}${servicesLine}\n\n${input.message}\n`,
   };
 };
 

@@ -19,15 +19,26 @@ const asArgs = (user: unknown): Parameters<Access>[0] =>
 const ANON = asArgs(undefined);
 const ADMIN = asArgs({ id: 'user-1' });
 
-const accessOf = (
-  collection: CollectionConfig,
-  rule: keyof NonNullable<CollectionConfig['access']>
-) => {
-  const fn = collection.access?.[rule];
+type AccessRule = 'create' | 'delete' | 'read' | 'update';
+
+/**
+ * Resolves a named access rule by explicit property reads rather than a
+ * computed lookup, so the four rules under test are visible in one place and
+ * a typo names a missing rule instead of silently reading `undefined`.
+ */
+const accessOf = (collection: CollectionConfig, rule: AccessRule) => {
+  const access = collection.access ?? {};
+  const rules = new Map<AccessRule, unknown>([
+    ['create', access.create],
+    ['delete', access.delete],
+    ['read', access.read],
+    ['update', access.update],
+  ]);
+  const fn = rules.get(rule);
   if (typeof fn !== 'function') {
     throw new Error(`${collection.slug} has no ${rule} access rule`);
   }
-  return fn;
+  return fn as Access;
 };
 
 describe.each([

@@ -11,7 +11,10 @@ describe('SiteFooter', () => {
   it('renders the copyleft line with the current year', () => {
     render(<SiteFooter />);
     const year = new Date().getFullYear().toString();
-    expect(screen.getByText(new RegExp(`${year} michaux kelley — copyleft`))).toBeInTheDocument();
+    // Substring assertion on the footer's text rather than a built regex —
+    // the year is interpolated data, and toHaveTextContent takes a plain
+    // string.
+    expect(screen.getByRole('contentinfo')).toHaveTextContent(`${year} michaux kelley — copyleft`);
   });
 
   it('renders github and linkedin links', () => {

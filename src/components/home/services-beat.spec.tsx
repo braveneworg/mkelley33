@@ -12,10 +12,14 @@ describe('ServicesBeat', () => {
     render(<ServicesBeat />);
     expect(screen.getByText('ls ./services')).toBeInTheDocument();
     for (const service of SERVICES) {
-      expect(screen.getByRole('link', { name: new RegExp(`${service.slug}/`) })).toHaveAttribute(
-        'href',
-        `/services#${service.slug}`
-      );
+      // Function matcher rather than a regex built from fixture data: the
+      // slug is interpolated, and a plain containment check says what is
+      // meant without compiling a pattern from it.
+      expect(
+        screen.getByRole('link', {
+          name: (accessibleName: string) => accessibleName.includes(`${service.slug}/`),
+        })
+      ).toHaveAttribute('href', `/services#${service.slug}`);
     }
   });
 });

@@ -23,7 +23,7 @@ import { describedBy, ErrorText, FieldError, fieldMessage } from '@/components/u
 import { submitContact } from '@/lib/actions/contact';
 import { turnstileSiteKey } from '@/lib/turnstile';
 import type { ContactFormValues, ContactReason } from '@/lib/validation/contact';
-import { CONTACT_REASON_LABELS, CONTACT_REASONS, contactSchema } from '@/lib/validation/contact';
+import { CONTACT_REASONS, contactSchema, labelForReason } from '@/lib/validation/contact';
 
 import type { TurnstileInstance } from '@marsidev/react-turnstile';
 
@@ -156,7 +156,7 @@ export const ContactForm = ({ services }: { services: ContactServiceOption[] }) 
         >
           {CONTACT_REASONS.map((value) => (
             <option key={value} value={value}>
-              {CONTACT_REASON_LABELS[value]}
+              {labelForReason(value)}
             </option>
           ))}
         </select>

@@ -38,6 +38,15 @@ binding. Everything below it applies only once the thing it names exists.
 - Never suppress lint/type errors — no `eslint-disable`, no `@ts-ignore` /
   `@ts-expect-error` / `@ts-nocheck`. Fix the code, or — only when a rule is
   genuinely inapplicable — scope it in `eslint.config.mjs`.
+- Security rules get no such escape. `eslint-plugin-security` runs thirteen
+  rules everywhere with zero exemptions, enforced by
+  `src/eslint-security.spec.ts`, which resolves the config ESLint would
+  actually apply and fails if any of them is switched off for a path. A rule
+  that genuinely does not fit is left out of the ruleset entirely, with the
+  reason recorded in `eslint.config.mjs` — one visible decision instead of an
+  override per directory. Computed member access on a record trips
+  `detect-object-injection`, so reach for a `Map` (see `labelForReason` and
+  `normalizeLanguage`); this applies in specs too.
 - Prefer destructuring everywhere, including function parameters. Implicit
   return for single-expression bodies; no parens around single params.
 - Imports use path aliases — never `../../` traversal except adjacent files.

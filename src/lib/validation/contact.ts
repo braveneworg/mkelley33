@@ -14,13 +14,24 @@ export const CONTACT_REASONS = [
 
 export type ContactReason = (typeof CONTACT_REASONS)[number];
 
-export const CONTACT_REASON_LABELS: Record<ContactReason, string> = {
-  general: 'general inquiry',
-  mentoring: 'mentoring',
-  other: 'other',
-  services: 'request services',
-  'speaking-writing': 'speaking & writing',
-};
+/**
+ * A Map rather than a `Record`, read through {@link labelForReason} rather
+ * than indexed at each call site. Every consumer previously did a computed
+ * member access on a plain object; one total accessor keeps the lookup in a
+ * single place and gives callers a `string` instead of a value the type
+ * system merely promises is present.
+ */
+const CONTACT_REASON_LABELS = new Map<ContactReason, string>([
+  ['general', 'general inquiry'],
+  ['mentoring', 'mentoring'],
+  ['other', 'other'],
+  ['services', 'request services'],
+  ['speaking-writing', 'speaking & writing'],
+]);
+
+/** Human-readable label for a reason, falling back to the raw value. */
+export const labelForReason = (reason: ContactReason): string =>
+  CONTACT_REASON_LABELS.get(reason) ?? reason;
 
 export const contactSchema = z
   .object({
