@@ -111,7 +111,11 @@ pnpm run format               # Prettier write (format:check = no write)
   storage only for non-sensitive client state.
 - Dependencies: reuse an existing one before adding (check `package.json`);
   weigh bundle size, maintenance, security, and MPL-2.0 compatibility.
-- Add the MPL header from `HEADER.txt` to every new source file. AI-generated
+- Add the MPL header from `HEADER.txt` to every new source file, above any
+  `'use client'` directive or `@vitest-environment` docblock and below a
+  shebang. `src/license-header.spec.ts` enforces this across every tracked
+  source file, so a missing header fails the suite rather than going
+  unnoticed; generated files are exempted by name there. AI-generated
   markdown goes in `docs/auto-generated/`; never author docs from files
   outside this repo. Never commit generated files or build artifacts.
 - When editing a line, confirm nearby comments are still accurate.
