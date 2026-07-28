@@ -7,31 +7,30 @@
 import { readFileSync } from 'node:fs';
 
 /**
- * Repo-policy check, not a unit test. Two files declare a Node version and
- * nothing links them: `.nvmrc` is the version actually installed — by `nvm`
- * locally and by `node-version-file` in all three jobs of
- * `.github/workflows/ci.yml` — while `engines.node` is the floor pnpm
- * enforces on install and the range Vercel reads to choose a function
- * runtime. Raise the floor past `.nvmrc` and every install fails the engines
- * check; the mismatch is invisible in review because the two values sit in
- * different files and neither mentions the other.
+ * Repo-policy check, not a unit test. Two files name a Node version and
+ * nothing links them. `.nvmrc` is the version actually installed — by `nvm`
+ * locally and by `node-version-file` in every job of
+ * `.github/workflows/ci.yml`, including the `deploy` job, whose
+ * `vercel build --prod` step compiles the very artifact production executes.
+ * `engines.node` is the floor pnpm enforces, and `engineStrict` in
+ * `pnpm-workspace.yaml` makes a mismatch a non-zero exit rather than a
+ * warning.
  *
- * Both values are required to be a plain `x.y.z` rather than a general semver
- * range, so this comparison stays honest without pulling in `semver` — which
- * is not a direct dependency and so is not importable under pnpm.
+ * They are required to name the *same* version, not merely compatible ones,
+ * because the binding constraint is a ceiling: Vercel's `nodejs24.x` runtime
+ * tops out at the version named here, and a `>=` floor cannot express a
+ * ceiling. Left to satisfy the floor alone, `.nvmrc` could drift upward and
+ * CI would ship an artifact built against a Node the functions never run —
+ * silently, since the two values sit in different files and neither mentions
+ * the other. Raising this pin means editing both files together, and
+ * confirming Vercel supports the new version before you do.
  */
 
-interface Semver {
-  major: number;
-  minor: number;
-  patch: number;
-}
+/** `engines.node`: a `>=` floor naming one exact version, not a range. */
+const ENGINES_FLOOR = /^>=(\d+\.\d+\.\d+)$/;
 
-/** `engines.node`: a `>=` floor, deliberately not a caret or `x` range. */
-const ENGINES_FLOOR = /^>=(\d+)\.(\d+)\.(\d+)$/;
-
-/** `.nvmrc`: one exact version, `v` prefix optional. */
-const NVMRC_VERSION = /^v?(\d+)\.(\d+)\.(\d+)$/;
+/** `.nvmrc`: the same version, `v`-prefixed. */
+const NVMRC_VERSION = /^v(\d+\.\d+\.\d+)$/;
 
 const enginesNode = (): string => {
   const packageJson: unknown = JSON.parse(readFileSync('package.json', 'utf8'));
@@ -40,24 +39,14 @@ const enginesNode = (): string => {
 
 const nvmrc = (): string => readFileSync('.nvmrc', 'utf8').trim();
 
-const parse = (value: string, pattern: RegExp): Semver => {
-  const match = pattern.exec(value);
+/** The bare `x.y.z` inside a declaration, or a failure naming what was found. */
+const versionIn = (declaration: string, pattern: RegExp): string => {
+  const match = pattern.exec(declaration);
   if (match === null) {
-    throw new Error(`not a plain x.y.z version: "${value}"`);
+    throw new Error(`does not name one exact version: "${declaration}"`);
   }
-  const [, major, minor, patch] = match;
-  return { major: Number(major), minor: Number(minor), patch: Number(patch) };
-};
-
-/** True when `version` is at or above `floor`, compared field by field. */
-const satisfies = (version: Semver, floor: Semver): boolean => {
-  if (version.major !== floor.major) {
-    return version.major > floor.major;
-  }
-  if (version.minor !== floor.minor) {
-    return version.minor > floor.minor;
-  }
-  return version.patch >= floor.patch;
+  const [, version] = match;
+  return version;
 };
 
 describe('Node version declarations', () => {
@@ -65,13 +54,11 @@ describe('Node version declarations', () => {
     expect(enginesNode()).toMatch(ENGINES_FLOOR);
   });
 
-  it('states .nvmrc as a single exact version', () => {
+  it('states .nvmrc as a single v-prefixed version', () => {
     expect(nvmrc()).toMatch(NVMRC_VERSION);
   });
 
-  it('installs a .nvmrc version that satisfies the engines.node floor', () => {
-    const installed = parse(nvmrc(), NVMRC_VERSION);
-    const floor = parse(enginesNode(), ENGINES_FLOOR);
-    expect(satisfies(installed, floor)).toBe(true);
+  it('installs exactly the Node the engines floor names', () => {
+    expect(versionIn(nvmrc(), NVMRC_VERSION)).toBe(versionIn(enginesNode(), ENGINES_FLOOR));
   });
 });

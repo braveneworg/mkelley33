@@ -9,6 +9,18 @@ values — if anything required is missing or anything forbidden is set.
 If the Vercel project also has Git auto-deploy enabled, disable it
 (Project → Settings → Git) so pushes don't double-build.
 
+## Node version
+
+`.nvmrc` and `engines.node` in `package.json` must name the same version, and
+that version is capped by Vercel: `nodejs24.x`, the runtime the deployed
+functions execute on, tops out at **24.15.0**. The `deploy` job runs
+`vercel build --prod` on the runner's `.nvmrc` Node, so a newer version there
+compiles the artifact against a Node production never runs — a skew nothing
+else would report. `src/node-version.spec.ts` pins the two files together.
+
+Raise the pin only after confirming Vercel supports the newer version, and
+edit both files in the same commit.
+
 ## One-time bootstrap
 
 1. `pnpm exec vercel link` locally, once, to create/attach the Vercel
