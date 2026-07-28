@@ -2,6 +2,11 @@
 # formatting applied here is reverted on the next run.
 src/payload-types.ts
 
+# Same, rewritten by `pnpm run generate:importmap` and the admin bundler.
+# Without this, `pnpm run lint` reformats it on every run and leaves the tree
+# dirty — including from the pre-push hook, after a push has succeeded.
+src/app/(payload)/admin/importMap.js
+
 # Agent state and agent-authored planning docs, not hand-maintained source.
 # ESLint ignores these for the same reason.
 .claude/
