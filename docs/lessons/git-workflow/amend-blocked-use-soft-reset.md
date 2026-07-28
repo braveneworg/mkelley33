@@ -40,6 +40,23 @@ diff <(git rev-list --pretty=%T <backup> --not main | grep -v '^commit') \
      <(git rev-list --pretty=%T HEAD      --not main | grep -v '^commit')
 ```
 
+## What actually trips `footer-leading-blank`
+
+Worth knowing before writing the message, since the fix is a reword and the
+reword costs a soft reset. The conventional-commits parser reads any body
+line beginning `<token>:` as the start of a footer, so an ordinary prose line
+that happens to open with a word and a colon —
+
+```text
+run: `import-x/no-duplicates` merges the duplicate imports
+```
+
+— becomes a footer with no blank line above it, and the warning fires on a
+message that has no footer in it at all. Nothing about the wrapping or the
+line length is at fault. Start such a line with anything else (`It ran:`, or
+move the colon off the front) and it parses as body.
+
 **History:** 2026-07-26, Phase 5 — first hit fixing a `footer-leading-blank`
 warning, then again stripping the trailers described in
-[agents-md-outranks-plan-docs](agents-md-outranks-plan-docs.md).
+[agents-md-outranks-plan-docs](agents-md-outranks-plan-docs.md). Hit twice
+more on 2026-07-27 in PR #15, which is when the cause above was pinned down.
