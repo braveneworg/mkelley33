@@ -40,6 +40,36 @@ edit both files in the same commit.
 | `VERCEL_ORG_ID`     | `orgId` from `.vercel/project.json`     |
 | `VERCEL_PROJECT_ID` | `projectId` from `.vercel/project.json` |
 
+### Pushing the GitHub secrets from the CLI
+
+`gh secret set NAME` with no `--body` prompts for the value and reads it
+without echoing, so nothing lands in shell history or `ps`. Repository
+secrets are the default level; `--app actions` is explicit about which
+consumer gets them.
+
+```bash
+gh secret set VERCEL_TOKEN --app actions          # paste at the prompt
+gh secret set VERCEL_ORG_ID --app actions
+gh secret set VERCEL_PROJECT_ID --app actions
+```
+
+The two IDs are not secret and already sit in `.vercel/project.json`, so
+they can be piped straight across:
+
+```bash
+gh secret set VERCEL_ORG_ID --app actions \
+  --body "$(jq -r .orgId .vercel/project.json)"
+gh secret set VERCEL_PROJECT_ID --app actions \
+  --body "$(jq -r .projectId .vercel/project.json)"
+```
+
+Do **not** pass `VERCEL_TOKEN` via `--body` — the value would be captured
+in shell history. Verify by name only; `gh` never prints a stored value:
+
+```bash
+gh secret list --app actions
+```
+
 ## Vercel project env (Production)
 
 Runtime config cannot live in GitHub secrets — Vercel functions read it at
@@ -61,11 +91,100 @@ if any is absent or empty.
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | real Turnstile site key (public, baked at build) |
 | `TURNSTILE_SECRET_KEY`           | real Turnstile secret key                        |
 
+### Pushing the project env from the CLI
+
+The dashboard and `vercel env add` write the same store; the CLI is the
+faster path for the tail end of the list. Run from the linked checkout (or
+add `--project mkelley33`). With no `--value`, the command prompts for the
+value and does not echo it, which is what you want for every secret here.
+
+The real secrets — never readable again once stored, which is the point:
+
+```bash
+pnpm exec vercel env add DATABASE_URL production --sensitive
+pnpm exec vercel env add PAYLOAD_SECRET production --sensitive
+pnpm exec vercel env add BLOB_READ_WRITE_TOKEN production --sensitive
+pnpm exec vercel env add SMTP_USER production --sensitive
+pnpm exec vercel env add SMTP_PASS production --sensitive
+pnpm exec vercel env add TURNSTILE_SECRET_KEY production --sensitive
+```
+
+The rest are configuration, not credentials. Store them readable so a later
+"what is this set to?" is answerable without a rotation:
+
+```bash
+pnpm exec vercel env add SMTP_HOST production --no-sensitive
+pnpm exec vercel env add SMTP_PORT production --no-sensitive
+pnpm exec vercel env add EMAIL_FROM production --no-sensitive
+pnpm exec vercel env add CONTACT_TO production --no-sensitive
+pnpm exec vercel env add NEXT_PUBLIC_TURNSTILE_SITE_KEY production --no-sensitive
+```
+
+`NEXT_PUBLIC_TURNSTILE_SITE_KEY` belongs in that second group by
+definition: it ships in the client bundle, so hiding it from the dashboard
+protects nothing and only costs you the ability to check it.
+
+Anything a preview deployment also needs takes a comma-separated target —
+`pnpm exec vercel env add DATABASE_URL production,preview --sensitive`.
+Only Production is audited by the preflight; preview builds fail open the
+same way local dev does.
+
+Replacing an existing value — the only way to change a sensitive one —
+takes `--force`:
+
+```bash
+pnpm exec vercel env add SMTP_PASS production --sensitive --force
+```
+
+`--value` exists for non-interactive use and puts the secret in shell
+history — reach for a pipe or a file instead when a prompt is not an
+option:
+
+```bash
+pnpm exec vercel env add SMTP_PASS production --sensitive < smtp-pass.txt
+rm smtp-pass.txt
+```
+
+`SMTP_PASS` is not the AWS secret access key: SES wants an SMTP password
+derived from it, which `scripts/derive-smtp-credentials.ts` computes.
+The key is passed as an argument, so it is visible in `ps` for the life of
+the command — fine on your own machine, not on a shared host:
+
+```bash
+pnpm exec tsx scripts/derive-smtp-credentials.ts "$AWS_SECRET_ACCESS_KEY" us-east-2 \
+  | pnpm exec vercel env add SMTP_PASS production --sensitive
+```
+
+### Checking what is still missing
+
+`vercel env ls` prints names, targets, and ages. Sensitive variables render
+as `Encrypted`; non-sensitive ones show a truncated prefix of the value, so
+skim the output before pasting it into a ticket:
+
+```bash
+pnpm exec vercel env ls production
+```
+
+To run the exact audit CI runs, pull production env to the same git-ignored
+path the deploy job uses and hand it to the preflight. It reports missing
+and forbidden names, never values:
+
+```bash
+pnpm exec vercel pull --yes --environment=production
+pnpm exec tsx scripts/check-deploy-env.ts .vercel/.env.production.local
+```
+
+That file holds real production secrets. It is git-ignored under `.vercel/`
+— leave it there, and delete it when you are done.
+
 Forbidden in Production (the audit fails the deploy if set):
 
 | Variable           | Why                                                        |
 | ------------------ | ---------------------------------------------------------- |
 | `EMAIL_LOG_UNSENT` | E2E-only: logs full email bodies incl. confirm-link tokens |
+
+If the audit names it, drop it:
+`pnpm exec vercel env rm EMAIL_LOG_UNSENT production`.
 
 The app itself fails open when mail/Turnstile config is absent (JSON email
 transport, Cloudflare test keys) — right for resilience, wrong as a deploy
