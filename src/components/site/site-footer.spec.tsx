@@ -29,9 +29,12 @@ describe('SiteFooter', () => {
     );
   });
 
-  it('hides links whose URLs are not yet supplied', () => {
+  it('renders the bluesky link', () => {
     render(<SiteFooter />);
-    expect(screen.queryByRole('link', { name: 'bluesky' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /^bluesky/ })).toHaveAttribute(
+      'href',
+      siteConfig.socials.bluesky
+    );
   });
 
   it('marks external links as safe new-tab links', () => {
@@ -50,7 +53,7 @@ describe('SiteFooter', () => {
 
   it('extends every new-tab link name with an opens-in-new-tab note', () => {
     render(<SiteFooter />);
-    for (const name of [/^github/, /^linkedin/, /^source/]) {
+    for (const name of [/^github/, /^linkedin/, /^bluesky/, /^source/]) {
       expect(screen.getByRole('link', { name })).toHaveAccessibleName(/\(opens in new tab\)$/);
     }
   });
