@@ -10,10 +10,10 @@ export interface SiteConfig {
   name: string;
   /** Public repo for the "open source on GitHub" links — owner supplies later. */
   repoUrl: string | null;
-  /** Path under /public to the resume PDF; null until the owner supplies it. */
+  /** Path under /public to the resume PDF; null hides the CV download button. */
   resumePdf: string | null;
   socials: {
-    /** Owner supplies later; footer hides the link while null. */
+    /** null hides it from the footer, the command palette, and JSON-LD sameAs. */
     bluesky: string | null;
     github: string;
     linkedin: string;
@@ -30,9 +30,9 @@ export const siteConfig: SiteConfig = {
   headshot: '/headshot.webp',
   name: 'Michaux Kelley',
   repoUrl: 'https://github.com/braveneworg/mkelley33',
-  resumePdf: null,
+  resumePdf: '/michaux-kelley-resume.pdf',
   socials: {
-    bluesky: null,
+    bluesky: 'https://bsky.app/profile/mkelley33.com',
     github: 'https://github.com/mkelley33',
     linkedin: 'https://www.linkedin.com/in/mkelley33',
   },

@@ -6,6 +6,7 @@ import { render, screen } from '@testing-library/react';
 
 import { CvDocument } from '@/components/cv/cv-document';
 import { CV_EDUCATION, CV_EXPERIENCE, CV_SKILLS } from '@/lib/cv-content';
+import { siteConfig } from '@/lib/site-config';
 
 describe('CvDocument', () => {
   it('renders summary, every skill group, every role, and education', () => {
@@ -32,6 +33,16 @@ describe('CvDocument', () => {
     expect(screen.getByRole('link', { name: /download pdf/i })).toHaveAttribute(
       'href',
       '/michaux-kelley-resume.pdf'
+    );
+  });
+
+  // Pins the shipped default, not just the prop: the page renders <CvDocument />
+  // with no arguments, so a null in site-config would silently drop the button.
+  it('defaults to the resume configured in site config', () => {
+    render(<CvDocument />);
+    expect(screen.getByRole('link', { name: /download pdf/i })).toHaveAttribute(
+      'href',
+      siteConfig.resumePdf
     );
   });
 });
