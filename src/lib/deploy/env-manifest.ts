@@ -52,3 +52,44 @@ export const auditDeployEnv = (presentKeys: Iterable<string>): DeployEnvAudit =>
     missing: REQUIRED_DEPLOY_ENV.filter((name) => !present.has(name)).sort(),
   };
 };
+
+export interface DeployEnvFormat {
+  /** Shown to whoever has to fix the value — never the value itself. */
+  hint: string;
+  pattern: RegExp;
+}
+
+/**
+ * Shapes for the vars where a present-but-wrong value fails silently at
+ * deploy time instead of loudly at audit time.
+ *
+ * BLOB_READ_WRITE_TOKEN earns its place: src/payload.config.ts registers the
+ * Vercel Blob adapter whenever the var is truthy, and the adapter throws on a
+ * token it cannot parse. That throw happens inside buildConfig, so Payload
+ * never initializes and every route that touches it — the whole /admin —
+ * fails, while the presence-only audit reports a healthy environment.
+ *
+ * A name absent from this map is unconstrained; only add one where the format
+ * is genuinely fixed, since a too-strict pattern blocks a valid deploy.
+ */
+export const DEPLOY_ENV_FORMATS: ReadonlyMap<string, DeployEnvFormat> = new Map([
+  [
+    'BLOB_READ_WRITE_TOKEN',
+    {
+      hint: 'vercel_blob_rw_<store id>_<random string>',
+      pattern: /^vercel_blob_rw_[A-Za-z0-9]+_[A-Za-z0-9]+$/,
+    },
+  ],
+]);
+
+/**
+ * Audits env-var VALUES against the format map and returns the NAMES that
+ * fail, sorted. Values enter this function but never leave it — the return is
+ * names only, so a caller cannot accidentally print a secret it rejected.
+ * Names with no declared format pass untouched.
+ */
+export const auditDeployEnvFormats = (entries: Iterable<readonly [string, string]>): string[] =>
+  [...entries]
+    .filter(([name, value]) => DEPLOY_ENV_FORMATS.get(name)?.pattern.test(value) === false)
+    .map(([name]) => name)
+    .sort();

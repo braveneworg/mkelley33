@@ -4,7 +4,8 @@ Deploys run from the `deploy` job in `.github/workflows/ci.yml`: every push
 to `main` that passes both gates (`ci`, `e2e`) is built with the Vercel CLI
 and promoted to production. A preflight audits the production env against
 `src/lib/deploy/env-manifest.ts` and fails the deploy — naming names, never
-values — if anything required is missing or anything forbidden is set.
+values — if anything required is missing, anything forbidden is set, or a
+value with a known shape does not match it.
 
 Vercel's own Git integration would otherwise promote the same commit in
 parallel, racing two builds to the production alias and skipping both the
@@ -166,8 +167,8 @@ pnpm exec vercel env ls production
 ```
 
 To run the exact audit CI runs, pull production env to the same git-ignored
-path the deploy job uses and hand it to the preflight. It reports missing
-and forbidden names, never values:
+path the deploy job uses and hand it to the preflight. It reports missing,
+forbidden, and malformed names, never values:
 
 ```bash
 pnpm exec vercel pull --yes --environment=production
@@ -185,6 +186,20 @@ Forbidden in Production (the audit fails the deploy if set):
 
 If the audit names it, drop it:
 `pnpm exec vercel env rm EMAIL_LOG_UNSENT production`.
+
+Checked for shape as well as presence (`DEPLOY_ENV_FORMATS`):
+
+| Variable                | Must look like                              |
+| ----------------------- | ------------------------------------------- |
+| `BLOB_READ_WRITE_TOKEN` | `vercel_blob_rw_<store id>_<random string>` |
+
+A present-but-unparseable Blob token is worse than a missing one:
+`src/payload.config.ts` registers the Blob adapter whenever the var is
+truthy, the adapter throws inside `buildConfig`, and Payload never
+initializes — so `/admin` fails while the site itself renders. Presence alone
+could not see that, which is why the shape is checked too. If you have no
+Blob store yet, unset the var rather than parking a placeholder in it; the
+config skips the plugin when it is absent.
 
 The app itself fails open when mail/Turnstile config is absent (JSON email
 transport, Cloudflare test keys) — right for resilience, wrong as a deploy

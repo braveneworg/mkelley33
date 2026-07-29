@@ -5,16 +5,21 @@
 /**
  * Deploy preflight: audits the env file `vercel pull` wrote against the
  * manifest in src/lib/deploy/env-manifest.ts and fails the deploy if any
- * required name is absent/empty or any forbidden name is set.
+ * required name is absent/empty, any forbidden name is set, or any value
+ * with a known shape does not match it.
  *
- * Only KEY NAMES are ever read into the report — values never leave this
- * process, so the output is safe for CI logs.
+ * Only KEY NAMES are ever reported — values are read to check their format
+ * but never leave this process, so the output is safe for CI logs.
  *
  * Usage: pnpm exec tsx scripts/check-deploy-env.ts .vercel/.env.production.local
  */
 import { readFileSync } from 'node:fs';
 
-import { auditDeployEnv } from '../src/lib/deploy/env-manifest';
+import {
+  auditDeployEnv,
+  auditDeployEnvFormats,
+  DEPLOY_ENV_FORMATS,
+} from '../src/lib/deploy/env-manifest';
 
 const envFilePath = process.argv[2];
 if (!envFilePath) {
@@ -33,14 +38,18 @@ try {
 // A key counts as present only when it has a non-empty value; `KEY=` or
 // `KEY=""` behaves like an unset var in this app (falsy checks gate the
 // email transport and Turnstile fallbacks), so treat it as missing.
-const presentKeys = raw
+const entries = raw
   .split('\n')
   .map((line) => /^(?<key>[A-Za-z_][A-Za-z0-9_]*)=(?<value>.*)$/.exec(line.trim()))
   .filter((match) => match !== null)
-  .filter((match) => (match.groups?.value ?? '').replace(/^["']|["']$/g, '').length > 0)
-  .map((match) => match.groups?.key ?? '');
+  .map(({ groups }): readonly [string, string] => [
+    groups?.key ?? '',
+    (groups?.value ?? '').replace(/^["']|["']$/g, ''),
+  ])
+  .filter(([, value]) => value.length > 0);
 
-const { forbidden, missing } = auditDeployEnv(presentKeys);
+const { forbidden, missing } = auditDeployEnv(entries.map(([key]) => key));
+const malformed = auditDeployEnvFormats(entries);
 
 for (const name of missing) {
   console.error(
@@ -50,10 +59,16 @@ for (const name of missing) {
 for (const name of forbidden) {
   console.error(`forbidden: ${name} — remove it from the Vercel project env (Production)`);
 }
-
-if (missing.length > 0 || forbidden.length > 0) {
+for (const name of malformed) {
+  // The hint describes the shape; the rejected value is never printed.
   console.error(
-    `deploy env audit failed (${String(missing.length)} missing, ${String(forbidden.length)} forbidden) — see docs/deploy.md`
+    `malformed: ${name} — set it to a value shaped like ${DEPLOY_ENV_FORMATS.get(name)?.hint ?? 'its documented format'}`
+  );
+}
+
+if (missing.length > 0 || forbidden.length > 0 || malformed.length > 0) {
+  console.error(
+    `deploy env audit failed (${String(missing.length)} missing, ${String(forbidden.length)} forbidden, ${String(malformed.length)} malformed) — see docs/deploy.md`
   );
   process.exit(1);
 }
