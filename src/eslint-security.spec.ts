@@ -56,19 +56,26 @@ describe.each(SAMPLES)('security rules resolved for %s', (file) => {
    * pattern `detect-object-injection` flags, and that rule now applies to spec
    * files too — this very file was its first catch.
    */
-  const configFor = async (): Promise<Map<string, unknown>> => {
-    const config: unknown = await new ESLint().calculateConfigForFile(file);
-    const rules = (config as { rules?: Record<string, unknown> }).rules ?? {};
-    return new Map(Object.entries(rules));
-  };
+  let rules: Map<string, unknown> = new Map();
 
-  it.each(ENABLED)('enables %s', async (rule) => {
-    const rules = await configFor();
+  /**
+   * Resolved once per file, not per test: `calculateConfigForFile` loads the
+   * whole plugin graph behind `eslint.config.mjs`, and doing that per test
+   * (28 resolutions) intermittently blew vitest's 5s default under a cold
+   * module cache with the full suite's workers contending. The explicit
+   * timeout budgets the one genuinely slow step instead of every assertion.
+   */
+  beforeAll(async () => {
+    const config: unknown = await new ESLint().calculateConfigForFile(file);
+    const record = (config as { rules?: Record<string, unknown> }).rules ?? {};
+    rules = new Map(Object.entries(record));
+  }, 30_000);
+
+  it.each(ENABLED)('enables %s', (rule) => {
     expect(severityOf(rules.get(rule))).toBeGreaterThan(0);
   });
 
-  it(`leaves ${NOT_RUN} out of the ruleset entirely`, async () => {
-    const rules = await configFor();
+  it(`leaves ${NOT_RUN} out of the ruleset entirely`, () => {
     expect(rules.has(NOT_RUN)).toBe(false);
   });
 });
