@@ -10,8 +10,8 @@ import { readFileSync } from 'node:fs';
  * Repo-policy check, not a unit test. Two independent things can promote this
  * project to production: Vercel's own Git integration, which builds on every
  * push it is told about, and the `deploy` job in `.github/workflows/ci.yml`,
- * which runs `vercel deploy --prebuilt --prod` after both gates pass. Exactly
- * one of them may own `main`.
+ * which runs `vercel deploy --prod` after both gates pass. Exactly one of
+ * them may own `main`.
  *
  * The `deploy` job owns it, because only that path runs the env preflight
  * (`scripts/check-deploy-env.ts`) and waits on `e2e`. Git auto-deploy has

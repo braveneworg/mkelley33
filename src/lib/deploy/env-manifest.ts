@@ -71,6 +71,13 @@ export interface DeployEnvFormat {
  *
  * A name absent from this map is unconstrained; only add one where the format
  * is genuinely fixed, since a too-strict pattern blocks a valid deploy.
+ *
+ * NEVER add a name stored as a sensitive Vercel variable. `vercel pull`
+ * cannot read those back — it writes a redaction marker — so the pattern
+ * would test the marker and fail every deploy while the stored value is
+ * perfectly good. BLOB_READ_WRITE_TOKEN is checkable only because the Blob
+ * store connection creates it, rather than `vercel env add --sensitive`.
+ * See docs/deploy.md, "Why Vercel builds, not the runner".
  */
 export const DEPLOY_ENV_FORMATS: ReadonlyMap<string, DeployEnvFormat> = new Map([
   [

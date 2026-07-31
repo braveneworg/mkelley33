@@ -3,7 +3,8 @@
 Deeper rules: [`src/app/AGENTS.md`](app/AGENTS.md) (UI, forms, styling),
 [`src/lib/AGENTS.md`](lib/AGENTS.md) (server layer). Load
 `docs/lessons/testing/` before work on test harnesses, E2E, or child
-processes — it is currently the only lessons category.
+processes, and `docs/lessons/deploy/` before touching the deploy job, the
+Vercel env, or the preflight — see the full table in the root `AGENTS.md`.
 
 Everything above "Not here yet" describes the codebase as it stands and is
 binding. Everything below it applies only once the thing it names exists.

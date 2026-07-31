@@ -10,20 +10,24 @@ import { readFileSync } from 'node:fs';
  * Repo-policy check, not a unit test. Two files name a Node version and
  * nothing links them. `.nvmrc` is the version actually installed — by `nvm`
  * locally and by `node-version-file` in every job of
- * `.github/workflows/ci.yml`, including the `deploy` job, whose
- * `vercel build --prod` step compiles the very artifact production executes.
- * `engines.node` is the floor pnpm enforces, and `engineStrict` in
- * `pnpm-workspace.yaml` makes a mismatch a non-zero exit rather than a
- * warning.
+ * `.github/workflows/ci.yml`. `engines.node` is the floor pnpm enforces, and
+ * `engineStrict` in `pnpm-workspace.yaml` makes a mismatch a non-zero exit
+ * rather than a warning.
  *
  * They are required to name the *same* version, not merely compatible ones,
  * because the binding constraint is a ceiling: Vercel's `nodejs24.x` runtime
  * tops out at the version named here, and a `>=` floor cannot express a
  * ceiling. Left to satisfy the floor alone, `.nvmrc` could drift upward and
- * CI would ship an artifact built against a Node the functions never run —
- * silently, since the two values sit in different files and neither mentions
- * the other. Raising this pin means editing both files together, and
- * confirming Vercel supports the new version before you do.
+ * the suite would validate the code against a Node the deployed functions
+ * never run — silently, since the two values sit in different files and
+ * neither mentions the other. Raising this pin means editing both files
+ * together, and confirming Vercel supports the new version before you do.
+ *
+ * The production artifact is no longer built here: `deploy` runs
+ * `vercel deploy --prod` and Vercel compiles it on its own Node (see
+ * src/deploy-workflow.spec.ts). That removes one way a skew could ship, and
+ * leaves this pin covering what the runner still does on `.nvmrc` Node —
+ * typecheck, lint, unit tests, and the whole `e2e` job.
  */
 
 /** `engines.node`: a `>=` floor naming one exact version, not a range. */
