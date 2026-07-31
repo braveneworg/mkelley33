@@ -1,8 +1,11 @@
 # Deploying mkelley33.com
 
 Deploys run from the `deploy` job in `.github/workflows/ci.yml`: every push
-to `main` that passes both gates (`ci`, `e2e`) is built with the Vercel CLI
-and promoted to production. A preflight audits the production env against
+to `main` that passes both gates (`ci`, `e2e`) is shipped with
+`vercel deploy --prod`, which uploads the source and lets **Vercel** build it.
+The runner deliberately does not build the production artifact — see
+"Why Vercel builds, not the runner" below. A preflight audits the production
+env against
 `src/lib/deploy/env-manifest.ts` and fails the deploy — naming names, never
 values — if anything required is missing, anything forbidden is set, or a
 value with a known shape does not match it.
@@ -18,10 +21,11 @@ would silently restore the double-build.
 
 `.nvmrc` and `engines.node` in `package.json` must name the same version, and
 that version is capped by Vercel: `nodejs24.x`, the runtime the deployed
-functions execute on, tops out at **24.15.0**. The `deploy` job runs
-`vercel build --prod` on the runner's `.nvmrc` Node, so a newer version there
-compiles the artifact against a Node production never runs — a skew nothing
-else would report. `src/node-version.spec.ts` pins the two files together.
+functions execute on, tops out at **24.15.0**. The runner uses that Node for
+typecheck, lint, unit tests, and the whole `e2e` job, so a newer version there
+validates the code against a Node the deployed functions never run — a skew
+nothing else would report. `src/node-version.spec.ts` pins the two files
+together.
 
 Raise the pin only after confirming Vercel supports the newer version, and
 edit both files in the same commit.
@@ -104,11 +108,26 @@ The real secrets — never readable again once stored, which is the point:
 ```bash
 pnpm exec vercel env add DATABASE_URL production --sensitive
 pnpm exec vercel env add PAYLOAD_SECRET production --sensitive
-pnpm exec vercel env add BLOB_READ_WRITE_TOKEN production --sensitive
 pnpm exec vercel env add SMTP_USER production --sensitive
 pnpm exec vercel env add SMTP_PASS production --sensitive
 pnpm exec vercel env add TURNSTILE_SECRET_KEY production --sensitive
 ```
+
+`BLOB_READ_WRITE_TOKEN` is deliberately **not** in that list. Connecting a
+Blob store injects it, so create the store with the environment attached
+rather than pasting the value:
+
+```bash
+pnpm exec vercel blob create-store mkelley33-media \
+  --access public --environment production
+```
+
+Adding it by hand with `--sensitive` would make it unreadable to
+`vercel pull`, and its entry in `DEPLOY_ENV_FORMATS` would then test a
+redaction marker and fail every deploy. There is no `connect-store`
+subcommand: reattaching an existing store is a dashboard action, and deleting
+the project's env var does not sever the connection — which leaves a store
+that looks connected while injecting nothing.
 
 The rest are configuration, not credentials. Store them readable so a later
 "what is this set to?" is answerable without a rotation:
@@ -187,7 +206,34 @@ Forbidden in Production (the audit fails the deploy if set):
 If the audit names it, drop it:
 `pnpm exec vercel env rm EMAIL_LOG_UNSENT production`.
 
-Checked for shape as well as presence (`DEPLOY_ENV_FORMATS`):
+## Why Vercel builds, not the runner
+
+`vercel pull` **cannot read back a variable stored as sensitive**. It writes a
+redaction marker in place of the value. The tell is that every sensitive
+variable pulls the _same_ short string — on 2026-07-30, `DATABASE_URL`,
+`PAYLOAD_SECRET`, `SMTP_PASS`, `SMTP_USER` and `TURNSTILE_SECRET_KEY` all
+came back as one identical 11-character value.
+
+Building on the runner (`vercel build --prod` + `vercel deploy --prebuilt`)
+therefore compiled production against those markers. The failure looked
+nothing like its cause: a `MongoParseError: Invalid scheme` raised inside
+`new ConnectionString(...)` — thrown before a socket is opened, so it reads
+like a network or IP-allowlist fault and is not one. No Atlas access list can
+fix a string the driver never dials.
+
+`vercel deploy --prod` uploads the source and builds on Vercel, where the real
+values are injected. It costs build minutes and a slower pipeline. That is the
+price of a build that can see its own secrets, and
+`src/deploy-workflow.spec.ts` pins it so the faster-looking flow cannot come
+back.
+
+**Consequence for the preflight:** for a sensitive variable it can only assert
+presence, because it sees a marker rather than a value. Never add a sensitive
+name to `DEPLOY_ENV_FORMATS` — the pattern would test the marker and fail
+every deploy while the stored value is perfectly good.
+
+Checked for shape as well as presence (`DEPLOY_ENV_FORMATS`) — non-sensitive
+variables only:
 
 | Variable                | Must look like                              |
 | ----------------------- | ------------------------------------------- |

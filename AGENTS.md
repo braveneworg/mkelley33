@@ -60,6 +60,7 @@ subdirectories:
 
 | Category        | Load before                                                 |
 | --------------- | ----------------------------------------------------------- |
+| `deploy/`       | CI deploy job, Vercel env/secrets, the env preflight        |
 | `git-workflow/` | branching, committing, pushing, PRs, code review            |
 | `testing/`      | test harnesses, E2E, mongodb-memory-server, child processes |
 
