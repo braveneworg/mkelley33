@@ -29,6 +29,7 @@
     "generate:types": "tsx scripts/generate-types.mjs",
     "generate:importmap": "payload generate:importmap",
     "migrate:posts": "tsx --env-file-if-exists=.env.local scripts/migrate-posts.ts",
+    "seed:first-user": "tsx --env-file-if-exists=.env.local scripts/seed-first-user.ts",
     "seed:services": "tsx --env-file-if-exists=.env.local scripts/seed-services.ts",
     "prepare": "husky",
     "test:coverage:check": "vitest run --coverage"
