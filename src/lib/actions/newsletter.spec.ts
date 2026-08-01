@@ -4,6 +4,12 @@
 
 // @vitest-environment node
 
+/**
+ * Only what is specific to this action: the subscriber it upserts, when a
+ * confirm link is sent, and the messages it hands the pipeline. The pipeline
+ * itself is covered once in `run-form-submission.spec.ts`.
+ */
+
 import { subscribeNewsletter } from '@/lib/actions/newsletter';
 import { sendEmail } from '@/lib/email/transport';
 import { upsertPendingSubscriber } from '@/lib/repositories/subscribers';
@@ -13,25 +19,26 @@ vi.mock('@/lib/email/transport', () => ({
   sendEmail: vi.fn().mockResolvedValue(true),
 }));
 vi.mock('@/lib/repositories/subscribers', () => ({
-  upsertPendingSubscriber: vi
-    .fn()
-    .mockResolvedValue({ alreadyActive: false, rawToken: 'a'.repeat(64) }),
+  upsertPendingSubscriber: vi.fn(),
 }));
 vi.mock('@/lib/turnstile', () => ({
-  verifyTurnstileToken: vi.fn().mockResolvedValue(true),
+  verifyTurnstileToken: vi.fn(),
 }));
 
 const valid = { email: 'a@b.com', turnstileToken: 'tok', website: '' };
 
 beforeEach(() => {
-  vi.clearAllMocks();
+  vi.mocked(verifyTurnstileToken).mockResolvedValue(true);
+  vi.mocked(upsertPendingSubscriber).mockResolvedValue({
+    alreadyActive: false,
+    rawToken: 'a'.repeat(64),
+  });
+  vi.spyOn(console, 'error').mockImplementation(() => undefined);
 });
 
 describe('subscribeNewsletter', () => {
   it('stores a pending subscriber and emails the confirm link', async () => {
-    await expect(subscribeNewsletter(valid)).resolves.toEqual({
-      success: true,
-    });
+    await expect(subscribeNewsletter(valid)).resolves.toEqual({ success: true });
     expect(upsertPendingSubscriber).toHaveBeenCalledWith('a@b.com');
     expect(sendEmail).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -42,30 +49,35 @@ describe('subscribeNewsletter', () => {
   });
 
   it('gives the uniform response for an already-active subscriber', async () => {
-    vi.mocked(upsertPendingSubscriber).mockResolvedValueOnce({
+    vi.mocked(upsertPendingSubscriber).mockResolvedValue({
       alreadyActive: true,
       rawToken: null,
     });
-    await expect(subscribeNewsletter(valid)).resolves.toEqual({
-      success: true,
-    });
+    await expect(subscribeNewsletter(valid)).resolves.toEqual({ success: true });
     expect(sendEmail).not.toHaveBeenCalled();
   });
 
-  it('honeypot short-circuits; invalid email and failed turnstile reject', async () => {
-    await expect(subscribeNewsletter({ ...valid, website: 'x' })).resolves.toEqual({
-      success: true,
+  it('sends nothing when the upsert produced no token', async () => {
+    vi.mocked(upsertPendingSubscriber).mockResolvedValue({
+      alreadyActive: false,
+      rawToken: null,
     });
-    expect(upsertPendingSubscriber).not.toHaveBeenCalled();
-    expect((await subscribeNewsletter({ ...valid, email: 'no' })).success).toBe(false);
-    vi.mocked(verifyTurnstileToken).mockResolvedValueOnce(false);
-    expect((await subscribeNewsletter(valid)).success).toBe(false);
+    await expect(subscribeNewsletter(valid)).resolves.toEqual({ success: true });
+    expect(sendEmail).not.toHaveBeenCalled();
   });
 
-  it('still succeeds when the confirm email fails to send', async () => {
-    vi.mocked(sendEmail).mockResolvedValueOnce(false);
+  it('asks for a valid email when input is invalid', async () => {
+    await expect(subscribeNewsletter({ ...valid, email: 'no' })).resolves.toEqual({
+      error: 'enter a valid email',
+      success: false,
+    });
+  });
+
+  it('asks the user to retry when the upsert throws', async () => {
+    vi.mocked(upsertPendingSubscriber).mockRejectedValueOnce(new Error('db down'));
     await expect(subscribeNewsletter(valid)).resolves.toEqual({
-      success: true,
+      error: 'something broke — retry in a bit',
+      success: false,
     });
   });
 });

@@ -4,46 +4,39 @@
 
 'use server';
 
+import { runFormSubmission } from '@/lib/actions/run-form-submission';
 import type { ActionResult } from '@/lib/actions/types';
 import { newsletterConfirmEmail } from '@/lib/email/templates';
 import { sendEmail } from '@/lib/email/transport';
+import type { UpsertPendingResult } from '@/lib/repositories/subscribers';
 import { upsertPendingSubscriber } from '@/lib/repositories/subscribers';
 import { siteConfig } from '@/lib/site-config';
-import { verifyTurnstileToken } from '@/lib/turnstile';
+import type { NewsletterFormValues } from '@/lib/validation/newsletter';
 import { newsletterSchema } from '@/lib/validation/newsletter';
 
-const honeypotFilled = (input: unknown): boolean =>
-  typeof input === 'object' &&
-  input !== null &&
-  'website' in input &&
-  Boolean((input as { website?: unknown }).website);
-
-export const subscribeNewsletter = async (input: unknown): Promise<ActionResult> => {
-  if (honeypotFilled(input)) {
-    return { success: true };
+/**
+ * Only a genuinely new or unconfirmed address gets a link. An address that is
+ * already subscribed is answered with the same uniform success as everyone
+ * else, so the response cannot be used to probe who is on the list.
+ */
+const emailConfirmLink = async (
+  values: NewsletterFormValues,
+  subscriber: UpsertPendingResult
+): Promise<void> => {
+  if (subscriber.alreadyActive || !subscriber.rawToken) {
+    return;
   }
-  const parsed = newsletterSchema.safeParse(input);
-  if (!parsed.success) {
-    return { error: 'enter a valid email', success: false };
-  }
-  if (!(await verifyTurnstileToken(parsed.data.turnstileToken))) {
-    return {
-      error: 'verification failed — give it a beat and retry',
-      success: false,
-    };
-  }
-  try {
-    const result = await upsertPendingSubscriber(parsed.data.email);
-    if (!result.alreadyActive && result.rawToken) {
-      const confirmUrl = `${siteConfig.url}/newsletter/confirm?token=${result.rawToken}`;
-      await sendEmail({
-        ...newsletterConfirmEmail(confirmUrl),
-        to: parsed.data.email,
-      });
-    }
-    return { success: true };
-  } catch (error) {
-    console.error('subscribeNewsletter failed:', error);
-    return { error: 'something broke — retry in a bit', success: false };
-  }
+  const confirmUrl = `${siteConfig.url}/newsletter/confirm?token=${subscriber.rawToken}`;
+  await sendEmail({ ...newsletterConfirmEmail(confirmUrl), to: values.email });
 };
+
+export const subscribeNewsletter = async (input: unknown): Promise<ActionResult> =>
+  runFormSubmission({
+    failureError: 'something broke — retry in a bit',
+    input,
+    invalidInputError: 'enter a valid email',
+    label: 'subscribeNewsletter',
+    notify: emailConfirmLink,
+    persist: (values) => upsertPendingSubscriber(values.email),
+    schema: newsletterSchema,
+  });
