@@ -4,14 +4,11 @@
 
 'use client';
 
-import { useRef, useState, useTransition } from 'react';
-
 import { useSearchParams } from 'next/navigation';
 
-import { zodResolver } from '@hookform/resolvers/zod';
 import { Turnstile } from '@marsidev/react-turnstile';
-import { useForm } from 'react-hook-form';
 
+import { useGuardedForm } from '@/components/forms/use-guarded-form';
 import {
   Dialog,
   DialogClose,
@@ -21,11 +18,8 @@ import {
 } from '@/components/ui/dialog';
 import { describedBy, ErrorText, FieldError, fieldMessage } from '@/components/ui/error-text';
 import { submitContact } from '@/lib/actions/contact';
-import { turnstileSiteKey } from '@/lib/turnstile';
 import type { ContactFormValues, ContactReason } from '@/lib/validation/contact';
 import { CONTACT_REASONS, contactSchema, labelForReason } from '@/lib/validation/contact';
-
-import type { TurnstileInstance } from '@marsidev/react-turnstile';
 
 export interface ContactServiceOption {
   name: string;
@@ -43,22 +37,20 @@ export const ContactForm = ({ services }: { services: ContactServiceOption[] }) 
   const validSlugs = new Set(services.map((service) => service.slug));
   const reasonParam = searchParams.get('reason');
   const initialServices = searchParams.getAll('service').filter((slug) => validSlugs.has(slug));
-  const [submitted, setSubmitted] = useState(false);
-  const [serverError, setServerError] = useState<null | string>(null);
-  const [isPending, startTransition] = useTransition();
-  const turnstileRef = useRef<TurnstileInstance | null>(null);
-  const form = useForm<ContactFormValues>({
-    defaultValues: {
-      email: '',
-      message: '',
-      name: '',
-      reason: isContactReason(reasonParam) ? reasonParam : 'general',
-      requestedServices: initialServices,
-      turnstileToken: '',
-      website: '',
-    },
-    resolver: zodResolver(contactSchema),
-  });
+  const { form, isPending, onSubmit, serverError, succeeded, turnstileProps } =
+    useGuardedForm<ContactFormValues>({
+      defaultValues: {
+        email: '',
+        message: '',
+        name: '',
+        reason: isContactReason(reasonParam) ? reasonParam : 'general',
+        requestedServices: initialServices,
+        turnstileToken: '',
+        website: '',
+      },
+      schema: contactSchema,
+      submit: submitContact,
+    });
   const reason = form.watch('reason');
   const selectedSlugs = form.watch('requestedServices');
   const errors = form.formState.errors;
@@ -70,21 +62,7 @@ export const ContactForm = ({ services }: { services: ContactServiceOption[] }) 
     form.setValue('requestedServices', next, { shouldValidate: true });
   };
 
-  const onSubmit = (values: ContactFormValues) => {
-    setServerError(null);
-    startTransition(async () => {
-      const result = await submitContact(values);
-      if (result.success) {
-        setSubmitted(true);
-      } else {
-        setServerError(result.error ?? 'something broke — retry in a bit');
-        turnstileRef.current?.reset();
-        form.setValue('turnstileToken', '', { shouldValidate: false });
-      }
-    });
-  };
-
-  if (submitted) {
+  if (succeeded) {
     return (
       <div role="status">
         <p className="text-fg-muted font-mono text-sm">
@@ -102,7 +80,7 @@ export const ContactForm = ({ services }: { services: ContactServiceOption[] }) 
   }
 
   return (
-    <form className="max-w-xl space-y-5" noValidate onSubmit={form.handleSubmit(onSubmit)}>
+    <form className="max-w-xl space-y-5" noValidate onSubmit={onSubmit}>
       <div>
         <label className="text-fg font-mono text-sm" htmlFor="contact-name">
           name
@@ -251,12 +229,7 @@ export const ContactForm = ({ services }: { services: ContactServiceOption[] }) 
           {...form.register('website')}
         />
       </div>
-      <Turnstile
-        onExpire={() => form.setValue('turnstileToken', '', { shouldValidate: false })}
-        onSuccess={(token) => form.setValue('turnstileToken', token, { shouldValidate: true })}
-        ref={turnstileRef}
-        siteKey={turnstileSiteKey()}
-      />
+      <Turnstile {...turnstileProps} />
       <FieldError id="contact-turnstile-error" message={fieldMessage(errors.turnstileToken)} />
       {serverError ? (
         <ErrorText role="alert" size="sm">

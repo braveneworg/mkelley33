@@ -4,46 +4,24 @@
 
 'use client';
 
-import { useRef, useState, useTransition } from 'react';
-
-import { zodResolver } from '@hookform/resolvers/zod';
 import { Turnstile } from '@marsidev/react-turnstile';
-import { useForm } from 'react-hook-form';
 
+import { useGuardedForm } from '@/components/forms/use-guarded-form';
 import { describedBy, ErrorText, FieldError, fieldMessage } from '@/components/ui/error-text';
 import { subscribeNewsletter } from '@/lib/actions/newsletter';
-import { turnstileSiteKey } from '@/lib/turnstile';
 import type { NewsletterFormValues } from '@/lib/validation/newsletter';
 import { newsletterSchema } from '@/lib/validation/newsletter';
 
-import type { TurnstileInstance } from '@marsidev/react-turnstile';
-
 export const NewsletterForm = () => {
-  const [done, setDone] = useState(false);
-  const [serverError, setServerError] = useState<null | string>(null);
-  const [isPending, startTransition] = useTransition();
-  const turnstileRef = useRef<TurnstileInstance | null>(null);
-  const form = useForm<NewsletterFormValues>({
-    defaultValues: { email: '', turnstileToken: '', website: '' },
-    resolver: zodResolver(newsletterSchema),
-  });
+  const { form, isPending, onSubmit, serverError, succeeded, turnstileProps } =
+    useGuardedForm<NewsletterFormValues>({
+      defaultValues: { email: '', turnstileToken: '', website: '' },
+      schema: newsletterSchema,
+      submit: subscribeNewsletter,
+    });
   const errors = form.formState.errors;
 
-  const onSubmit = (values: NewsletterFormValues) => {
-    setServerError(null);
-    startTransition(async () => {
-      const result = await subscribeNewsletter(values);
-      if (result.success) {
-        setDone(true);
-      } else {
-        setServerError(result.error ?? 'something broke — retry in a bit');
-        turnstileRef.current?.reset();
-        form.setValue('turnstileToken', '', { shouldValidate: false });
-      }
-    });
-  };
-
-  if (done) {
+  if (succeeded) {
     return (
       <p className="text-phosphor font-mono text-sm" role="status">
         subscription pending — check your inbox to confirm ✓
@@ -52,7 +30,7 @@ export const NewsletterForm = () => {
   }
 
   return (
-    <form className="max-w-md space-y-3" noValidate onSubmit={form.handleSubmit(onSubmit)}>
+    <form className="max-w-md space-y-3" noValidate onSubmit={onSubmit}>
       <div className="flex gap-2">
         <div className="flex-1">
           <label className="sr-only" htmlFor="newsletter-email">
@@ -92,12 +70,7 @@ export const NewsletterForm = () => {
           {...form.register('website')}
         />
       </div>
-      <Turnstile
-        onExpire={() => form.setValue('turnstileToken', '', { shouldValidate: false })}
-        onSuccess={(token) => form.setValue('turnstileToken', token, { shouldValidate: true })}
-        ref={turnstileRef}
-        siteKey={turnstileSiteKey()}
-      />
+      <Turnstile {...turnstileProps} />
       <FieldError id="newsletter-turnstile-error" message={fieldMessage(errors.turnstileToken)} />
       {serverError ? (
         <ErrorText role="alert" size="sm">
