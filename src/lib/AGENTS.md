@@ -23,7 +23,9 @@ binding. Everything below it applies only once the thing it names exists.
   `SMTP_HOST` is unset) and `templates.ts`.
 - Loose modules for cross-cutting concerns: `site-config.ts`, `json-ld.ts`,
   `rss.ts`, `highlight.ts`, `newsletter-tokens.ts`, `turnstile.ts`,
-  `cv-content.ts`, `services-content.ts`, `services-seed.ts`.
+  `cv-content.ts`, `services-content.ts`, `services-seed.ts`, and
+  `db-backup.ts` (pure decisions for `scripts/db-backup.ts` /
+  `scripts/db-restore.ts` — the wrappers keep the side effects).
 
 ## Rules
 
