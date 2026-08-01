@@ -48,7 +48,7 @@ const severityOf = (setting: unknown): number => {
  * A source file and a spec file: past exemptions were scoped to tests, so
  * checking only production code would have missed them.
  */
-const SAMPLES = ['src/lib/migration/migrate-posts.ts', 'src/collections/access.spec.ts'];
+const SAMPLES = ['src/lib/first-user-seed.ts', 'src/collections/access.spec.ts'];
 
 describe.each(SAMPLES)('security rules resolved for %s', (file) => {
   /**

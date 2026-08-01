@@ -413,15 +413,15 @@ const eslintConfig = [
   //
   // `security/detect-non-literal-fs-filename` is the omission. It is purely
   // syntactic — it flags any `fs` call whose path argument is not a string
-  // literal — and all six places this repo reads files are legitimately
-  // dynamic: `src/lib/migration/` walks an operator-supplied content directory
-  // handed to it by the `migrate:posts` CLI, its integration spec writes
-  // fixtures into a `mkdtemp` directory, and `src/license-header.spec.ts`
-  // reads every path `git ls-files` reports. None takes a path from a request,
-  // and nothing short of renaming the `fs` binding to evade detection would
-  // satisfy the rule. Running it would mean carrying permanent exemptions for
-  // code that was never the hazard it describes, so it is not run at all.
-  // Revisit if this codebase ever opens a file from user input.
+  // literal — and every dynamic file read in this repo is an operator-driven
+  // tool, not request handling: `src/license-header.spec.ts` reads every path
+  // `git ls-files` reports, and the harness and maintenance scripts under
+  // `scripts/` read their own logs, fixtures, and local backup archives. None
+  // takes a path from a request, and nothing short of renaming the `fs`
+  // binding to evade detection would satisfy the rule. Running it would mean
+  // carrying permanent exemptions for code that was never the hazard it
+  // describes, so it is not run at all. Revisit if this codebase ever opens a
+  // file from user input.
   {
     plugins: { security },
     rules: {
