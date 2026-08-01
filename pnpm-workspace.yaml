@@ -53,3 +53,11 @@ peerDependencyRules:
   allowedVersions:
     eslint-plugin-jsx-a11y>eslint: '10'
     eslint-plugin-react>eslint: '10'
+
+# GHSA-r28c-9q8g-f849 (Dependabot #1): postcss <= 8.5.17 can disclose
+# arbitrary .map files via sourceMappingURL auto-loading. The direct dep is
+# already safe; this lifts the one vulnerable copy — next pins postcss
+# 8.4.31 — without touching resolutions that are already patched. Scoped to
+# the advisory range so it self-retires once next's own pin catches up.
+overrides:
+  'postcss@<8.5.18': '>=8.5.18'
