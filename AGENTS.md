@@ -1,6 +1,6 @@
 # mkelley33 — Agent & Contributor Guidelines
 
-Last updated: 2026-07-26
+Last updated: 2026-08-01
 
 Single source of truth for how to work in this repository — for humans and for
 every AI coding agent. Tool-specific files (e.g. `CLAUDE.md`) defer to this
@@ -68,36 +68,12 @@ When corrected — or when you catch your own mistake — add the lesson as a ne
 file in the matching category (create a new category directory if none fits)
 before continuing, so it never happens again.
 
-## Stack
-
-Versions track `package.json` — update this block when they change.
-
-- TypeScript 6 (strict), Node 24 (from `.nvmrc`, never global), pnpm 11 —
-  `pnpm exec` for CLI tools (`prisma`, `tsx`, …).
-- Next.js 16 (App Router, Turbopack dev, webpack build), React 19.
-
-## Commands
-
-```bash
-pnpm run dev                  # Dev server (Turbopack)
-pnpm run build                # Production build (webpack)
-pnpm run test                 # Unit tests once (test = watch mode)
-pnpm run typecheck            # tsc on tracked types
-pnpm run lint                 # ESLint check + auto-fix (--max-warnings 0)
-pnpm run format               # Prettier write (format:check = no write)
-```
-
 ## Commits & git hooks
 
-- Conventional Commits, enforced by commitlint: header ≤50 chars INCLUDING the
-  `type(scope): ` prefix and gitmoji (counts as 2); body/footer lines ≤72.
-  Format `type(scope): <gitmoji> subject` — `feat: ✨`, `fix: 🐛`,
-  `refactor: ♻️`, `perf: ⚡`, `docs: 📝`, `test: ✅`, `chore: 🔧`, `style: 🎨`.
-  Pick the type accurately: commitlint enforces the format, and the type is
-  what a release tool would read to compute a version bump and `CHANGELOG.md`.
-  No such tool is wired up yet — there is no semantic-release, changesets, or
-  release workflow — so today the type buys readable history and a clean
-  changelog whenever one is generated.
+- Conventional Commits, enforced by commitlint. The full format spec (header
+  limits, gitmoji per type, type-accuracy rationale) lives in
+  `docs/lessons/git-workflow/commit-format.md` — loaded with the git-workflow
+  lessons before any commit, per the lessons table above.
 - Never commit or push to `main`; never bypass hooks with `--no-verify`; never
   add AI attribution / `Co-authored-by` lines. Atomic commits when working
   autonomously.
