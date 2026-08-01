@@ -8,7 +8,7 @@ enforcement point for every invariant below — keep the two in sync.
 `makeEnv()` pins every env-sensitive key: throwaway in-memory Mongo URI,
 always-pass Turnstile test keys, `SMTP_HOST=''` (forces the JSON email
 transport — nothing can leave the suite), `BLOB_READ_WRITE_TOKEN=''`.
-Seed/migrate run via `pnpm exec tsx` so `.env.local` is never loaded;
+Seeding runs via `pnpm exec tsx` so `.env.local` is never loaded;
 `next build`/`next start` do load it, but explicit process env always wins.
 Never weaken a pinned key or read `.env*` to "fix" a failure.
 
@@ -22,8 +22,8 @@ right before spawning, so probes can never pass against a foreign server.
 ## Seed BEFORE build (ISR)
 
 Every page uses ISR (`revalidate = 300`); building against an empty database
-would bake empty services/posts into the prerendered HTML and serve that
-stale markup to the specs' first visit. The harness seeds first — keep it so.
+would bake empty services into the prerendered HTML and serve that stale
+markup to the specs' first visit. The harness seeds first — keep it so.
 
 ## EMAIL_LOG_UNSENT log-scrape protocol
 

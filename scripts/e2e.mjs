@@ -33,10 +33,10 @@ const E2E_PORT = 4310;
 const BASE_URL = `http://localhost:${E2E_PORT}`;
 
 // Hermetic env: the suite must never touch a developer database or real
-// third-party services, so every env-sensitive key is pinned here. Seed and
-// migrate run via `pnpm exec tsx` (not the package.json scripts) so
-// .env.local is never loaded; `next build`/`next start` load it on their
-// own, but explicit process env always wins over env files.
+// third-party services, so every env-sensitive key is pinned here. Seeding
+// runs via `pnpm exec tsx` (not the package.json scripts) so .env.local is
+// never loaded; `next build`/`next start` load it on their own, but
+// explicit process env always wins over env files.
 const makeEnv = (uri, params) => ({
   ...process.env,
   // Truthiness-gated in payload.config.ts — '' keeps the plugin off.
@@ -131,8 +131,8 @@ const runStep = async (label, args, env, timeout) => {
 };
 
 // Seed BEFORE building: every page uses ISR (`revalidate = 300`), so a build
-// against an empty database would bake empty services/posts into the
-// prerendered HTML and serve that stale markup to the specs' first visit.
+// against an empty database would bake empty services into the prerendered
+// HTML and serve that stale markup to the specs' first visit.
 const setUp = async () => {
   for (let attempt = 1; attempt <= SETUP_ATTEMPTS; attempt += 1) {
     const mongod = await MongoMemoryServer.create({
@@ -146,14 +146,7 @@ const setUp = async () => {
         ['exec', 'tsx', 'scripts/seed-services.ts'],
         fastEnv,
         STEP_TIMEOUT_MS
-      )) &&
-      (await runStep(
-        'migrate:posts',
-        ['exec', 'tsx', 'scripts/migrate-posts.ts'],
-        fastEnv,
-        STEP_TIMEOUT_MS
-      )) &&
-      (await runStep('build', ['build'], makeEnv(uri, PATIENT_PARAMS), BUILD_TIMEOUT_MS));
+      )) && (await runStep('build', ['build'], makeEnv(uri, PATIENT_PARAMS), BUILD_TIMEOUT_MS));
     if (done) {
       return mongod;
     }
