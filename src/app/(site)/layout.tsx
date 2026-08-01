@@ -28,6 +28,9 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   alternates: {
+    // './' resolves against the request pathname, so every page gets a
+    // self-referencing canonical (e.g. /blog/foo → siteConfig.url/blog/foo).
+    canonical: './',
     types: { 'application/rss+xml': '/feed.xml' },
   },
   description: siteConfig.description,
