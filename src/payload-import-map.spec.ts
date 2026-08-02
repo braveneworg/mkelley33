@@ -30,6 +30,10 @@ const importMap = (): string => readFileSync('src/app/(payload)/admin/importMap.
 
 const payloadConfig = (): string => readFileSync('src/payload.config.ts', 'utf8');
 
+const packageJson = (): string => readFileSync('package.json', 'utf8');
+
+const generatorScript = (): string => readFileSync('scripts/generate-importmap.mjs', 'utf8');
+
 describe('payload import map', () => {
   it('guards a config that still registers vercel-blob storage', () => {
     expect(payloadConfig()).toMatch(/vercelBlobStorage/);
@@ -38,6 +42,31 @@ describe('payload import map', () => {
   it('maps the vercel-blob client upload handler', () => {
     expect(importMap()).toMatch(
       /"@payloadcms\/storage-vercel-blob\/client#VercelBlobClientUploadHandler":/
+    );
+  });
+});
+
+/**
+ * The upstream `payload generate:importmap` CLI dies with
+ * ERR_REQUIRE_ASYNC_MODULE (payloadcms/payload#16378), so the script must go
+ * through the same fallback shape as `generate:types`: the tsx CLI calling
+ * the supported `generateImportMap` export directly. And per the lesson
+ * above, the generator must force the env-gated blob plugin ON before the
+ * config loads, so every regeneration emits the union map — never the
+ * plugin-off subset that blanked production's /admin.
+ */
+describe('import map generator', () => {
+  it('routes generate:importmap through the tsx fallback script', () => {
+    expect(packageJson()).toMatch(/"generate:importmap": "tsx scripts\/generate-importmap\.mjs"/);
+  });
+
+  it('calls the supported payload export instead of the broken CLI', () => {
+    expect(generatorScript()).toMatch(/import \{ generateImportMap \} from 'payload'/);
+  });
+
+  it('forces the env-gated blob plugin on before the config loads', () => {
+    expect(generatorScript()).toMatch(
+      /BLOB_READ_WRITE_TOKEN \|\|=[\s\S]*import\('\.\.\/src\/payload\.config\.ts'\)/
     );
   });
 });

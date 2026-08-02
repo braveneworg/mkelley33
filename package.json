@@ -29,7 +29,7 @@
     "payload": "payload",
     "generate:icons": "tsx scripts/generate-icons.ts",
     "generate:types": "tsx scripts/generate-types.mjs",
-    "generate:importmap": "payload generate:importmap",
+    "generate:importmap": "tsx scripts/generate-importmap.mjs",
     "db:backup": "tsx --env-file-if-exists=.env.local scripts/db-backup.ts",
     "db:restore": "tsx --env-file-if-exists=.env.local scripts/db-restore.ts",
     "seed:first-user": "tsx --env-file-if-exists=.env.local scripts/seed-first-user.ts",
