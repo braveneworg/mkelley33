@@ -134,7 +134,11 @@ analytics off after it had been granted.
   the content column, reveals `cookies` label on hover/focus. Hidden while
   the banner is visible. The sticky element is a content-width wrapper
   (`sticky bottom-3`, `pointer-events-none`) so `<main>` is the tall
-  containing block; the button inside takes pointer events back. The
+  containing block; the button inside takes pointer events back. `<main>`
+  is a flex column and the wrapper carries `mt-auto`, because sticky
+  `bottom` can lift an element but never push it down — without the auto
+  margin, a page shorter than the viewport strands the cookie mid-column
+  above the stretched remainder. The
   cookie is the codebase's one inline `<svg>` — `aria-hidden`,
   `fill-current` under `text-phosphor` — recorded as a deliberate
   exception in `src/app/AGENTS.md`. Accepted trade-off: being in flow, a
@@ -150,7 +154,8 @@ analytics off after it had been granted.
 
 `ConsentProvider` wraps the tree inside `ThemeProvider`; banner and dialog
 mount beside `PaletteMount`; the cookie trigger mounts as the last child of
-`<main>` (sticky needs that tall parent); `GoogleAnalyticsTag` and
+`<main className="flex flex-1 flex-col">` (sticky needs that tall parent, and
+the flex column is what lets its `mt-auto` work); `GoogleAnalyticsTag` and
 `<Analytics />` move inside the provider.
 
 ## Privacy page & footer

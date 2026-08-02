@@ -66,7 +66,9 @@ binding. Everything below it applies only once the thing it names exists.
   phosphor. It follows the same rules as the glyphs — `aria-hidden="true"`,
   `fill-current` under a `text-phosphor` parent, meaning on the button's
   `aria-label`. Everything else stays text; a second inline SVG needs its own
-  owner decision, not this precedent.
+  owner decision, not this precedent. (The rule is about `<svg` in component
+  markup. `src/app/icon.svg` and the `src/lib/icons/icon-svg.ts` generator
+  that emits it are the site favicon, not UI, and are outside it.)
 - Semantic HTML, ARIA, and keyboard navigation are required.
 
 ## Performance
