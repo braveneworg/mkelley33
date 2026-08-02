@@ -2,6 +2,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> **Note (2026-08-02):** Task 8's cursor trigger and Task 10's footer `pb-16` were superseded by the content-sticky cookie trigger during pre-merge review of PR #43 — see the spec doc. The tasks below are left as executed, as the historical record.
+
 **Goal:** An Art. 13-complete `/privacy` page plus a banner + in-depth preferences dialog that hard-gates Google Analytics AND Vercel Analytics behind explicit consent, with a persistent phosphor cursor-block reopen trigger.
 
 **Architecture:** A framework-free consent core in `src/lib/consent/` (versioned, Zod-validated localStorage record; Consent Mode v2 helpers over a parse-time bootstrap script) consumed by a React context provider in `src/components/consent/`. The analytics surfaces (`GoogleAnalyticsTag`, a new `VercelAnalyticsTag`, `trackEvent`) render/send only when the provider grants analytics. UI is hand-rolled on the existing dialog primitive and design tokens — zero new dependencies.

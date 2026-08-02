@@ -64,7 +64,7 @@ test('declining keeps analytics unloaded and shows the privacy page', async ({ p
   await expect(page.getByRole('heading', { level: 1, name: /privacy/ })).toBeVisible();
   await expect(page.getByRole('button', { name: 'manage cookie preferences' })).toBeVisible();
   // Re-checked after a full navigation carrying the declined record. The
-  // anchor is the cursor trigger, not the manage button: the manage button is
+  // anchor is the cookie trigger, not the manage button: the manage button is
   // server-rendered and visible before hydration, while the trigger only
   // appears once the provider has read storage — strictly after the commit in
   // which an ungated analytics tag would have mounted and injected.

@@ -57,9 +57,18 @@ binding. Everything below it applies only once the thing it names exists.
   package when a new primitive needs real interaction behavior.
 - Fonts are Inter (`--font-sans`) and JetBrains Mono (`--font-mono`), loaded
   via `next/font/google` in the site layout.
-- Icons: there are none — no icon library is installed and no component ships
-  an inline `<svg>`. The terminal aesthetic uses text glyphs, and those are
-  `aria-hidden` with the meaning carried by adjacent text.
+- Icons: no icon library is installed, and the terminal aesthetic uses text
+  glyphs — `aria-hidden`, with the meaning carried by adjacent text or the
+  control's `aria-label`. Exactly one component ships an inline `<svg>`:
+  `src/components/consent/consent-cookie-trigger.tsx`, whose cookie is a
+  deliberate exception (owner decision, 2026-08-02) because the caret glyph is
+  reserved for the terminal branding and an emoji cookie cannot be tinted
+  phosphor. It follows the same rules as the glyphs — `aria-hidden="true"`,
+  `fill-current` under a `text-phosphor` parent, meaning on the button's
+  `aria-label`. Everything else stays text; a second inline SVG needs its own
+  owner decision, not this precedent. (The rule is about `<svg` in component
+  markup. `src/app/icon.svg` and the `src/lib/icons/icon-svg.ts` generator
+  that emits it are the site favicon, not UI, and are outside it.)
 - Semantic HTML, ARIA, and keyboard navigation are required.
 
 ## Performance

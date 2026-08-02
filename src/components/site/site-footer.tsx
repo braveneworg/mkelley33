@@ -47,7 +47,7 @@ const externalLinks = (): FooterLink[] => {
 
 export const SiteFooter = () => (
   <footer className="border-edge border-t">
-    <div className="text-fg-muted mx-auto flex w-full max-w-5xl flex-wrap items-center gap-x-5 gap-y-2 px-5 pt-6 pb-16 font-mono text-xs">
+    <div className="text-fg-muted mx-auto flex w-full max-w-5xl flex-wrap items-center gap-x-5 gap-y-2 px-5 py-6 font-mono text-xs">
       <p>
         <span aria-hidden="true">🄯</span> {new Date().getFullYear()} michaux kelley — copyleft,
         share alike

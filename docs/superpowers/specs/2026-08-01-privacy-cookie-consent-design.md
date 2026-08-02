@@ -33,14 +33,18 @@ conversion numbers will read low by design.
   equal-prominence `accept all` / `decline all` / `customize`; `customize`
   opens an in-depth preferences dialog with per-category toggles and a
   per-item cookie/storage inventory.
-- **Persistent reopen affordance.** A sticky control fixed to the
-  bottom-left corner: a steady phosphor block (`--color-phosphor`, the
-  typewriter-caret green, **no blink**), a button with
-  `aria-label="cookie preferences"`, revealing a mono `cookies` label on
-  hover/focus. Visible whenever the banner is not, so preferences can be
-  changed at any time. **All viewports** — caret-sized visually, padded
-  hit area ≥44px; footer gets enough bottom padding that the block never
-  overlaps the copyleft line.
+- **Persistent reopen affordance.** A control stuck to the bottom-left of
+  the **content column**, not the viewport: a steady cookie icon in
+  phosphor green (`--color-phosphor`, the typewriter-caret green, **no
+  animation**), a button with `aria-label="cookie preferences"`, revealing
+  a mono `cookies` label on hover/focus. Visible whenever the banner is
+  not, so preferences can be changed at any time. **All viewports** —
+  icon-sized visually, padded hit area ≥44px. Revised 2026-08-02 (owner):
+  the original was a phosphor cursor block fixed to the viewport, but the
+  caret glyph is reserved for the terminal-caret branding, and a
+  viewport-fixed control floated over the footer. Sticky-in-content parks
+  it above the footer instead, so the footer needs no extra bottom
+  padding.
 - **No server-side consent logging** (Art. 7(1) weighed): the hard gate's
   technical impossibility of pre-consent collection is the defense; a
   consent log would be new stored data and its own retention liability,
@@ -126,9 +130,20 @@ analytics off after it had been granted.
     what is off. The state text stays visible and stays clickable.
   - Inventory table per category from `inventory.ts`.
   - Actions: `save preferences`, `accept all`, `decline all`.
-- `consent-cursor-trigger.tsx` — the sticky bottom-left phosphor block
-  (steady, cursor-styled, no blink), reveals `cookies` label on
-  hover/focus. Hidden while the banner is visible.
+- `consent-cookie-trigger.tsx` — the cookie stuck to the bottom-left of
+  the content column, reveals `cookies` label on hover/focus. Hidden while
+  the banner is visible. The sticky element is a content-width wrapper
+  (`sticky bottom-3`, `pointer-events-none`) so `<main>` is the tall
+  containing block; the button inside takes pointer events back. `<main>`
+  is a flex column and the wrapper carries `mt-auto`, because sticky
+  `bottom` can lift an element but never push it down — without the auto
+  margin, a page shorter than the viewport strands the cookie mid-column
+  above the stretched remainder. The
+  cookie is the codebase's one inline `<svg>` — `aria-hidden`,
+  `fill-current` under `text-phosphor` — recorded as a deliberate
+  exception in `src/app/AGENTS.md`. Accepted trade-off: being in flow, a
+  ~44px box appears at the end of the content once the status flips to
+  `decided` after hydration.
 - `src/components/ui/switch.tsx` — new tiny primitive: native checkbox
   styled as an ASCII toggle (`[ ]` / `[■]` in phosphor). Accessible by
   construction (real checkbox, visible focus, label association), with
@@ -137,8 +152,10 @@ analytics off after it had been granted.
 
 ### Layout wiring (`src/app/(site)/layout.tsx`)
 
-`ConsentProvider` wraps the tree inside `ThemeProvider`; banner, dialog,
-and cursor trigger mount beside `PaletteMount`; `GoogleAnalyticsTag` and
+`ConsentProvider` wraps the tree inside `ThemeProvider`; banner and dialog
+mount beside `PaletteMount`; the cookie trigger mounts as the last child of
+`<main className="flex flex-1 flex-col">` (sticky needs that tall parent, and
+the flex column is what lets its `mt-auto` work); `GoogleAnalyticsTag` and
 `<Analytics />` move inside the provider.
 
 ## Privacy page & footer
@@ -177,12 +194,13 @@ and cursor trigger mount beside `PaletteMount`; `GoogleAnalyticsTag` and
   - Links: <https://policies.google.com/privacy> and
     <https://policies.google.com/technologies/partner-sites>.
   - `manage cookie preferences` button (client, opens the dialog) + note
-    about the corner control.
+    about the cookie control.
   - Metadata title `privacy`; added to `sitemap.ts` if routes are
     enumerated there.
-- Footer: `privacy` internal `Link` beside `uses` / `rss`
-  (`link-draw` styling), plus bottom padding so the sticky trigger never
-  overlaps the copyleft line.
+- Footer: `privacy` internal `Link` beside `uses` / `rss` (`link-draw`
+  styling). Its symmetric `py-6` stands: the sticky trigger parks above
+  the footer instead of over it, so the extra bottom padding the
+  viewport-fixed version needed was reverted on 2026-08-02.
 
 ## Testing (TDD, Vitest, specs adjacent)
 
@@ -196,12 +214,13 @@ and cursor trigger mount beside `PaletteMount`; `GoogleAnalyticsTag` and
 - Banner: visible only while undecided; three actions wired.
 - Dialog: toggle state, save persists, accept/decline-all shortcuts.
 - Switch primitive: label association, checked state, keyboard.
-- Cursor trigger: hidden while banner visible; opens dialog; hit area
-  ≥44px despite caret-sized visual.
+- Cookie trigger: hidden while banner visible; opens dialog; hit area
+  ≥44px despite icon-sized visual; sticky wrapper, `aria-hidden`
+  `fill-current` icon.
 - Privacy page: renders inventory + links; footer link present.
 - E2E: read `e2e/AGENTS.md` in full first. Add a consent-pre-seed helper
   (init-script localStorage) so existing flows keep passing, plus one
-  flow: banner → customize → save → banner gone → cursor trigger
+  flow: banner → customize → save → banner gone → cookie trigger
   reopens.
 
 ## Constraints
