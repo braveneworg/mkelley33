@@ -51,10 +51,10 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: [
-    { color: '#0b0f14', media: '(prefers-color-scheme: dark)' },
-    { color: '#f4f7f5', media: '(prefers-color-scheme: light)' },
-  ],
+  // Dark is the default theme regardless of OS preference, so the SSR'd
+  // theme-color is pinned dark; ThemeColorSync re-stamps it after hydration
+  // for visitors who explicitly chose light.
+  themeColor: '#0b0f14',
 };
 
 /**

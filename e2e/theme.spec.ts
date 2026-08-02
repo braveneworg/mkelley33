@@ -10,8 +10,10 @@ test.beforeEach(async ({ page }) => {
   await seedDecidedConsent(page);
 });
 
-test('theme toggle persists across reload', async ({ page }) => {
-  await page.emulateMedia({ colorScheme: 'dark' });
+test('defaults dark against a light OS and the toggle persists across reload', async ({ page }) => {
+  // Light OS emulation proves the dark default wins over the system
+  // preference, not merely mirrors it.
+  await page.emulateMedia({ colorScheme: 'light' });
   await page.goto('/');
   await expect(page.locator('html')).toHaveClass(/dark/);
   await page.getByRole('button', { name: 'Switch to light theme' }).click();
