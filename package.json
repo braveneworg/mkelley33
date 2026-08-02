@@ -11,7 +11,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build && serwist build serwist.config.ts",
-    "build:ci": "node scripts/ci-build.mjs",
+    "build:ci": "tsx scripts/ci-build.ts",
     "gate": "pnpm run format:check && pnpm run typecheck && pnpm run lint:check && pnpm run test:coverage:check",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
@@ -24,7 +24,7 @@
     "test:watch": "vitest --watch",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
-    "e2e": "node scripts/e2e.mjs",
+    "e2e": "tsx scripts/e2e.ts",
     "e2e:test": "playwright test",
     "payload": "payload",
     "generate:icons": "node scripts/generate-icons.mjs",

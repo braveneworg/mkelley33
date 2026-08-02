@@ -4,7 +4,7 @@
 
 // @vitest-environment node
 
-import { execFileSync, spawn } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import {
   chmodSync,
   existsSync,
@@ -16,6 +16,8 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+
+import { runChild } from '@/lib/proc/run-child';
 
 /**
  * Repo-policy check for `.husky/pre-push`, not a unit test. The branch guard
@@ -53,16 +55,22 @@ interface HookRun {
  */
 const SHELLS = ['/bin/sh', '/bin/dash'].filter((shell) => existsSync(shell));
 
-const runHook = (shell: string, refLine: string): Promise<HookRun> =>
-  new Promise((settle) => {
-    const child = spawn(shell, ['.husky/pre-push'], { stdio: ['pipe', 'pipe', 'pipe'] });
-    child.stdout.resume();
-    child.stderr.resume();
-    child.stdin.end(`${refLine}\n`);
-    child.on('close', (code) => {
-      settle({ code: code ?? 1, log: readFileSync(LOG, 'utf8') });
-    });
+/**
+ * Driven exactly as git drives it: the ref lines on stdin, then EOF. The
+ * hook's own diagnostics go to the log file, so the captured output is
+ * drained and discarded — an undrained pipe would stall the hook mid-run.
+ */
+const runHook = async (shell: string, refLine: string): Promise<HookRun> => {
+  const { code } = await runChild({
+    args: ['.husky/pre-push'],
+    command: shell,
+    input: `${refLine}\n`,
+    output: 'capture',
+    writeErr: () => {},
+    writeOut: () => {},
   });
+  return { code: code ?? 1, log: readFileSync(LOG, 'utf8') };
+};
 
 interface Sandbox {
   binDir: string;
@@ -78,20 +86,6 @@ interface SandboxRun extends HookRun {
 }
 
 /**
- * A throwaway repository whose `origin` is a bare repo on disk, plus a stub
- * `pnpm` first on `PATH`. Together they let the hook run all the way to its
- * final stage without touching the network and without re-entering the test
- * suite: the fetch and the up-to-date check resolve against the local bare
- * repo, and the stub records what the hook asked `pnpm` to do instead of
- * doing it. `GATE_EXIT` makes the stub fail on demand, which is the only way
- * to exercise the hook's failure branch under both shells.
- *
- * `branch.autoSetupMerge=false` keeps the feature branch upstream-less
- * whatever the developer's global git config says, so the hook always takes
- * its `origin/main` fallback path and the fixture stays deterministic.
- */
-
-/**
  * When this suite runs from inside a git hook (`vitest --changed` in
  * pre-commit), git has exported GIT_DIR and GIT_INDEX_FILE into the
  * environment — and a child git inheriting them ignores its `cwd` and
@@ -104,6 +98,19 @@ const sandboxEnv: NodeJS.ProcessEnv = {
   NODE_ENV: process.env.NODE_ENV,
 };
 
+/**
+ * A throwaway repository whose `origin` is a bare repo on disk, plus a stub
+ * `pnpm` first on `PATH`. Together they let the hook run all the way to its
+ * final stage without touching the network and without re-entering the test
+ * suite: the fetch and the up-to-date check resolve against the local bare
+ * repo, and the stub records what the hook asked `pnpm` to do instead of
+ * doing it. `GATE_EXIT` makes the stub fail on demand, which is the only way
+ * to exercise the hook's failure branch under both shells.
+ *
+ * `branch.autoSetupMerge=false` keeps the feature branch upstream-less
+ * whatever the developer's global git config says, so the hook always takes
+ * its `origin/main` fallback path and the fixture stays deterministic.
+ */
 const createSandbox = (): Sandbox => {
   const root = mkdtempSync(join(tmpdir(), 'pre-push-gate-'));
   const remoteDir = join(root, 'remote.git');
@@ -173,33 +180,32 @@ afterAll(() => {
   rmSync(sandbox.logDir, { force: true, recursive: true });
 });
 
-const runHookInSandbox = (shell: string, gateExit: number): Promise<SandboxRun> =>
-  new Promise((settle) => {
-    writeFileSync(sandbox.pnpmArgsLog, '');
-    const child = spawn(shell, [HOOK], {
-      cwd: sandbox.workDir,
-      env: {
-        ...sandboxEnv,
-        GATE_EXIT: String(gateExit),
-        PATH: `${sandbox.binDir}:${process.env.PATH ?? ''}`,
-        PNPM_ARGS_LOG: sandbox.pnpmArgsLog,
-        TMPDIR: sandbox.logDir,
-      },
-      stdio: ['pipe', 'pipe', 'pipe'],
-    });
-    child.stdout.resume();
-    child.stderr.resume();
-    child.stdin.end(`refs/heads/chore/gate ${sandbox.headSha} refs/heads/chore/gate ${ZERO}\n`);
-    child.on('close', (code) => {
-      settle({
-        code: code ?? 1,
-        log: readFileSync(join(sandbox.logDir, 'husky-pre-push.log'), 'utf8'),
-        pnpmCalls: readFileSync(sandbox.pnpmArgsLog, 'utf8')
-          .split('\n')
-          .filter((line) => line !== ''),
-      });
-    });
+const runHookInSandbox = async (shell: string, gateExit: number): Promise<SandboxRun> => {
+  writeFileSync(sandbox.pnpmArgsLog, '');
+  const { code } = await runChild({
+    args: [HOOK],
+    command: shell,
+    cwd: sandbox.workDir,
+    env: {
+      ...sandboxEnv,
+      GATE_EXIT: String(gateExit),
+      PATH: `${sandbox.binDir}:${process.env.PATH ?? ''}`,
+      PNPM_ARGS_LOG: sandbox.pnpmArgsLog,
+      TMPDIR: sandbox.logDir,
+    },
+    input: `refs/heads/chore/gate ${sandbox.headSha} refs/heads/chore/gate ${ZERO}\n`,
+    output: 'capture',
+    writeErr: () => {},
+    writeOut: () => {},
   });
+  return {
+    code: code ?? 1,
+    log: readFileSync(join(sandbox.logDir, 'husky-pre-push.log'), 'utf8'),
+    pnpmCalls: readFileSync(sandbox.pnpmArgsLog, 'utf8')
+      .split('\n')
+      .filter((line) => line !== ''),
+  };
+};
 
 describe.each(SHELLS)('pre-push branch guard under %s', (shell) => {
   it('allows deleting a merged feature branch', async () => {

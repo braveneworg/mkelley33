@@ -6,6 +6,8 @@ import { readFile } from 'node:fs/promises';
 
 import { expect, test } from '@playwright/test';
 
+import { CONFIRM_TOKEN_PATTERN } from '@/lib/e2e/harness-config';
+
 test('newsletter opt-in confirm round trip', async ({ page }) => {
   await page.goto('/');
   const form = page.locator('form').filter({ hasText: 'subscribe' });
@@ -21,7 +23,10 @@ test('newsletter opt-in confirm round trip', async ({ page }) => {
   let token = '';
   await expect(async () => {
     const log = await readFile('e2e-server.log', 'utf8');
-    const match = /\/newsletter\/confirm\?token=([0-9a-f]{64})/.exec(log);
+    // Shared with the harness, which pins a NON-matching token for its own
+    // readiness probe — a second copy of this pattern here could drift out of
+    // that guarantee and confirm a subscription the probe invented.
+    const match = CONFIRM_TOKEN_PATTERN.exec(log);
     if (!match) {
       throw new Error('confirm link not in server log yet');
     }

@@ -135,7 +135,10 @@ export default defineConfig((): ViteUserConfig => {
         '**/coverage/**',
         '**/*.config.{ts,js,mjs,cjs}',
         '**/setupTests.ts',
-        '**/e2e/**',
+        // The Playwright suite, which lives in the repo-root `e2e/` only.
+        // Anchored rather than `**/e2e/**`, which also swallowed the unit
+        // specs beside the harness's own modules in `src/lib/e2e/`.
+        'e2e/**',
         '**/.claude/**',
       ],
     },

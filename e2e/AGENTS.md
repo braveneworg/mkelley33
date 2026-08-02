@@ -1,7 +1,10 @@
 # e2e/ — Harness Invariants
 
-The suite runs ONLY via `pnpm e2e` (`scripts/e2e.mjs`). That script is the
-enforcement point for every invariant below — keep the two in sync.
+The suite runs ONLY via `pnpm e2e` (`scripts/e2e.ts`, under tsx). That script
+is the enforcement point for every invariant below — keep the two in sync. Its
+pure decisions (the pinned env, the port, the probe token) live in
+`src/lib/e2e/harness-config.ts`, and `harness-config.spec.ts` turns the
+invariants below into assertions, so weakening one also fails the unit suite.
 
 ## Hermetic env — no `.env*` input, ever
 
@@ -38,7 +41,9 @@ regex if the probe URL is ever logged.
 The harness owns a `MongoMemoryServer` whose piped output OUR event loop
 must drain; any blocking call (e.g. `spawnSync`) wedges mongod on a full
 pipe buffer. Children also spawn `detached` so kill paths signal the whole
-process group. See `docs/lessons/testing/spawnsync-starves-owned-child-pipes.md`.
+process group. Every child goes through `src/lib/proc/run-child.ts`, which
+owns both of those and is specced; do not hand-roll another `spawn` here.
+See `docs/lessons/testing/spawnsync-starves-owned-child-pipes.md`.
 
 ## Never run the suite against a server you didn't spawn
 
