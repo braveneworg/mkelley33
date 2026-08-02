@@ -29,6 +29,25 @@ export const listPublishedPosts = cache(async (): Promise<Post[]> => {
   }
 });
 
+/** Published-only by-id read; the comment action uses it to title the owner email. */
+export const getPublishedPostById = cache(async (id: string): Promise<Post | null> => {
+  try {
+    const payload = await client();
+    const result = await payload.find({
+      collection: 'posts',
+      limit: 1,
+      overrideAccess: false,
+      where: {
+        and: [{ id: { equals: id } }, { status: { equals: 'published' } }],
+      },
+    });
+    return result.docs[0] ?? null;
+  } catch (error) {
+    console.error(`getPublishedPostById(${id}) failed:`, error);
+    return null;
+  }
+});
+
 export const getPostBySlug = cache(async (slug: string): Promise<Post | null> => {
   try {
     const payload = await client();

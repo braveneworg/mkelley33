@@ -37,6 +37,30 @@ describe('listPublishedPosts', () => {
   });
 });
 
+describe('getPublishedPostById', () => {
+  it('returns the matching published post', async () => {
+    find.mockResolvedValue({ docs: [{ id: 'p1', title: 'Hello' }] });
+    const { getPublishedPostById } = await importFresh();
+
+    await expect(getPublishedPostById('p1')).resolves.toEqual({ id: 'p1', title: 'Hello' });
+  });
+
+  it('returns null when no published post matches', async () => {
+    find.mockResolvedValue({ docs: [] });
+    const { getPublishedPostById } = await importFresh();
+
+    await expect(getPublishedPostById('missing')).resolves.toBeNull();
+  });
+
+  it('returns null instead of throwing when the query fails', async () => {
+    find.mockRejectedValue(new Error('boom'));
+    const { getPublishedPostById } = await importFresh();
+
+    await expect(getPublishedPostById('p1')).resolves.toBeNull();
+    expect(console.error).toHaveBeenCalled();
+  });
+});
+
 describe('getPostBySlug', () => {
   it('returns the matching post', async () => {
     find.mockResolvedValue({ docs: [{ slug: 'hello' }] });
