@@ -9,18 +9,38 @@ import { ConsentBanner } from '@/components/consent/consent-banner';
 import { ConsentProvider, useConsent } from '@/components/consent/consent-provider';
 import { readConsent, writeConsent } from '@/lib/consent/consent-storage';
 
-const PreferencesProbe = () => {
-  const { preferencesOpen } = useConsent();
-  return <span data-testid="preferences-open">{String(preferencesOpen)}</span>;
+const ConsentProbe = () => {
+  const { preferencesOpen, status } = useConsent();
+  return (
+    <div>
+      <span data-testid="preferences-open">{String(preferencesOpen)}</span>
+      <span data-testid="status">{status}</span>
+    </div>
+  );
 };
 
 const renderBanner = () =>
   render(
     <ConsentProvider>
       <ConsentBanner />
-      <PreferencesProbe />
+      <ConsentProbe />
     </ConsentProvider>
   );
+
+/**
+ * Gate an absence assertion behind proof that hydration finished. `waitFor`
+ * resolves on its first pass, and the provider starts in 'loading' with the
+ * banner unrendered — so asserting absence straight after `render` passes for
+ * the wrong reason and cannot fail. Anchored because 'undecided' contains
+ * 'decided'.
+ */
+const waitForDecided = async () => {
+  await waitFor(() => {
+    expect(screen.getByTestId('status')).toHaveTextContent(/^decided$/);
+  });
+};
+
+const queryBanner = () => screen.queryByRole('region', { name: 'cookie consent' });
 
 describe('ConsentBanner', () => {
   afterEach(() => {
@@ -35,15 +55,25 @@ describe('ConsentBanner', () => {
   it('stays hidden once a decision exists', async () => {
     writeConsent(false);
     renderBanner();
-    await waitFor(() => {
-      expect(screen.queryByRole('region', { name: 'cookie consent' })).not.toBeInTheDocument();
-    });
+    await waitForDecided();
+    expect(queryBanner()).not.toBeInTheDocument();
   });
 
-  it('accept all stores a granted decision and hides the banner', async () => {
+  it('accept all stores a granted decision', async () => {
     renderBanner();
     await userEvent.click(await screen.findByRole('button', { name: 'accept all' }));
     expect(readConsent()?.analytics).toBe(true);
+  });
+
+  it('disappears once a decision is made', async () => {
+    renderBanner();
+    // findBy throws when absent, so reaching the click proves the region was
+    // on screen — the disappearance below cannot pass for the wrong reason.
+    await screen.findByRole('region', { name: 'cookie consent' });
+    await userEvent.click(screen.getByRole('button', { name: 'accept all' }));
+    await waitFor(() => {
+      expect(queryBanner()).not.toBeInTheDocument();
+    });
   });
 
   it('decline all stores a declined decision', async () => {
