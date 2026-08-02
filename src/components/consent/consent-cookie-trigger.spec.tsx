@@ -57,12 +57,25 @@ const findStickyWrapper = async (): Promise<HTMLElement> => {
   return parentElement;
 };
 
-const findIconClass = async (): Promise<null | string> => {
+/**
+ * Exact class membership, not a substring: `sticky` is a substring of nothing
+ * here today, but `fixed`, `bottom-3`, and `mt-auto` all live one prefix away
+ * from classes a future edit could add, and a substring check would keep
+ * passing on the wrong one.
+ */
+const findWrapperClasses = async (): Promise<string[]> =>
+  (await findStickyWrapper()).className.split(' ');
+
+const findIconClass = async (): Promise<string> => {
   const icon = (await findTrigger()).querySelector('svg');
   if (icon === null) {
     throw new Error('the trigger rendered without its cookie icon');
   }
-  return icon.getAttribute('class');
+  const iconClass = icon.getAttribute('class');
+  if (iconClass === null) {
+    throw new Error('the cookie icon rendered without a class attribute');
+  }
+  return iconClass;
 };
 
 describe('ConsentCookieTrigger', () => {
@@ -109,13 +122,31 @@ describe('ConsentCookieTrigger', () => {
   it('sticks the wrapper to the content instead of the viewport', async () => {
     writeConsent(true);
     renderTrigger();
-    expect((await findStickyWrapper()).className).toContain('sticky');
+    expect(await findWrapperClasses()).toContain('sticky');
   });
 
   it('pins the sticky wrapper near the bottom edge', async () => {
     writeConsent(true);
     renderTrigger();
-    expect((await findStickyWrapper()).className).toContain('bottom-3');
+    expect(await findWrapperClasses()).toContain('bottom-3');
+  });
+
+  // Sticky `bottom` can lift an element but never push it down, so on a page
+  // shorter than the viewport the wrapper would otherwise sit directly under
+  // the content, mid-column, above an empty stretch of stretched-out `main`.
+  // `mt-auto` is what drops it to the bottom of that flex column.
+  it('drops the wrapper to the bottom of a short page', async () => {
+    writeConsent(true);
+    renderTrigger();
+    expect(await findWrapperClasses()).toContain('mt-auto');
+  });
+
+  // The whole point of the revision: a viewport-fixed control floated over the
+  // footer, so a reintroduced `fixed` is the specific regression to catch.
+  it('never falls back to viewport-fixed positioning', async () => {
+    writeConsent(true);
+    renderTrigger();
+    expect(await findWrapperClasses()).not.toContain('fixed');
   });
 
   // The wrapper spans the whole content column so the button lines up with the
@@ -124,7 +155,7 @@ describe('ConsentCookieTrigger', () => {
   it('keeps the full-width wrapper from intercepting clicks', async () => {
     writeConsent(true);
     renderTrigger();
-    expect((await findStickyWrapper()).className).toContain('pointer-events-none');
+    expect(await findWrapperClasses()).toContain('pointer-events-none');
   });
 
   it('restores pointer events on the button itself', async () => {
@@ -214,5 +245,14 @@ describe('ConsentCookieTrigger', () => {
     renderTrigger();
     const trigger = await findTrigger();
     expect(trigger.outerHTML).not.toContain('animate');
+  });
+
+  // The button's guard stops at its own subtree, and the wrapper is the
+  // positioned element — a float-in or slide-up would be attached here, on the
+  // box that actually moves.
+  it('renders a steady wrapper with no entrance animation', async () => {
+    writeConsent(true);
+    renderTrigger();
+    expect((await findStickyWrapper()).className).not.toContain('animate');
   });
 });

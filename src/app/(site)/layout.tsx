@@ -89,7 +89,13 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                 {/* tabIndex={-1}: older Safari won't move sequential focus past
                     the skip link's target unless it is programmatically
                     focusable. */}
-                <main className="flex-1" id="main" tabIndex={-1}>
+                {/* A flex column, not a plain block: `flex-1` already
+                    stretches `main` past short content, and only a flex
+                    formatting context lets the trigger's `mt-auto` claim that
+                    leftover height instead of stranding the cookie mid-page.
+                    Every route's own root is a full-width block, so becoming a
+                    flex item changes nothing above it. */}
+                <main className="flex flex-1 flex-col" id="main" tabIndex={-1}>
                   {children}
                   {/* Inside `<main>`, not beside it: the trigger is sticky, and
                       sticky resolves against the parent box — only this tall

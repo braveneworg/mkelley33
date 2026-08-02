@@ -19,6 +19,13 @@ import { useConsent } from '@/components/consent/consent-provider';
  * clickable it would be a full-width strip swallowing clicks meant for the
  * content beside it.
  *
+ * `mt-auto` pairs with `<main>` being a flex column: sticky `bottom` can lift
+ * an element off the page floor but never push it down, so on a page shorter
+ * than the viewport — a 404, `/~offline`, the newsletter confirm — the wrapper
+ * would otherwise stop right under the content and leave the cookie stranded
+ * mid-column above the stretched remainder of `main`. The auto margin eats
+ * that remainder and puts the cookie back on the bottom-left.
+ *
  * Accepted trade-off: the control is in flow, so once the provider reads
  * storage and the status flips to 'decided', a ~44px box appears at the end
  * of the content. A fixed control avoided that but overlapped the footer,
@@ -36,7 +43,13 @@ export const ConsentCookieTrigger = () => {
   }
 
   return (
-    <div className="pointer-events-none sticky bottom-3 z-40 mx-auto w-full max-w-5xl px-5">
+    <div className="pointer-events-none sticky bottom-3 z-40 mx-auto mt-auto w-full max-w-5xl px-5">
+      {/* `gap-2` separates the cookie from the label once it expands. Flex gap
+          applies between items regardless of their width, so it stays behind
+          the collapsed label too — measured 56px wide with the label hidden
+          (24px padding + 24px cookie + the 8px gap). That trailing space is
+          inside the button, which is the control itself, so it widens the hit
+          area rather than leaving a dead strip of page. */}
       <button
         aria-label="cookie preferences"
         className="group pointer-events-auto flex h-11 w-fit min-w-11 items-center gap-2 rounded px-3"
