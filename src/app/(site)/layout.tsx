@@ -57,6 +57,14 @@ export const viewport: Viewport = {
   ],
 };
 
+/**
+ * `flex flex-col` is a load-bearing prerequisite, not styling: the consent
+ * cookie trigger is `<main>`'s last child with `mt-auto`, which only pins it
+ * to the bottom of short pages while `<main>` is a flex column. Exported so
+ * the layout spec can pin the classes without rendering the tree.
+ */
+export const MAIN_CLASSES = 'flex flex-1 flex-col';
+
 const personJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'Person',
@@ -95,7 +103,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                     leftover height instead of stranding the cookie mid-page.
                     Every route's own root is a full-width block, so becoming a
                     flex item changes nothing above it. */}
-                <main className="flex flex-1 flex-col" id="main" tabIndex={-1}>
+                <main className={MAIN_CLASSES} id="main" tabIndex={-1}>
                   {children}
                   {/* Inside `<main>`, not beside it: the trigger is sticky, and
                       sticky resolves against the parent box — only this tall
