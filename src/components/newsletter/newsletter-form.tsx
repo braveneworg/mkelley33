@@ -9,6 +9,7 @@ import { Turnstile } from '@marsidev/react-turnstile';
 import { useGuardedForm } from '@/components/forms/use-guarded-form';
 import { describedBy, ErrorText, FieldError, fieldMessage } from '@/components/ui/error-text';
 import { subscribeNewsletter } from '@/lib/actions/newsletter';
+import { trackEvent } from '@/lib/analytics';
 import type { NewsletterFormValues } from '@/lib/validation/newsletter';
 import { newsletterSchema } from '@/lib/validation/newsletter';
 
@@ -17,7 +18,13 @@ export const NewsletterForm = () => {
     useGuardedForm<NewsletterFormValues>({
       defaultValues: { email: '', turnstileToken: '', website: '' },
       schema: newsletterSchema,
-      submit: subscribeNewsletter,
+      submit: async (values) => {
+        const result = await subscribeNewsletter(values);
+        if (result.success) {
+          trackEvent('newsletter_signup', {});
+        }
+        return result;
+      },
     });
   const errors = form.formState.errors;
 

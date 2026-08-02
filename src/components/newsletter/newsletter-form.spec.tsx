@@ -10,6 +10,7 @@ import userEvent from '@testing-library/user-event';
 
 import { NewsletterForm } from '@/components/newsletter/newsletter-form';
 import { subscribeNewsletter } from '@/lib/actions/newsletter';
+import { trackEvent } from '@/lib/analytics';
 
 /**
  * This form's own concerns: its single field and its confirmation copy. The
@@ -35,6 +36,7 @@ vi.mock('@marsidev/react-turnstile', () => ({
 vi.mock('@/lib/actions/newsletter', () => ({
   subscribeNewsletter: vi.fn().mockResolvedValue({ success: true }),
 }));
+vi.mock('@/lib/analytics', () => ({ trackEvent: vi.fn() }));
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -51,6 +53,30 @@ describe('NewsletterForm', () => {
     expect(subscribeNewsletter).toHaveBeenCalledWith(
       expect.objectContaining({ email: 'a@b.com', turnstileToken: 'test-token' })
     );
+  });
+
+  it('tracks the signup once the subscription is queued', async () => {
+    const user = userEvent.setup();
+    render(<NewsletterForm />);
+    await user.type(screen.getByLabelText('email'), 'a@b.com');
+    await user.click(screen.getByRole('button', { name: 'solve turnstile' }));
+    await user.click(screen.getByRole('button', { name: /subscribe/ }));
+    expect(await screen.findByText(/check your inbox to confirm/)).toBeInTheDocument();
+    expect(trackEvent).toHaveBeenCalledWith('newsletter_signup', {});
+  });
+
+  it('does not track a signup when the submit fails', async () => {
+    vi.mocked(subscribeNewsletter).mockResolvedValueOnce({
+      error: 'something broke — retry in a bit',
+      success: false,
+    });
+    const user = userEvent.setup();
+    render(<NewsletterForm />);
+    await user.type(screen.getByLabelText('email'), 'a@b.com');
+    await user.click(screen.getByRole('button', { name: 'solve turnstile' }));
+    await user.click(screen.getByRole('button', { name: /subscribe/ }));
+    expect(await screen.findByText(/something broke/)).toBeInTheDocument();
+    expect(trackEvent).not.toHaveBeenCalled();
   });
 
   it('shows a validation error for a bad email without calling the action', async () => {

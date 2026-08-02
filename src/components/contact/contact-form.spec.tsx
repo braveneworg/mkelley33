@@ -10,6 +10,7 @@ import userEvent from '@testing-library/user-event';
 
 import { ContactForm } from '@/components/contact/contact-form';
 import { submitContact } from '@/lib/actions/contact';
+import { trackEvent } from '@/lib/analytics';
 
 /**
  * This form's own concerns: the services picker, the deep link, and the error
@@ -39,6 +40,7 @@ vi.mock('@marsidev/react-turnstile', () => ({
 vi.mock('@/lib/actions/contact', () => ({
   submitContact: vi.fn().mockResolvedValue({ success: true }),
 }));
+vi.mock('@/lib/analytics', () => ({ trackEvent: vi.fn() }));
 
 const services = [
   { name: 'AI enablement', slug: 'ai-enablement' },
@@ -120,6 +122,40 @@ describe('ContactForm', () => {
         turnstileToken: 'test-token',
       })
     );
+  });
+
+  it('tracks a lead once the message is queued', async () => {
+    const user = userEvent.setup();
+    render(<ContactForm services={services} />);
+    await user.type(screen.getByLabelText('name'), 'Ada');
+    await user.type(screen.getByLabelText('email'), 'ada@example.com');
+    await user.type(
+      screen.getByLabelText('message'),
+      'Help my team adopt AI-assisted development.'
+    );
+    await user.click(screen.getByRole('button', { name: 'solve turnstile' }));
+    await user.click(screen.getByRole('button', { name: /send-message/ }));
+    expect(await screen.findByText(/message queued/)).toBeInTheDocument();
+    expect(trackEvent).toHaveBeenCalledWith('generate_lead', { reason: 'general' });
+  });
+
+  it('does not track a lead when the submit fails', async () => {
+    vi.mocked(submitContact).mockResolvedValueOnce({
+      error: 'verification failed — give it a beat and retry',
+      success: false,
+    });
+    const user = userEvent.setup();
+    render(<ContactForm services={services} />);
+    await user.type(screen.getByLabelText('name'), 'Ada');
+    await user.type(screen.getByLabelText('email'), 'ada@example.com');
+    await user.type(
+      screen.getByLabelText('message'),
+      'Help my team adopt AI-assisted development.'
+    );
+    await user.click(screen.getByRole('button', { name: 'solve turnstile' }));
+    await user.click(screen.getByRole('button', { name: /send-message/ }));
+    expect(await screen.findByText(/verification failed/)).toBeInTheDocument();
+    expect(trackEvent).not.toHaveBeenCalled();
   });
 
   it('pre-selects reason and service from the deep link', () => {

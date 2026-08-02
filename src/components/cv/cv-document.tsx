@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-import { BUTTON_LINK_CLASSES } from '@/components/ui/button-link';
+import { CvDownloadLink } from '@/components/cv/cv-download-link';
 import {
   CV_EDUCATION,
   CV_EXPERIENCE,
@@ -32,11 +32,7 @@ export const CvDocument = ({ resumePdf = siteConfig.resumePdf }: { resumePdf?: s
       Wake Forest, NC · me@mkelley33.com · mkelley33.com · linkedin.com/in/mkelley33 ·
       github.com/mkelley33
     </p>
-    {resumePdf ? (
-      <a className={`${BUTTON_LINK_CLASSES} mt-5 print:hidden`} download href={resumePdf}>
-        Download PDF ↓
-      </a>
-    ) : null}
+    {resumePdf ? <CvDownloadLink resumePdf={resumePdf} /> : null}
 
     <SectionHeading>Professional summary</SectionHeading>
     <p className="text-fg mt-3 leading-relaxed">{CV_SUMMARY}</p>

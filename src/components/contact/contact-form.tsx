@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/dialog';
 import { describedBy, ErrorText, FieldError, fieldMessage } from '@/components/ui/error-text';
 import { submitContact } from '@/lib/actions/contact';
+import { trackEvent } from '@/lib/analytics';
 import type { ContactFormValues, ContactReason } from '@/lib/validation/contact';
 import { CONTACT_REASONS, contactSchema, labelForReason } from '@/lib/validation/contact';
 
@@ -49,7 +50,13 @@ export const ContactForm = ({ services }: { services: ContactServiceOption[] }) 
         website: '',
       },
       schema: contactSchema,
-      submit: submitContact,
+      submit: async (values) => {
+        const result = await submitContact(values);
+        if (result.success) {
+          trackEvent('generate_lead', { reason: values.reason });
+        }
+        return result;
+      },
     });
   const reason = form.watch('reason');
   const selectedSlugs = form.watch('requestedServices');
