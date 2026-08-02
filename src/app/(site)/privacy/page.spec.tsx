@@ -22,8 +22,11 @@ describe('PrivacyPage', () => {
 
   it('names the controller', () => {
     renderPage();
-    // Anchored: '## who receives it' is also a level-2 heading matching /who/.
-    expect(screen.getByRole('heading', { level: 2, name: /^who$/ })).toBeInTheDocument();
+    // Art. 13(1)(a) makes the controller's identity mandatory, so pin the
+    // sentence itself — a heading assertion survives deleting the name.
+    expect(
+      screen.getByText(/Michaux Kelley runs this site and is the data controller/)
+    ).toBeInTheDocument();
   });
 
   it('points data requests at the contact form', () => {
