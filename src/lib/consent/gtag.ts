@@ -42,9 +42,13 @@ interface Reloadable {
  * Vercel runtimes a grant already started, so the provider reloads to kill
  * them outright. The target is a parameter because `window.location` is
  * unforgeable in jsdom: nothing else can observe the call.
+ *
+ * A no-op outside the browser, like its siblings above. The DOM lib types
+ * `globalThis.location` as always present, but in Node it is undefined — so
+ * the annotation admits that and the call is optional-chained.
  */
-export const reloadPage = (target: Reloadable = globalThis.location): void => {
-  target.reload();
+export const reloadPage = (target: Reloadable | undefined = globalThis.location): void => {
+  target?.reload();
 };
 
 const GA_COOKIE_PATTERN = /^_ga($|_)/;

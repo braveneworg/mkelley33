@@ -78,6 +78,11 @@ export const ConsentProvider = ({ children }: { children: ReactNode }) => {
         // Neither gtag.js nor Vercel's runtime can be unloaded once mounted,
         // and a denied Consent Mode signal only stops storage — not the
         // beacons. Reloading is the only way to make withdrawal immediate.
+        //
+        // Accepted trade-off: the corner trigger is on every page, /contact
+        // included, so this discards whatever a visitor had typed into an open
+        // form. Withdrawing consent mid-form is rare; leaving trackers running
+        // because someone might be mid-form is not a trade worth making.
         reloadPage();
       }
     },

@@ -7,11 +7,18 @@
 // only be exercised in an environment that genuinely lacks it — the server
 // render, where this module is imported but never has cookies to expire.
 
-import { deleteGaCookies, updateAnalyticsConsent } from '@/lib/consent/gtag';
+import { deleteGaCookies, reloadPage, updateAnalyticsConsent } from '@/lib/consent/gtag';
 
 describe('consent gtag helpers outside the browser', () => {
   it('deleteGaCookies is a no-op where there is no document', () => {
     expect(() => deleteGaCookies()).not.toThrow();
+  });
+
+  // The DOM lib types `globalThis.location` as always present; in Node it is
+  // undefined, so the default argument resolves to nothing and the call has
+  // to survive it — same convention as its two siblings here.
+  it('reloadPage is a no-op where there is no location', () => {
+    expect(() => reloadPage()).not.toThrow();
   });
 
   it('updateAnalyticsConsent is a no-op where there is no gtag', () => {
