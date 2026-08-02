@@ -40,6 +40,7 @@
   "dependencies": {
     "@hookform/resolvers": "^5.5.7",
     "@marsidev/react-turnstile": "^1.5.3",
+    "@next/third-parties": "^16.2.12",
     "@payloadcms/db-mongodb": "^3.86.0",
     "@payloadcms/next": "^3.86.0",
     "@payloadcms/richtext-lexical": "^3.86.0",

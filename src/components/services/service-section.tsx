@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-import { ButtonLink } from '@/components/ui/button-link';
+import { QuoteCta } from '@/components/services/quote-cta';
 import type { ServiceContent } from '@/lib/services-content';
 
 export const ServiceSection = ({ service }: { service: ServiceContent }) => (
@@ -23,8 +23,6 @@ export const ServiceSection = ({ service }: { service: ServiceContent }) => (
     <p className="text-fg-muted mt-4 max-w-2xl font-mono text-xs">
       <span aria-hidden="true">#</span> {service.credibility}
     </p>
-    <ButtonLink className="mt-5" href={`/contact?reason=services&service=${service.slug}`}>
-      Request a quote →
-    </ButtonLink>
+    <QuoteCta service={service.slug} />
   </section>
 );
