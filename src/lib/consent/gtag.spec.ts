@@ -78,11 +78,33 @@ describe('reloadPage', () => {
 });
 
 describe('deleteGaCookies', () => {
+  // Cookies live on the shared jsdom document and tests run shuffled, so a
+  // seed left behind would leak into another test's assertion.
+  afterEach(() => {
+    document.cookie
+      .split(';')
+      .map((pair) => pair.split('=')[0].trim())
+      .filter((name) => name !== '')
+      .forEach((name) => {
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+      });
+  });
+
   it('expires _ga and _ga_* cookies but leaves others', () => {
     document.cookie = '_ga=GA1.1.111';
     document.cookie = '_ga_ABC123=GS1.1.222';
     document.cookie = 'other=keep';
     deleteGaCookies();
     expect(document.cookie).toBe('other=keep');
+  });
+
+  // `_gaX` is not a GA cookie. The pattern anchors on `_ga` followed by the
+  // end of the name or an underscore; drop that anchor for a bare `^_ga` and
+  // this cookie — and any other one merely starting those three characters —
+  // gets expired along with GA's own, with nothing else here to notice.
+  it('leaves a cookie whose name merely begins with _ga', () => {
+    document.cookie = '_gaX=keep';
+    deleteGaCookies();
+    expect(document.cookie).toBe('_gaX=keep');
   });
 });
