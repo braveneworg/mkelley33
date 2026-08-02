@@ -72,4 +72,26 @@ describe('PrivacyPage', () => {
     renderPage();
     expect(screen.getByText('_ga')).toBeInTheDocument();
   });
+
+  // Art. 20. Representative of the rights added alongside it — restriction
+  // (Art. 18) and objection (Art. 21) — which a rights list is incomplete
+  // without and which nothing else on the page mentions.
+  it('offers the right to data portability', () => {
+    renderPage();
+    expect(screen.getByText(/data portability/)).toBeInTheDocument();
+  });
+
+  // Art. 7(3): withdrawal is prospective. Without the sentence the notice
+  // reads as if withdrawing undid processing already done under consent.
+  it('says withdrawal does not unwind past processing', () => {
+    renderPage();
+    expect(screen.getByText(/does not affect the lawfulness/)).toBeInTheDocument();
+  });
+
+  // Art. 13(1)(c): Vercel logs IPs to serve the site at all, and it happens
+  // whether or not anyone consents to anything — so it needs its own basis.
+  it('discloses hosting as a legitimate interest', () => {
+    renderPage();
+    expect(screen.getByText(/processes IP addresses in server logs/)).toBeInTheDocument();
+  });
 });

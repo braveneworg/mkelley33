@@ -30,7 +30,7 @@ export const ConsentBanner = () => {
     >
       <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center gap-3 px-5 py-4">
         <p className="text-fg-muted font-mono text-xs">
-          this site uses cookies for analytics — nothing loads until you decide.{' '}
+          this site uses cookies for analytics — no analytics loads until you decide.{' '}
           <Link className="link-draw text-fg" href="/privacy">
             privacy
           </Link>

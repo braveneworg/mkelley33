@@ -28,6 +28,13 @@ describe('consent inventory', () => {
     expect(names).toContain(CONSENT_STORAGE_KEY);
   });
 
+  // Turnstile runs on both forms without asking, under legitimate interest —
+  // which makes disclosing it more important, not less.
+  it('lists turnstile under essential', () => {
+    const names = inventoryFor('essential').map((item) => item.name);
+    expect(names).toContain('turnstile');
+  });
+
   it('lists the GA cookies under analytics', () => {
     const names = inventoryFor('analytics').map((item) => item.name);
     expect(names).toEqual(expect.arrayContaining(['_ga', '_ga_*']));

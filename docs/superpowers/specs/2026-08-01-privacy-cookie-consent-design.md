@@ -75,7 +75,11 @@ conversion numbers will read low by design.
   provider, purpose, duration, type (cookie / localStorage / script),
   category. Entries: `_ga` (Google, 2y), `_ga_*` (Google, 2y), Vercel
   Analytics (script, no cookies, aggregate), consent record + theme
-  (localStorage, essential).
+  (localStorage, essential), Turnstile (Cloudflare script, essential —
+  it runs on both forms under legitimate interest, so it is disclosed
+  rather than gated). Typed `readonly` throughout: this is a disclosure,
+  and a consumer that can splice an entry out can make the page
+  under-report what runs.
 
 ### `src/components/consent/consent-provider.tsx`
 
@@ -147,17 +151,23 @@ and cursor trigger mount beside `PaletteMount`; `GoogleAnalyticsTag` and
       basis **steps prior to a contract** (Art. 6(1)(b)).
     - newsletter — email + double-opt-in confirm/unsubscribe tokens in
       the database; legal basis **consent**; unsubscribe = withdrawal.
-    - bot protection — Cloudflare Turnstile on the contact form
-      (IP/browser signals); legal basis **legitimate interest**; links
-      Cloudflare's policy.
+    - bot protection — Cloudflare Turnstile on the contact and
+      newsletter forms (IP/browser signals); legal basis **legitimate
+      interest**; links Cloudflare's policy.
+    - hosting — Vercel serves the site and processes IP addresses in
+      server logs as a technical necessity; legal basis **legitimate
+      interest** in operating the site.
   - `who receives it` — Google LLC, Vercel Inc., Cloudflare Inc. named;
     email delivery provider kept generic; EU→US transfers under the
     EU-US Data Privacy Framework.
   - `retention` — analytics event data **14 months** (GA4 console
     setting user-confirmed as already set); contact/newsletter data kept
     until purpose served or withdrawal.
-  - `your rights` — withdraw consent anytime (corner control), access /
-    erasure, complaint to a supervisory authority.
+  - `your rights` — withdraw consent anytime (corner control), with the
+    Art. 7(3) note that withdrawal does not affect the lawfulness of
+    processing done under that consent beforehand; access / rectification
+    / erasure; restriction (Art. 18); objection (Art. 21); data
+    portability (Art. 20); complaint to a supervisory authority.
   - Inventory table rendered from `inventory.ts`.
   - Links: <https://policies.google.com/privacy> and
     <https://policies.google.com/technologies/partner-sites>.

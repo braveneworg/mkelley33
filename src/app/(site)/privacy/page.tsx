@@ -33,7 +33,7 @@ export default function PrivacyPage() {
         <span aria-hidden="true"># </span>privacy
       </h1>
       <p className="text-fg-muted mt-3 max-w-2xl leading-relaxed">
-        What this site measures, who receives it, and the choices you keep. Last updated 2026-08-01.
+        What this site measures, who receives it, and the choices you keep. Last updated 2026-08-02.
       </p>
 
       <h2 className={H2_CLASSES}>
@@ -67,8 +67,14 @@ export default function PrivacyPage() {
           tokens, stored in the site database. Legal basis: consent; unsubscribing withdraws it.
         </li>
         <li>
-          <strong>bot protection</strong> — Cloudflare Turnstile on the contact form processes IP
-          and browser signals to keep bots out. Legal basis: legitimate interest in site security.
+          <strong>bot protection</strong> — Cloudflare Turnstile on the contact and newsletter forms
+          processes IP and browser signals to keep bots out. Legal basis: legitimate interest in
+          site security.
+        </li>
+        <li>
+          <strong>hosting</strong> — Vercel serves this site and processes IP addresses in server
+          logs as a technical necessity of delivering it. Legal basis: legitimate interest in
+          operating the site.
         </li>
       </ul>
 
@@ -142,8 +148,16 @@ export default function PrivacyPage() {
         <span aria-hidden="true">## </span>your rights
       </h2>
       <ul className={LIST_CLASSES}>
-        <li>withdraw consent at any time — it is as easy as giving it.</li>
+        <li>
+          withdraw consent at any time — it is as easy as giving it. withdrawing does not affect the
+          lawfulness of anything processed under that consent before you withdrew it.
+        </li>
         <li>ask for access to, correction of, or erasure of your data.</li>
+        <li>ask for restriction of processing while a request or objection is being resolved.</li>
+        <li>object to processing carried out under legitimate interest.</li>
+        <li>
+          ask for data portability — your data handed back in a structured, machine-readable form.
+        </li>
         <li>lodge a complaint with your local supervisory authority.</li>
       </ul>
     </div>

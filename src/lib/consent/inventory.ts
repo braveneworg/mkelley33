@@ -83,6 +83,14 @@ export const CONSENT_INVENTORY: readonly InventoryItem[] = [
     purpose: 'remembers your light/dark preference',
     type: 'local storage',
   },
+  {
+    category: 'essential',
+    duration: 'per form challenge',
+    name: 'turnstile',
+    provider: 'cloudflare',
+    purpose: 'bot protection on the contact and newsletter forms',
+    type: 'script',
+  },
 ];
 
 export const inventoryFor = (category: ConsentCategoryId): readonly InventoryItem[] =>
