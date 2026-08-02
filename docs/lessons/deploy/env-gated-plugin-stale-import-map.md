@@ -30,10 +30,12 @@ fake-format token was exported, at which point it went blank identically.
 
 - When a config input is env-gated, every **generated artifact derived from
   the config** silently becomes env-dependent too. Generate the import map
-  with all env-gated plugins forced ON (any truthy `BLOB_READ_WRITE_TOKEN`
-  works — generation never dials the store), so the committed map is the
-  union across environments. Extra entries are harmless; missing ones blank
-  the admin.
+  with all env-gated plugins forced ON, so the committed map is the union
+  across environments. Extra entries are harmless; missing ones blank the
+  admin. (Not just any truthy `BLOB_READ_WRITE_TOKEN` works: the plugin
+  rejects tokens that fail its
+  `vercel_blob_rw_<store_id>_<random_string>` format check — generation
+  still never dials the store.)
 - `src/payload-import-map.spec.ts` pins the blob handler entry, verified red
   against the stale map. Extend it when the config gains another env-gated
   plugin.
@@ -41,11 +43,14 @@ fake-format token was exported, at which point it went blank identically.
   component-resolution failure — read the function logs first, not the
   client.
 
-**Also:** `pnpm run generate:importmap` currently dies with
-`ERR_REQUIRE_ASYNC_MODULE` — the payload CLI `require()`s the lexical ESM
-graph, which has top-level await. The fix entry was hand-authored in the
-generator's exact output shape. Un-breaking the generator (likely a Payload
-bump) is open work; until then, regenerating the map means hand-editing it.
+**Also:** the upstream `payload generate:importmap` CLI dies with
+`ERR_REQUIRE_ASYNC_MODULE` — it `require()`s the lexical ESM graph, which
+has top-level await. Fixed 2026-08-02 the same way as `generate:types`:
+`pnpm generate:importmap` now runs `scripts/generate-importmap.mjs` (tsx CLI
+calling the public `generateImportMap` export), which forces a format-valid
+placeholder `BLOB_READ_WRITE_TOKEN` before the config loads, so every
+regeneration emits the union map by construction. The wiring is pinned by
+`src/payload-import-map.spec.ts`.
 
 **History:** 2026-07-30, found diagnosing the blank production admin, the
 first time `/admin` was opened after the Blob token landed. See
