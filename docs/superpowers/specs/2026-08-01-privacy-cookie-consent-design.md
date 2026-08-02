@@ -118,8 +118,12 @@ analytics off after it had been granted.
   `z-40`, below palette/dialog layers. `role="region"`,
   `aria-label="cookie consent"`.
 - `consent-preferences-dialog.tsx` — built on `src/components/ui/dialog.tsx`:
-  - `essential` — always on; control disabled, labeled `always on`.
-  - `analytics` — toggle, off by default when undecided.
+  - `essential` — always on; control disabled, state text `always on`.
+  - `analytics` — toggle, off by default when undecided; state text
+    `on` / `off`.
+  - Each toggle's **accessible name is its category heading**, not its
+    state text: a control announced as "off checkbox" says nothing about
+    what is off. The state text stays visible and stays clickable.
   - Inventory table per category from `inventory.ts`.
   - Actions: `save preferences`, `accept all`, `decline all`.
 - `consent-cursor-trigger.tsx` — the sticky bottom-left phosphor block
@@ -127,8 +131,9 @@ analytics off after it had been granted.
   hover/focus. Hidden while the banner is visible.
 - `src/components/ui/switch.tsx` — new tiny primitive: native checkbox
   styled as an ASCII toggle (`[ ]` / `[■]` in phosphor). Accessible by
-  construction (real checkbox, visible focus, label association). Spec
-  beside it.
+  construction (real checkbox, visible focus, label association), with
+  an optional `labelledBy` that redirects the accessible name to a
+  heading when the visible label is only state. Spec beside it.
 
 ### Layout wiring (`src/app/(site)/layout.tsx`)
 
