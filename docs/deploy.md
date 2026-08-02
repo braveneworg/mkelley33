@@ -146,8 +146,12 @@ protects nothing and only costs you the ability to check it.
 
 Anything a preview deployment also needs takes a comma-separated target —
 `pnpm exec vercel env add DATABASE_URL production,preview --sensitive`.
-Only Production is audited by the preflight; preview builds fail open the
-same way local dev does.
+Only Production is audited by the preflight, so a preview missing a variable
+degrades the same way local dev does — with one exception. A preview build
+still runs with `NODE_ENV=production` (Vercel sets `VERCEL_ENV=preview`, not
+`NODE_ENV`), so `TURNSTILE_SECRET_KEY` fails **closed** there too: give
+preview the `production,preview` target for that variable, or accept that
+every contact and newsletter submission on a preview URL is rejected.
 
 Replacing an existing value — the only way to change a sensitive one —
 takes `--force`:
@@ -247,11 +251,19 @@ could not see that, which is why the shape is checked too. If you have no
 Blob store yet, unset the var rather than parking a placeholder in it; the
 config skips the plugin when it is absent.
 
-The app itself fails open when mail/Turnstile config is absent (JSON email
-transport, Cloudflare test keys) — right for resilience, wrong as a deploy
-default, which is why the manifest hard-requires them. To consciously
-soft-launch without one, remove it from `REQUIRED_DEPLOY_ENV` in
-`src/lib/deploy/env-manifest.ts` in a reviewed commit.
+The app degrades rather than crashing when config is absent — the JSON email
+transport stands in for SMTP, the Cloudflare test site key for a real one —
+which is right for resilience and wrong as a deploy default, and is why the
+manifest hard-requires them. To consciously soft-launch without one, remove
+it from `REQUIRED_DEPLOY_ENV` in `src/lib/deploy/env-manifest.ts` in a
+reviewed commit.
+
+`TURNSTILE_SECRET_KEY` is the exception: `src/lib/turnstile/verify.ts` fails
+**closed** when it is unset and `NODE_ENV` is `production`, so removing it
+from the manifest does not soft-launch the spam gate — it rejects every
+contact and newsletter submission. An explicitly configured secret is always
+honored, whatever its value, so pointing production at Cloudflare's test
+key remains a deliberate choice rather than a silent default.
 
 When the app starts reading a new env var, add it to the manifest — the
 spec in `src/lib/deploy/env-manifest.spec.ts` pins the list, so the change

@@ -90,6 +90,20 @@ interface SandboxRun extends HookRun {
  * whatever the developer's global git config says, so the hook always takes
  * its `origin/main` fallback path and the fixture stays deterministic.
  */
+
+/**
+ * When this suite runs from inside a git hook (`vitest --changed` in
+ * pre-commit), git has exported GIT_DIR and GIT_INDEX_FILE into the
+ * environment — and a child git inheriting them ignores its `cwd` and
+ * operates on the OUTER repository, where `remote add origin` fails because
+ * origin already exists. Every sandbox process gets this scrubbed
+ * environment so the sandbox stays a sandbox wherever the suite runs.
+ */
+const sandboxEnv: NodeJS.ProcessEnv = {
+  ...Object.fromEntries(Object.entries(process.env).filter(([name]) => !name.startsWith('GIT_'))),
+  NODE_ENV: process.env.NODE_ENV,
+};
+
 const createSandbox = (): Sandbox => {
   const root = mkdtempSync(join(tmpdir(), 'pre-push-gate-'));
   const remoteDir = join(root, 'remote.git');
@@ -112,11 +126,14 @@ const createSandbox = (): Sandbox => {
         'user.name=Gate Fixture',
         ...args,
       ],
-      { cwd: workDir, stdio: 'ignore' }
+      { cwd: workDir, env: sandboxEnv, stdio: 'ignore' }
     );
   };
 
-  execFileSync('git', ['init', '--bare', '--initial-branch=main', remoteDir], { stdio: 'ignore' });
+  execFileSync('git', ['init', '--bare', '--initial-branch=main', remoteDir], {
+    env: sandboxEnv,
+    stdio: 'ignore',
+  });
   mkdirSync(workDir);
   git('init', '--initial-branch=main');
   git('remote', 'add', 'origin', remoteDir);
@@ -139,7 +156,11 @@ const createSandbox = (): Sandbox => {
 
   return {
     binDir,
-    headSha: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: workDir, encoding: 'utf8' }).trim(),
+    headSha: execFileSync('git', ['rev-parse', 'HEAD'], {
+      cwd: workDir,
+      encoding: 'utf8',
+      env: sandboxEnv,
+    }).trim(),
     logDir: root,
     pnpmArgsLog: join(root, 'pnpm-args.log'),
     workDir,
@@ -158,7 +179,7 @@ const runHookInSandbox = (shell: string, gateExit: number): Promise<SandboxRun> 
     const child = spawn(shell, [HOOK], {
       cwd: sandbox.workDir,
       env: {
-        ...process.env,
+        ...sandboxEnv,
         GATE_EXIT: String(gateExit),
         PATH: `${sandbox.binDir}:${process.env.PATH ?? ''}`,
         PNPM_ARGS_LOG: sandbox.pnpmArgsLog,

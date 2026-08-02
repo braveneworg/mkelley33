@@ -3,7 +3,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 import type { ActionResult } from '@/lib/actions/types';
-import { verifyTurnstileToken } from '@/lib/turnstile';
+import { verifyTurnstileToken } from '@/lib/turnstile/verify';
 
 import type { ZodType } from 'zod';
 

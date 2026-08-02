@@ -21,6 +21,12 @@ binding. Everything below it applies only once the thing it names exists.
   with Zod (`src/lib/validation/`) before use.
 - Every API route and Server Action handles errors with `try`/`catch` and
   returns appropriate HTTP status codes.
+- A module that reads a secret is marked `import 'server-only'` so importing
+  it from a Client Component fails the build instead of relying on
+  tree-shaking. `src/lib/turnstile/verify.ts` is the one such module today,
+  split from the client-safe `site-key.ts` beside it — keep that shape: when
+  a module has a client half and a secret-reading half, they are two files,
+  not one with two exports.
 
 ## TypeScript
 
@@ -71,6 +77,10 @@ binding. Everything below it applies only once the thing it names exists.
 - Mock external deps at the service-layer boundary. Test behavior and output,
   never implementation details. One condition per test — never `expect` inside
   a conditional.
+- A spec that loads a `server-only` module must stub the package first with
+  `vi.mock('server-only', () => ({}))`. It throws on import outside a server
+  bundle, and Vitest resolves the client conditions. See
+  `src/lib/turnstile/verify.spec.ts`.
 - Deterministic and independent of network, time, and ordering. Remove
   orphaned tests when code is deleted, and orphaned code when tests are
   removed.
@@ -97,9 +107,6 @@ do not file a bug because today's code does not comply.
   adding protected routes: `withAuth` / `withAdmin` / `withRateLimit` in
   `src/lib/decorators/`, and gate every protected route and action through
   them.
-- **`'server-only'`.** Not a dependency and no module is marked. If added,
-  mark server-only modules with it and mock it in specs
-  (`vi.mock('server-only', () => ({}))`).
 - **Client data fetching.** `@tanstack/react-query` is installed but used in
   exactly one place — `src/components/palette/command-palette.tsx`, which
   builds its own `QueryClient` inline. `src/lib/query-keys.ts`, `src/hooks/`,

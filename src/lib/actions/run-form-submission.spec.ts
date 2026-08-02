@@ -7,9 +7,9 @@
 import { z } from 'zod';
 
 import { runFormSubmission, TURNSTILE_FAILED_ERROR } from '@/lib/actions/run-form-submission';
-import { verifyTurnstileToken } from '@/lib/turnstile';
+import { verifyTurnstileToken } from '@/lib/turnstile/verify';
 
-vi.mock('@/lib/turnstile', () => ({
+vi.mock('@/lib/turnstile/verify', () => ({
   verifyTurnstileToken: vi.fn(),
 }));
 
