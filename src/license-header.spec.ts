@@ -40,6 +40,13 @@ const trackedSourceFiles = (): string[] =>
     .split('\0')
     .filter((file) => file !== '' && SOURCE_FILE.test(file) && !GENERATED.has(file));
 
+describe('package.json license field', () => {
+  it('declares the MPL-2.0 license the LICENSE file grants', () => {
+    const { license } = JSON.parse(readFileSync('package.json', 'utf8')) as { license: string };
+    expect(license).toBe('MPL-2.0');
+  });
+});
+
 describe('MPL license headers', () => {
   const files = trackedSourceFiles();
 

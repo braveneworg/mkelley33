@@ -2,7 +2,7 @@
   "name": "mkelley33",
   "version": "1.0.0",
   "private": true,
-  "license": "ISC",
+  "license": "MPL-2.0",
   "packageManager": "pnpm@11.17.0",
   "engines": {
     "node": ">=24.15.0",
