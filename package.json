@@ -12,10 +12,12 @@
     "dev": "next dev",
     "build": "next build && serwist build serwist.config.ts",
     "build:ci": "node scripts/ci-build.mjs",
+    "gate": "pnpm run format:check && pnpm run typecheck && pnpm run lint:check && pnpm run test:coverage:check",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
     "start": "next start",
     "lint": "eslint . --max-warnings=0 --config eslint.config.mjs --fix",
+    "lint:check": "eslint . --max-warnings=0 --config eslint.config.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest --reporter=dot --silent",
     "test:run": "vitest run",
@@ -112,7 +114,8 @@
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.65.0",
     "vercel": "^57.0.0",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.10",
+    "yaml": "^2.9.0"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx}": [

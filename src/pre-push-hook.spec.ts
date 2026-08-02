@@ -5,7 +5,17 @@
 // @vitest-environment node
 
 import { execFileSync, spawn } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 /**
  * Repo-policy check for `.husky/pre-push`, not a unit test. The branch guard
@@ -17,13 +27,15 @@ import { existsSync, readFileSync } from 'node:fs';
  *
  * The hook is driven exactly as git drives it: one
  * `<local ref> <local sha> <remote ref> <remote sha>` line per ref on stdin.
- * A push of real commits to a feature branch is deliberately not exercised
- * here, because the hook would go on to fetch, typecheck, lint and run the
- * whole suite — the four cases below all resolve inside the guard itself.
+ * The guard cases below resolve inside the guard itself, against the real
+ * repository. The gate cases run against a sandbox instead — see
+ * `createSandbox` — because reaching the gate in the real repository would
+ * fetch from the network and then run the whole suite from inside the suite.
  */
 const ZERO = '0'.repeat(40);
 const HEAD_SHA = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
 const LOG = `${process.env.TMPDIR ?? '/tmp'}/husky-pre-push.log`;
+const HOOK = join(process.cwd(), '.husky', 'pre-push');
 
 interface HookRun {
   code: number;
@@ -42,13 +54,149 @@ interface HookRun {
 const SHELLS = ['/bin/sh', '/bin/dash'].filter((shell) => existsSync(shell));
 
 const runHook = (shell: string, refLine: string): Promise<HookRun> =>
-  new Promise((resolve) => {
+  new Promise((settle) => {
     const child = spawn(shell, ['.husky/pre-push'], { stdio: ['pipe', 'pipe', 'pipe'] });
     child.stdout.resume();
     child.stderr.resume();
     child.stdin.end(`${refLine}\n`);
     child.on('close', (code) => {
-      resolve({ code: code ?? 1, log: readFileSync(LOG, 'utf8') });
+      settle({ code: code ?? 1, log: readFileSync(LOG, 'utf8') });
+    });
+  });
+
+interface Sandbox {
+  binDir: string;
+  headSha: string;
+  logDir: string;
+  pnpmArgsLog: string;
+  workDir: string;
+}
+
+interface SandboxRun extends HookRun {
+  /** One line per `pnpm` invocation the hook made, as the stub recorded it. */
+  pnpmCalls: string[];
+}
+
+/**
+ * A throwaway repository whose `origin` is a bare repo on disk, plus a stub
+ * `pnpm` first on `PATH`. Together they let the hook run all the way to its
+ * final stage without touching the network and without re-entering the test
+ * suite: the fetch and the up-to-date check resolve against the local bare
+ * repo, and the stub records what the hook asked `pnpm` to do instead of
+ * doing it. `GATE_EXIT` makes the stub fail on demand, which is the only way
+ * to exercise the hook's failure branch under both shells.
+ *
+ * `branch.autoSetupMerge=false` keeps the feature branch upstream-less
+ * whatever the developer's global git config says, so the hook always takes
+ * its `origin/main` fallback path and the fixture stays deterministic.
+ */
+
+/**
+ * When this suite runs from inside a git hook (`vitest --changed` in
+ * pre-commit), git has exported GIT_DIR and GIT_INDEX_FILE into the
+ * environment — and a child git inheriting them ignores its `cwd` and
+ * operates on the OUTER repository, where `remote add origin` fails because
+ * origin already exists. Every sandbox process gets this scrubbed
+ * environment so the sandbox stays a sandbox wherever the suite runs.
+ */
+const sandboxEnv: NodeJS.ProcessEnv = Object.fromEntries(
+  Object.entries(process.env).filter(([name]) => !name.startsWith('GIT_'))
+);
+
+const createSandbox = (): Sandbox => {
+  const root = mkdtempSync(join(tmpdir(), 'pre-push-gate-'));
+  const remoteDir = join(root, 'remote.git');
+  const workDir = join(root, 'work');
+  const binDir = join(root, 'bin');
+
+  const git = (...args: string[]): void => {
+    execFileSync(
+      'git',
+      [
+        '-c',
+        'branch.autoSetupMerge=false',
+        '-c',
+        'commit.gpgsign=false',
+        '-c',
+        'core.hooksPath=/dev/null',
+        '-c',
+        'user.email=gate@example.test',
+        '-c',
+        'user.name=Gate Fixture',
+        ...args,
+      ],
+      { cwd: workDir, env: sandboxEnv, stdio: 'ignore' }
+    );
+  };
+
+  execFileSync('git', ['init', '--bare', '--initial-branch=main', remoteDir], {
+    env: sandboxEnv,
+    stdio: 'ignore',
+  });
+  mkdirSync(workDir);
+  git('init', '--initial-branch=main');
+  git('remote', 'add', 'origin', remoteDir);
+  writeFileSync(join(workDir, 'base.ts'), 'export const base = 1;\n');
+  git('add', '.');
+  git('commit', '-m', 'chore: base');
+  git('push', '-u', 'origin', 'main');
+  git('checkout', '-b', 'chore/gate');
+  writeFileSync(join(workDir, 'ahead.ts'), 'export const ahead = 2;\n');
+  git('add', '.');
+  git('commit', '-m', 'chore: ahead');
+
+  mkdirSync(binDir);
+  const stub = join(binDir, 'pnpm');
+  writeFileSync(
+    stub,
+    '#!/bin/sh\nprintf \'%s\\n\' "$*" >> "$PNPM_ARGS_LOG"\nexit "${GATE_EXIT:-0}"\n'
+  );
+  chmodSync(stub, 0o755);
+
+  return {
+    binDir,
+    headSha: execFileSync('git', ['rev-parse', 'HEAD'], {
+      cwd: workDir,
+      encoding: 'utf8',
+      env: sandboxEnv,
+    }).trim(),
+    logDir: root,
+    pnpmArgsLog: join(root, 'pnpm-args.log'),
+    workDir,
+  };
+};
+
+const sandbox = createSandbox();
+
+afterAll(() => {
+  rmSync(sandbox.logDir, { force: true, recursive: true });
+});
+
+const runHookInSandbox = (shell: string, gateExit: number): Promise<SandboxRun> =>
+  new Promise((settle) => {
+    writeFileSync(sandbox.pnpmArgsLog, '');
+    const child = spawn(shell, [HOOK], {
+      cwd: sandbox.workDir,
+      env: {
+        ...sandboxEnv,
+        GATE_EXIT: String(gateExit),
+        PATH: `${sandbox.binDir}:${process.env.PATH ?? ''}`,
+        PNPM_ARGS_LOG: sandbox.pnpmArgsLog,
+        TMPDIR: sandbox.logDir,
+      },
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+    child.stdout.resume();
+    child.stderr.resume();
+    child.stdin.end(`refs/heads/chore/gate ${sandbox.headSha} refs/heads/chore/gate ${ZERO}\n`);
+    child.on('close', (code) => {
+      settle({
+        code: code ?? 1,
+        log: readFileSync(join(sandbox.logDir, 'husky-pre-push.log'), 'utf8'),
+        pnpmCalls: readFileSync(sandbox.pnpmArgsLog, 'utf8')
+          .split('\n')
+          .filter((line) => line !== ''),
+      });
     });
   });
 
@@ -75,5 +223,27 @@ describe.each(SHELLS)('pre-push branch guard under %s', (shell) => {
     const { code, log } = await runHook(shell, `(delete) ${ZERO} refs/heads/main ${HEAD_SHA}`);
     expect(code).toBe(1);
     expect(log).toContain("Refusing to push to 'main'");
+  });
+});
+
+describe.each(SHELLS)('pre-push gate under %s', (shell) => {
+  it('runs the one gate script rather than the checks one by one', async () => {
+    const { pnpmCalls } = await runHookInSandbox(shell, 0);
+    expect(pnpmCalls).toEqual(['gate']);
+  });
+
+  it('pushes when the gate passes', async () => {
+    const { code } = await runHookInSandbox(shell, 0);
+    expect(code).toBe(0);
+  });
+
+  it('refuses the push when the gate fails', async () => {
+    const { code } = await runHookInSandbox(shell, 1);
+    expect(code).toBe(1);
+  });
+
+  it('says the gate is what failed', async () => {
+    const { log } = await runHookInSandbox(shell, 1);
+    expect(log).toContain('The gate failed');
   });
 });

@@ -19,8 +19,12 @@ binding. Everything below it applies only once the thing it names exists.
   wrong at build time, which is why `scripts/ci-build.mjs` fails the build if
   Payload never reached mongod.
 - `validation/` — Zod schemas for all external input, one module per form.
-- `email/` — `transport.ts` (nodemailer; falls back to the JSON transport when
-  `SMTP_HOST` is unset) and `templates.ts`.
+- `email/` — the mailer, split along its seam: `mailer-config.ts` resolves the
+  `SMTP_*`/`EMAIL_*` environment into a typed config with no I/O, `mailer.ts`
+  turns that config into a `Mailer` (the nodemailer SMTP transport, or the JSON
+  fallback used when `SMTP_HOST` is unset), `transport.ts` is the `sendEmail`
+  convenience over a memoized default mailer, and `templates.ts` holds the
+  message bodies.
 - `turnstile/` — split at the client/server seam. `site-key.ts` reads only
   `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and is imported by the form hook;
   `verify.ts` reads `TURNSTILE_SECRET_KEY`, is marked `server-only`, and is

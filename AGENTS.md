@@ -20,8 +20,12 @@ never preload everything.
 - Reuse before you create — search for an existing component, type, field, or
   util before adding one. Server Components, Server Actions for mutations, and
   named exports are the default posture.
-- Gate before committing — all four must pass:
-  `pnpm run typecheck && pnpm run test:run && pnpm run lint && pnpm run format`.
+- Gate before committing — `pnpm run gate` must pass. That one script is the
+  gate: format check, type-check, lint without `--fix`, and the suite under
+  its coverage thresholds. `.husky/pre-push` and the CI `ci` job call the same
+  script, so a green gate locally is a green gate on the runner; keep it that
+  way rather than listing the checks again anywhere (`src/gate.spec.ts` fails
+  if a copy grows back).
 
 ## Hard constraints
 
@@ -79,9 +83,8 @@ before continuing, so it never happens again.
   autonomously.
 - Husky: **pre-commit** blocks `main`, runs gitleaks, lint-staged, and
   `vitest --changed`; **pre-push** requires up-to-date with `origin/main`,
-  rejects WIP/`fixup!` commits, runs `tsc --noEmit`, lint, and
-  `test:coverage:check`; **post-merge** reinstalls deps / regenerates Prisma
-  when the lockfile or schema changed.
+  rejects WIP/`fixup!` commits, and runs `pnpm gate`; **post-merge**
+  reinstalls deps / regenerates Prisma when the lockfile or schema changed.
 
 ## Conventions
 

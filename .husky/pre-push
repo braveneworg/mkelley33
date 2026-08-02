@@ -243,7 +243,7 @@ if ! git merge-base --is-ancestor "$sync_ref" HEAD; then
   if [ "$force_push" = "1" ]; then
     echo "⚠️  '$sync_ref' is not an ancestor of HEAD, but this is a force push"
     echo "    (e.g. --force-with-lease after a rebase) — skipping the up-to-date"
-    echo "    check. Type-check, lint, format, and tests still run below."
+    echo "    check. The gate still runs below."
   elif [ "$has_upstream" = "1" ]; then
     echo "🚫 Your local branch is behind '$sync_ref'."
     echo "   Run: git pull --rebase $sync_remote $sync_branch"
@@ -263,77 +263,35 @@ diff_base="$sync_ref"
 # Check if any .ts or .tsx files changed compared to the diff base
 TS_CHANGED=$(git diff --name-only "$diff_base"..HEAD -- '*.ts' '*.tsx' 2>/dev/null | head -1)
 
-# A force push rewrites history, so always run the full gate (type-check, lint,
-# format, tests) regardless of which files appear changed vs the stale upstream.
-# Only the fast-forward path keeps the "no .ts/.tsx changed" skip optimization.
+# A force push rewrites history, so always run the gate regardless of which
+# files appear changed vs the stale upstream. Only the fast-forward path keeps
+# the "no .ts/.tsx changed" skip optimization.
 if [ "$force_push" = "1" ]; then
-  echo "🛡️  Force push detected — running the full gate (type-check, lint, format, tests)."
+  echo "🛡️  Force push detected — running the full gate."
 elif [ -z "$TS_CHANGED" ]; then
-  echo "📦 No .ts or .tsx files changed — skipping type-check, lint, format, and tests."
+  echo "📦 No .ts or .tsx files changed — skipping the gate."
   echo "🚀 Pushing changes..."
   exit 0
 fi
 
-echo "🔍 Running TypeScript type-check before push..."
-stage="TypeScript type-check (pnpm exec tsc --noEmit)"
+# One gate, defined once in package.json and run identically here, by the
+# `ci` job in .github/workflows/ci.yml, and by anyone following AGENTS.md:
+# format check, type-check, lint (no --fix), and the suite under its coverage
+# thresholds. Spelling the four out here again is what let this hook and CI
+# drift apart in the first place; src/gate.spec.ts now fails if they do.
+echo "🚦 Running the gate before push (format, type-check, lint, tests)..."
+stage="gate (pnpm gate)"
 
-# Run TypeScript type-check on the entire project
-pnpm exec tsc --noEmit
-
-if [ $? -ne 0 ]; then
-  echo ""
-  echo "❌ TypeScript type-check failed. Please fix type errors before pushing."
-  echo "   Run 'pnpm exec tsc --noEmit' to see all errors."
-  exit 1
-fi
-
-echo "✅ TypeScript type-check passed"
-
-echo ""
-echo "🔎 Running ESLint before push..."
-stage="ESLint (pnpm run lint)"
-
-pnpm run lint
+pnpm gate
 
 if [ $? -ne 0 ]; then
   echo ""
-  echo "❌ ESLint found errors or warnings. Please fix them before pushing."
-  echo "   Run 'pnpm run lint' to see all issues."
+  echo "❌ The gate failed. Fix what it reported before pushing."
+  echo "   Run 'pnpm gate' to see it again."
   exit 1
 fi
 
-echo "✅ ESLint passed"
-
-echo ""
-echo "🎨 Running Prettier format check before push..."
-stage="Prettier format check (pnpm run format:check)"
-
-pnpm run format:check
-
-if [ $? -ne 0 ]; then
-  echo ""
-  echo "❌ Prettier found unformatted files. Please run 'pnpm run format' before pushing."
-  echo "   Run 'pnpm run format:check' to see all issues."
-  exit 1
-fi
-
-echo "✅ Prettier format check passed"
-
-echo ""
-echo "🧪 Running tests before push..."
-stage="tests + coverage (pnpm run test:coverage:check)"
-
-# Suppress console output during tests to reduce verbosity
-pnpm run test:coverage:check --reporter=dot --silent
-
-if [ $? -ne 0 ]; then
-  echo ""
-  echo "❌ Tests failed. Please fix failing tests before pushing."
-  echo "   Run 'pnpm run test' to see all failures."
-  exit 1
-fi
-
-echo "✅ All tests passed"
+echo "✅ Gate passed"
 echo "🚀 Pushing changes..."
 
 exit 0
