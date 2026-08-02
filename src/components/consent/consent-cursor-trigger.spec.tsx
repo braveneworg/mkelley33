@@ -80,6 +80,38 @@ describe('ConsentCursorTrigger', () => {
     expect(trigger.className).toContain('min-w-11');
   });
 
+  // A transparent label still occupies its box, and that box sits inside the
+  // button — so a fading-only label left an invisible strip of clickable page
+  // beside the caret. Collapsing the width takes the region away with it.
+  it('collapses the label box while it is hidden', async () => {
+    writeConsent(true);
+    renderTrigger();
+    await findTrigger();
+    expect(screen.getByText('cookies').className).toContain('max-w-0');
+  });
+
+  it('expands the label box on hover', async () => {
+    writeConsent(true);
+    renderTrigger();
+    await findTrigger();
+    expect(screen.getByText('cookies').className).toContain('group-hover:max-w-24');
+  });
+
+  it('expands the label box on keyboard focus', async () => {
+    writeConsent(true);
+    renderTrigger();
+    await findTrigger();
+    expect(screen.getByText('cookies').className).toContain('group-focus-visible:max-w-24');
+  });
+
+  // Without it the collapsing box would wrap the word mid-transition.
+  it('keeps the label on one line while it collapses', async () => {
+    writeConsent(true);
+    renderTrigger();
+    await findTrigger();
+    expect(screen.getByText('cookies').className).toContain('whitespace-nowrap');
+  });
+
   it('reveals the label on hover', async () => {
     writeConsent(true);
     renderTrigger();

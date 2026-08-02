@@ -27,7 +27,10 @@ export const ConsentCursorTrigger = () => {
       type="button"
     >
       <span aria-hidden="true" className="bg-phosphor h-5 w-2.5" />
-      <span className="text-phosphor font-mono text-xs opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+      {/* Collapsed to zero width, not merely transparent: a faded label still
+          holds its box, and that box is inside the button — an invisible strip
+          of clickable page beside the caret. */}
+      <span className="text-phosphor max-w-0 overflow-hidden font-mono text-xs whitespace-nowrap opacity-0 transition-all group-hover:max-w-24 group-hover:opacity-100 group-focus-visible:max-w-24 group-focus-visible:opacity-100">
         cookies
       </span>
     </button>
