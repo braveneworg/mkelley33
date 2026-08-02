@@ -28,6 +28,20 @@ describe('consent inventory', () => {
     expect(names).toContain(CONSENT_STORAGE_KEY);
   });
 
+  // The dialog renders each category's description directly above that
+  // category's inventory table, so a description promising the data stays
+  // on-device is contradicted by the very rows beneath it the moment a
+  // third-party item joins the category — which is what adding Turnstile to
+  // `essential` did.
+  it('never promises on-device storage for a category holding a third party', () => {
+    const overclaiming = CONSENT_CATEGORIES.filter(
+      (category) =>
+        /never leaves|stays (in|on) your/.test(category.description) &&
+        inventoryFor(category.id).some((item) => item.provider !== 'this site')
+    );
+    expect(overclaiming).toEqual([]);
+  });
+
   // Turnstile runs on both forms without asking, under legitimate interest —
   // which makes disclosing it more important, not less.
   it('lists turnstile under essential', () => {

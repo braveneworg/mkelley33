@@ -30,7 +30,7 @@ export interface InventoryItem {
 export const CONSENT_CATEGORIES: readonly ConsentCategory[] = [
   {
     description:
-      'required for the site to work — remembers your cookie decision and theme. always on, never leaves your browser.',
+      'required for the site to work — remembers your cookie decision and theme, and keeps bots off the forms. always on.',
     id: 'essential',
     title: 'essential',
   },
