@@ -19,7 +19,7 @@ export const ThemeColorSync = () => {
   const { resolvedTheme } = useTheme();
 
   useEffect(() => {
-    const color = THEME_COLORS[resolvedTheme ?? 'light'];
+    const color = THEME_COLORS[resolvedTheme ?? 'dark'];
     if (!color) {
       return;
     }

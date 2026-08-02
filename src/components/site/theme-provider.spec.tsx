@@ -32,7 +32,7 @@ describe('ThemeProvider', () => {
     window.localStorage.clear();
   });
 
-  it('forwards class attribute and system default to next-themes', () => {
+  it('forwards class attribute and dark default to next-themes', () => {
     render(
       <ThemeProvider>
         <p>forwarded child</p>
@@ -40,7 +40,7 @@ describe('ThemeProvider', () => {
     );
     expect(captured.props[0]).toMatchObject({
       attribute: 'class',
-      defaultTheme: 'system',
+      defaultTheme: 'dark',
       enableSystem: true,
     });
     expect(screen.getByText('forwarded child')).toBeInTheDocument();
@@ -60,6 +60,18 @@ describe('ThemeProvider', () => {
     render(
       <ThemeProvider>
         <p>themed</p>
+      </ThemeProvider>
+    );
+    await waitFor(() => expect(document.documentElement).toHaveClass('dark'));
+  });
+
+  it('defaults to dark on first visit even when the system prefers light', async () => {
+    // vitest.setup.ts stubs matchMedia with `matches: false`, so the system
+    // preference resolves light — the dark class can only come from the
+    // provider's own default.
+    render(
+      <ThemeProvider>
+        <p>first visit</p>
       </ThemeProvider>
     );
     await waitFor(() => expect(document.documentElement).toHaveClass('dark'));
