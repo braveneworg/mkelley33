@@ -11,6 +11,12 @@ import userEvent from '@testing-library/user-event';
 import { NewsletterForm } from '@/components/newsletter/newsletter-form';
 import { subscribeNewsletter } from '@/lib/actions/newsletter';
 
+/**
+ * This form's own concerns: its single field and its confirmation copy. The
+ * submit contract it shares with the contact form — server errors, retiring a
+ * spent Turnstile token — is covered in the `useGuardedForm` spec.
+ */
+
 const resetSpy = vi.hoisted(() => vi.fn());
 
 vi.mock('@marsidev/react-turnstile', () => ({
@@ -54,19 +60,5 @@ describe('NewsletterForm', () => {
     await user.click(screen.getByRole('button', { name: /subscribe/ }));
     expect(await screen.findByText(/enter a valid email/)).toBeInTheDocument();
     expect(subscribeNewsletter).not.toHaveBeenCalled();
-  });
-
-  it('surfaces server errors', async () => {
-    vi.mocked(subscribeNewsletter).mockResolvedValueOnce({
-      error: 'something broke — retry in a bit',
-      success: false,
-    });
-    const user = userEvent.setup();
-    render(<NewsletterForm />);
-    await user.type(screen.getByLabelText('email'), 'a@b.com');
-    await user.click(screen.getByRole('button', { name: 'solve turnstile' }));
-    await user.click(screen.getByRole('button', { name: /subscribe/ }));
-    expect(await screen.findByText(/something broke/)).toBeInTheDocument();
-    expect(resetSpy).toHaveBeenCalled();
   });
 });

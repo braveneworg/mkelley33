@@ -4,10 +4,18 @@
 
 // @vitest-environment node
 
+/**
+ * Only what is specific to this action: the repositories it writes, the
+ * notification it builds, and the messages it hands the pipeline. The pipeline
+ * itself — honeypot ordering, Turnstile before persistence, tolerance of a
+ * failed notification, the catch path — is covered once in
+ * `run-form-submission.spec.ts` and is not re-tested here.
+ */
+
 import { submitContact } from '@/lib/actions/contact';
 import { sendEmail } from '@/lib/email/transport';
 import { createSubmission } from '@/lib/repositories/submissions';
-import { verifyTurnstileToken } from '@/lib/turnstile';
+import { verifyTurnstileToken } from '@/lib/turnstile/verify';
 
 vi.mock('@/lib/email/transport', () => ({
   sendEmail: vi.fn().mockResolvedValue(true),
@@ -19,7 +27,7 @@ vi.mock('@/lib/repositories/services', () => ({
 vi.mock('@/lib/repositories/submissions', () => ({
   createSubmission: vi.fn().mockResolvedValue({ id: 's1', status: 'new' }),
 }));
-vi.mock('@/lib/turnstile', () => ({
+vi.mock('@/lib/turnstile/verify', () => ({
   verifyTurnstileToken: vi.fn().mockResolvedValue(true),
 }));
 
@@ -34,45 +42,40 @@ const valid = {
 };
 
 beforeEach(() => {
-  vi.clearAllMocks();
+  vi.mocked(verifyTurnstileToken).mockResolvedValue(true);
+  vi.spyOn(console, 'error').mockImplementation(() => undefined);
 });
 
 describe('submitContact', () => {
-  it('stores, emails, and succeeds on the happy path', async () => {
+  it('stores the submission with the resolved service ids', async () => {
     await expect(submitContact(valid)).resolves.toEqual({ success: true });
     expect(createSubmission).toHaveBeenCalledWith(
       expect.objectContaining({ reason: 'services', requestedServiceIds: ['id-1'] })
     );
-    expect(sendEmail).toHaveBeenCalledOnce();
   });
 
-  it('silently accepts a filled honeypot without storing', async () => {
-    await expect(submitContact({ ...valid, website: 'spam.example' })).resolves.toEqual({
-      success: true,
+  it('emails the owner with the requested service names', async () => {
+    await submitContact(valid);
+    expect(sendEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        text: expect.stringContaining('AI enablement'),
+        to: 'me@mkelley33.com',
+      })
+    );
+  });
+
+  it('asks the user to fix the highlighted fields when input is invalid', async () => {
+    await expect(submitContact({ ...valid, email: 'nope' })).resolves.toEqual({
+      error: 'check the highlighted fields and retry',
+      success: false,
     });
-    expect(createSubmission).not.toHaveBeenCalled();
-    expect(verifyTurnstileToken).not.toHaveBeenCalled();
   });
 
-  it('rejects invalid input and failed verification', async () => {
-    const bad = await submitContact({ ...valid, email: 'nope' });
-    expect(bad.success).toBe(false);
-    vi.mocked(verifyTurnstileToken).mockResolvedValueOnce(false);
-    const unverified = await submitContact(valid);
-    expect(unverified.success).toBe(false);
-    expect(createSubmission).not.toHaveBeenCalled();
-  });
-
-  it('still succeeds when the notification email fails', async () => {
-    vi.mocked(sendEmail).mockResolvedValueOnce(false);
-    await expect(submitContact(valid)).resolves.toEqual({ success: true });
-    expect(createSubmission).toHaveBeenCalledOnce();
-  });
-
-  it('fails with a friendly error when storage throws', async () => {
+  it('offers a direct email address when storage throws', async () => {
     vi.mocked(createSubmission).mockRejectedValueOnce(new Error('db down'));
-    const result = await submitContact(valid);
-    expect(result.success).toBe(false);
-    expect(result.error).toContain('me@mkelley33.com');
+    await expect(submitContact(valid)).resolves.toEqual({
+      error: 'something broke — email me directly at me@mkelley33.com',
+      success: false,
+    });
   });
 });

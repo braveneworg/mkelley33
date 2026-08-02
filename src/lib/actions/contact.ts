@@ -4,62 +4,54 @@
 
 'use server';
 
+import { runFormSubmission } from '@/lib/actions/run-form-submission';
 import type { ActionResult } from '@/lib/actions/types';
 import { contactNotificationEmail } from '@/lib/email/templates';
 import { sendEmail } from '@/lib/email/transport';
 import { findServiceIdsBySlugs, listServices } from '@/lib/repositories/services';
 import { createSubmission } from '@/lib/repositories/submissions';
-import { verifyTurnstileToken } from '@/lib/turnstile';
+import type { ContactFormValues } from '@/lib/validation/contact';
 import { contactSchema } from '@/lib/validation/contact';
 
-const honeypotFilled = (input: unknown): boolean =>
-  typeof input === 'object' &&
-  input !== null &&
-  'website' in input &&
-  Boolean((input as { website?: unknown }).website);
-
-export const submitContact = async (input: unknown): Promise<ActionResult> => {
-  if (honeypotFilled(input)) {
-    return { success: true };
-  }
-  const parsed = contactSchema.safeParse(input);
-  if (!parsed.success) {
-    return { error: 'check the highlighted fields and retry', success: false };
-  }
-  const data = parsed.data;
-  if (!(await verifyTurnstileToken(data.turnstileToken))) {
-    return {
-      error: 'verification failed — give it a beat and retry',
-      success: false,
-    };
-  }
-  try {
-    const requestedServiceIds = await findServiceIdsBySlugs(data.requestedServices);
-    await createSubmission({
-      email: data.email,
-      message: data.message,
-      name: data.name,
-      reason: data.reason,
-      requestedServiceIds,
-    });
-    const services = await listServices();
-    const serviceNames = services
-      .filter((service) => data.requestedServices.includes(service.slug))
-      .map((service) => service.name);
-    const email = contactNotificationEmail({
-      email: data.email,
-      message: data.message,
-      name: data.name,
-      reason: data.reason,
-      serviceNames,
-    });
-    await sendEmail({ ...email, to: process.env.CONTACT_TO ?? 'me@mkelley33.com' });
-    return { success: true };
-  } catch (error) {
-    console.error('submitContact failed:', error);
-    return {
-      error: 'something broke — email me directly at me@mkelley33.com',
-      success: false,
-    };
-  }
+/**
+ * Stores the submission and resolves the requested slugs to display names for
+ * the notification. Reading the names here rather than in the notification
+ * keeps a repository failure on the "the submission did not land" side of the
+ * pipeline, where the user is told to retry.
+ */
+const persistSubmission = async (values: ContactFormValues): Promise<string[]> => {
+  const requestedServiceIds = await findServiceIdsBySlugs(values.requestedServices);
+  await createSubmission({
+    email: values.email,
+    message: values.message,
+    name: values.name,
+    reason: values.reason,
+    requestedServiceIds,
+  });
+  const services = await listServices();
+  return services
+    .filter((service) => values.requestedServices.includes(service.slug))
+    .map((service) => service.name);
 };
+
+const emailOwner = async (values: ContactFormValues, serviceNames: string[]): Promise<void> => {
+  const email = contactNotificationEmail({
+    email: values.email,
+    message: values.message,
+    name: values.name,
+    reason: values.reason,
+    serviceNames,
+  });
+  await sendEmail({ ...email, to: process.env.CONTACT_TO ?? 'me@mkelley33.com' });
+};
+
+export const submitContact = async (input: unknown): Promise<ActionResult> =>
+  runFormSubmission({
+    failureError: 'something broke — email me directly at me@mkelley33.com',
+    input,
+    invalidInputError: 'check the highlighted fields and retry',
+    label: 'submitContact',
+    notify: emailOwner,
+    persist: persistSubmission,
+    schema: contactSchema,
+  });

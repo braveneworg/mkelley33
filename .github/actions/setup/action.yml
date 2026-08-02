@@ -1,0 +1,42 @@
+name: Set up the toolchain
+description: >-
+  pnpm, Node from .nvmrc, the caches a job needs, and a frozen-lockfile
+  install — the block every job in ci.yml used to repeat verbatim.
+
+# Callers must run actions/checkout FIRST. A local composite action is read
+# from the workspace, so the runner cannot resolve `./.github/actions/setup`
+# until the repository is on disk; checkout is the one setup step that cannot
+# move in here.
+
+inputs:
+  mongodb-binaries-cache:
+    description: >-
+      Restore the mongodb-memory-server binary cache. The suites that start a
+      memory server need it; the deploy job never does, and paying for the
+      restore there would slow a production deploy for nothing.
+    required: false
+    default: 'true'
+
+runs:
+  using: composite
+  steps:
+    - uses: pnpm/action-setup@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version-file: .nvmrc
+        cache: pnpm
+    - if: inputs.mongodb-binaries-cache == 'true'
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/mongodb-binaries
+        key: mongodb-binaries-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+        restore-keys: |
+          mongodb-binaries-${{ runner.os }}-
+    # --trust-lockfile skips pnpm 11's supply-chain re-verification of every
+    # lockfile entry. The lockfile is reviewed in the PR diff before it lands,
+    # so it is part of the trusted base here; local installs keep the full
+    # minimumReleaseAge quarantine, which is where an unreviewed new version
+    # would actually appear. Without this, CI fails whenever any locked
+    # dependency was published within the last 24h.
+    - run: pnpm install --frozen-lockfile --trust-lockfile
+      shell: bash

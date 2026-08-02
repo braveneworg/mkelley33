@@ -2,77 +2,38 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-import nodemailer from 'nodemailer';
+import { createMailer } from '@/lib/email/mailer';
+import type { Mailer, SendEmailInput } from '@/lib/email/mailer';
+import { resolveMailerConfig } from '@/lib/email/mailer-config';
 
-import type { Transporter } from 'nodemailer';
+export type { SendEmailInput };
 
-export interface SendEmailInput {
-  subject: string;
-  text: string;
-  to: string;
-}
-
-let transporter: null | Transporter<unknown> = null;
+let defaultMailer: null | Mailer = null;
 
 /**
- * JSON-transport payloads carry confirm/unsubscribe links, so writing them to
- * server logs is only safe where the logs are local: development, or a run
- * that explicitly opts in (the E2E harness sets EMAIL_LOG_UNSENT=true so
- * specs can scrape confirm links). A production deployment that merely lost
- * its SMTP config must never leak tokens into log storage.
+ * The mailer the site sends through: built from `process.env` on first use and
+ * reused, so a configured SMTP connection is not rebuilt per message.
+ *
+ * The memo used to be unreachable — nothing could rebuild it, so a spec that
+ * wanted a differently-configured transport had to reset the whole module
+ * registry to get one. {@link resetDefaultMailer} is that door.
  */
-const shouldLogUnsentMessage = (): boolean =>
-  process.env.EMAIL_LOG_UNSENT === 'true' || process.env.NODE_ENV === 'development';
+const defaultMailerForEnv = (): Mailer =>
+  (defaultMailer ??= createMailer(resolveMailerConfig(process.env)));
 
-const jsonTransportMessage = (info: unknown): null | string =>
-  info !== null &&
-  typeof info === 'object' &&
-  'message' in info &&
-  typeof (info as { message: unknown }).message === 'string'
-    ? (info as { message: string }).message
-    : null;
-
-const createTransport = (): Transporter<unknown> => {
-  const host = process.env.SMTP_HOST;
-  if (!host) {
-    const message = 'SMTP_HOST unset — email disabled, using JSON transport';
-    if (process.env.NODE_ENV === 'production') {
-      console.error(message);
-    } else {
-      console.warn(message);
-    }
-    return nodemailer.createTransport({ jsonTransport: true });
-  }
-  const port = Number(process.env.SMTP_PORT || 587);
-  return nodemailer.createTransport({
-    auth: {
-      pass: process.env.SMTP_PASS ?? '',
-      user: process.env.SMTP_USER ?? '',
-    },
-    host,
-    port,
-    requireTLS: port !== 465,
-    secure: port === 465,
-  });
+/** Drops the memo so the next send re-reads the environment. */
+export const resetDefaultMailer = (): void => {
+  defaultMailer = null;
 };
 
-/** Never throws — email failure must not break the calling flow (spec §7). */
-export const sendEmail = async (input: SendEmailInput): Promise<boolean> => {
-  transporter ??= createTransport();
-  try {
-    const info: unknown = await transporter.sendMail({
-      from: process.env.EMAIL_FROM ?? 'mkelley33.com <no-reply@mkelley33.com>',
-      subject: input.subject,
-      text: input.text,
-      to: input.to,
-    });
-    const unsentMessage = jsonTransportMessage(info);
-    if (!process.env.SMTP_HOST && shouldLogUnsentMessage() && unsentMessage !== null) {
-      console.info('email (not sent):', unsentMessage);
-    }
-    return true;
-  } catch (error) {
-    console.error('sendEmail failed:', error);
-    return false;
-  }
-};
+/**
+ * Sends one message and never throws — email failure must not break the
+ * calling flow (spec §7); a failed delivery resolves `false`, already logged.
+ *
+ * Callers pass an input and nothing else. The second argument is the seam:
+ * pass a {@link Mailer} to send through it instead of the site's own.
+ */
+export const sendEmail = async (
+  input: SendEmailInput,
+  mailer: Mailer = defaultMailerForEnv()
+): Promise<boolean> => mailer.send(input);

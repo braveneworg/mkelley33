@@ -13,31 +13,17 @@ on:
   pull_request:
 
 jobs:
+  # `pnpm gate` is THE gate — the same script .husky/pre-push runs and the
+  # same one AGENTS.md tells contributors to run. Keep this job calling it
+  # rather than listing the checks again: the three copies this replaced had
+  # already drifted apart, and CI's was the one missing format:check.
+  # src/gate.spec.ts fails if a check is spelled out here instead.
   ci:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .nvmrc
-          cache: pnpm
-      - uses: actions/cache@v4
-        with:
-          path: ~/.cache/mongodb-binaries
-          key: mongodb-binaries-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: |
-            mongodb-binaries-${{ runner.os }}-
-      # --trust-lockfile skips pnpm 11's supply-chain re-verification of every
-      # lockfile entry. The lockfile is reviewed in the PR diff before it lands,
-      # so it is part of the trusted base here; local installs keep the full
-      # minimumReleaseAge quarantine, which is where an unreviewed new version
-      # would actually appear. Without this, CI fails whenever any locked
-      # dependency was published within the last 24h.
-      - run: pnpm install --frozen-lockfile --trust-lockfile
-      - run: pnpm lint
-      - run: pnpm typecheck
-      - run: pnpm test:coverage
+      - uses: ./.github/actions/setup
+      - run: pnpm gate
       - run: pnpm build:ci
 
   e2e:
@@ -45,27 +31,13 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .nvmrc
-          cache: pnpm
-      - uses: actions/cache@v4
-        with:
-          path: ~/.cache/mongodb-binaries
-          key: mongodb-binaries-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: |
-            mongodb-binaries-${{ runner.os }}-
+      - uses: ./.github/actions/setup
       - uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: |
             playwright-${{ runner.os }}-
-      # --trust-lockfile for the same reason as the ci job above: without it
-      # this job fails whenever any locked dependency was published in the last
-      # 24h, which has nothing to do with the e2e suite.
-      - run: pnpm install --frozen-lockfile --trust-lockfile
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm e2e
       # The CI reporter is `github`, which writes no playwright-report/ —
@@ -101,12 +73,10 @@ jobs:
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: ./.github/actions/setup
         with:
-          node-version-file: .nvmrc
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile --trust-lockfile
+          # No memory server runs here, so the binary cache is dead weight.
+          mongodb-binaries-cache: 'false'
       - name: Pull Vercel project settings and production env
         run: pnpm exec vercel pull --yes --environment=production --token "${{ secrets.VERCEL_TOKEN }}"
       - name: Audit production env against the manifest
