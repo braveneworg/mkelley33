@@ -23,29 +23,6 @@ allowBuilds:
   sharp: true
   unrs-resolver: true
 
-# Written by pnpm itself when `pnpm install --trust-lockfile` resolved the
-# merge of origin/main into feature/phase-5-polish: each of these was
-# published within the 24h minimumReleaseAge window at that moment. Each is
-# pinned to an exact version and each already appeared in a lockfile reviewed
-# on main or on this branch, so nothing unreviewed was admitted — the merged
-# lockfile contains no package version absent from both parents.
-#
-# These are meant to be temporary. Once a version is more than 24h old, delete
-# its line and prove the quarantine is satisfied without it by running a plain
-# `pnpm install` with NO --trust-lockfile: a clean install is the whole point,
-# and ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION means the entry is still needed.
-# Drop this block entirely when the last line goes. The quarantine continues
-# to apply to every package not listed here.
-#
-# Remaining eligibility (24h after publish):
-#   @hookform/resolvers@5.5.7          2026-07-27T09:47:07Z
-#   conventional-commits-parser@7.1.1  2026-07-27T11:47:45Z
-#   globals@17.8.0                     2026-07-27T16:39:39Z
-minimumReleaseAgeExclude:
-  - '@hookform/resolvers@5.5.7'
-  - conventional-commits-parser@7.1.1
-  - globals@17.8.0
-
 # Moved here from package.json's "pnpm" field, which pnpm 11 no longer reads
 # (it warns and ignores the keys). Both plugins declare a peer range stopping
 # at ESLint 9 but work correctly on the 10 this repo uses.
