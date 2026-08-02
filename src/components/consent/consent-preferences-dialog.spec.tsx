@@ -45,24 +45,36 @@ describe('ConsentPreferencesDialog', () => {
     );
   });
 
-  it('renders the essential toggle as always on and disabled', async () => {
+  // Named by what each toggle governs, not by the state it is in: 'off' tells
+  // a screen-reader user nothing about what is off.
+  it('names the essential toggle after its category', async () => {
     await renderDialog();
-    expect(screen.getByRole('checkbox', { name: 'always on' })).toBeDisabled();
+    expect(screen.getByRole('checkbox', { name: 'essential' })).toBeInTheDocument();
+  });
+
+  it('renders the essential toggle as disabled', async () => {
+    await renderDialog();
+    expect(screen.getByRole('checkbox', { name: 'essential' })).toBeDisabled();
   });
 
   it('keeps the essential toggle checked', async () => {
     await renderDialog();
-    expect(screen.getByRole('checkbox', { name: 'always on' })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'essential' })).toBeChecked();
   });
 
   it('defaults the analytics toggle to off when undecided', async () => {
     await renderDialog();
-    expect(screen.getByRole('checkbox', { name: 'off' })).not.toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'analytics' })).not.toBeChecked();
+  });
+
+  it('shows the analytics state as visible text', async () => {
+    await renderDialog();
+    expect(screen.getByText('off')).toBeInTheDocument();
   });
 
   it('save preferences persists the toggled analytics choice', async () => {
     await renderDialog();
-    await userEvent.click(screen.getByRole('checkbox', { name: 'off' }));
+    await userEvent.click(screen.getByRole('checkbox', { name: 'analytics' }));
     await userEvent.click(screen.getByRole('button', { name: 'save preferences' }));
     expect(readConsent()?.analytics).toBe(true);
   });
@@ -91,11 +103,20 @@ describe('ConsentPreferencesDialog', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
+  // Escape is a dismissal, not a decision. Recording one would strip the
+  // visitor of the banner without their ever having chosen anything.
+  it('dismissing with escape records no decision', async () => {
+    await renderDialog();
+    await userEvent.click(screen.getByRole('checkbox', { name: 'analytics' }));
+    await userEvent.keyboard('{Escape}');
+    expect(readConsent()).toBeNull();
+  });
+
   it('discards an abandoned toggle when reopened', async () => {
     await renderDialog();
-    await userEvent.click(screen.getByRole('checkbox', { name: 'off' }));
+    await userEvent.click(screen.getByRole('checkbox', { name: 'analytics' }));
     await userEvent.keyboard('{Escape}');
     await userEvent.click(screen.getByRole('button', { name: 'open-preferences' }));
-    expect(screen.getByRole('checkbox', { name: 'off' })).not.toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'analytics' })).not.toBeChecked();
   });
 });

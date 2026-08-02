@@ -21,7 +21,9 @@ test('banner gates analytics until a custom save decision', async ({ page }) => 
   // fails its actionability check ("[ ] intercepts pointer events"), so
   // clicking the label is both the real gesture and the working one.
   await dialog.locator('label').filter({ hasText: 'off' }).click();
-  await expect(dialog.getByRole('checkbox', { exact: true, name: 'on' })).toBeChecked();
+  // Named by category, not by state: 'on'/'off' is decorative text the toggle
+  // deliberately keeps out of its accessible name.
+  await expect(dialog.getByRole('checkbox', { exact: true, name: 'analytics' })).toBeChecked();
   await dialog.getByRole('button', { name: 'save preferences' }).click();
   await expect(banner).toBeHidden();
 

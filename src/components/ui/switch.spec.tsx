@@ -7,10 +7,52 @@ import userEvent from '@testing-library/user-event';
 
 import { Switch } from '@/components/ui/switch';
 
+const LabelledByFixture = () => (
+  <>
+    <h3 id="analytics-heading">analytics</h3>
+    <Switch
+      checked={false}
+      label="off"
+      labelledBy="analytics-heading"
+      onCheckedChange={() => undefined}
+    />
+  </>
+);
+
 describe('Switch', () => {
   it('exposes an accessible checkbox named by its label', () => {
     render(<Switch checked={false} label="analytics" onCheckedChange={() => undefined} />);
     expect(screen.getByRole('checkbox', { name: 'analytics' })).not.toBeChecked();
+  });
+
+  // A control named by the state it happens to be in ('on', 'off') announces
+  // as "off checkbox" and says nothing about what is off. `labelledBy` points
+  // the name at whatever names the purpose instead.
+  it('takes its accessible name from the referenced element', () => {
+    render(<LabelledByFixture />);
+    expect(screen.getByRole('checkbox', { name: 'analytics' })).toBeInTheDocument();
+  });
+
+  it('hides the visible state text from the accessibility tree', () => {
+    render(<LabelledByFixture />);
+    expect(screen.getByText('off')).toHaveAttribute('aria-hidden', 'true');
+  });
+
+  it('still toggles when the visible state text is clicked', async () => {
+    const onCheckedChange = vi.fn();
+    render(
+      <>
+        <h3 id="analytics-heading">analytics</h3>
+        <Switch
+          checked={false}
+          label="off"
+          labelledBy="analytics-heading"
+          onCheckedChange={onCheckedChange}
+        />
+      </>
+    );
+    await userEvent.click(screen.getByText('off'));
+    expect(onCheckedChange).toHaveBeenCalledWith(true);
   });
 
   it('reports the next checked state on click', async () => {

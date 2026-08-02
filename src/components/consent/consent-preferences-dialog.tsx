@@ -11,6 +11,7 @@ import { CookieInventoryTable } from '@/components/consent/cookie-inventory-tabl
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { CONSENT_CATEGORIES } from '@/lib/consent/inventory';
+import type { ConsentCategoryId } from '@/lib/consent/inventory';
 
 const ACTION_BUTTON_CLASSES =
   'border-phosphor text-phosphor hover:bg-phosphor hover:text-canvas rounded border px-3 py-1.5 font-mono text-xs transition-colors';
@@ -21,6 +22,10 @@ export const ConsentPreferencesDialog = () => {
     useConsent();
   const [analyticsPending, setAnalyticsPending] = useState(analyticsGranted);
   const descriptionId = useId();
+  // One `useId` for the whole list — hooks cannot run inside the map, and the
+  // category ids are already unique.
+  const headingIdPrefix = useId();
+  const headingIdFor = (category: ConsentCategoryId) => `${headingIdPrefix}-${category}`;
 
   // Re-sync the pending toggle each time the dialog opens, so an abandoned
   // change never leaks into the next opening.
@@ -44,13 +49,24 @@ export const ConsentPreferencesDialog = () => {
         {CONSENT_CATEGORIES.map((category) => (
           <section aria-label={`${category.title} category`} className="mt-5" key={category.id}>
             <div className="flex items-center justify-between gap-4">
-              <h3 className="font-mono text-sm font-bold">{category.title}</h3>
+              {/* Names the toggle beside it: a control announced as 'off' says
+                  nothing about what is off. */}
+              <h3 className="font-mono text-sm font-bold" id={headingIdFor(category.id)}>
+                {category.title}
+              </h3>
               {category.id === 'essential' ? (
-                <Switch checked disabled label="always on" onCheckedChange={() => undefined} />
+                <Switch
+                  checked
+                  disabled
+                  label="always on"
+                  labelledBy={headingIdFor(category.id)}
+                  onCheckedChange={() => undefined}
+                />
               ) : (
                 <Switch
                   checked={analyticsPending}
                   label={analyticsPending ? 'on' : 'off'}
+                  labelledBy={headingIdFor(category.id)}
                   onCheckedChange={setAnalyticsPending}
                 />
               )}
