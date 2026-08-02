@@ -84,4 +84,14 @@ describe('SiteFooter', () => {
     expect(uses).toHaveAttribute('href', '/uses');
     expect(uses).not.toHaveAttribute('target');
   });
+
+  it('links to the privacy page', () => {
+    render(<SiteFooter />);
+    expect(screen.getByRole('link', { name: 'privacy' })).toHaveAttribute('href', '/privacy');
+  });
+
+  it('reserves bottom padding for the consent cursor trigger', () => {
+    const { container } = render(<SiteFooter />);
+    expect(container.querySelector('.pb-16')).not.toBeNull();
+  });
 });
