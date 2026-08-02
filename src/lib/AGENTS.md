@@ -42,6 +42,11 @@ binding. Everything below it applies only once the thing it names exists.
   Server Component render.
 - Secrets come from env vars, never hardcoded, and never appear in logs or
   error messages returned to a caller.
+- A missing secret fails closed in production rather than substituting a
+  permissive default. `turnstile/verify.ts` is the pattern: an explicitly
+  configured value is honored in every environment (the E2E harness pins
+  Cloudflare's test secret into a production build), and only the implicit
+  fallback is withheld once `NODE_ENV === 'production'`.
 
 ## Not here yet
 
