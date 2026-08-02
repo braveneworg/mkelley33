@@ -67,9 +67,15 @@ export default function PrivacyPage() {
           tokens, stored in the site database. Legal basis: consent; unsubscribing withdraws it.
         </li>
         <li>
-          <strong>bot protection</strong> — Cloudflare Turnstile on the contact and newsletter forms
-          processes IP and browser signals to keep bots out. Legal basis: legitimate interest in
-          site security.
+          <strong>comments</strong> — a display name, an optional email (never published — used only
+          if I need to follow up about moderation), and your comment text, stored in the site
+          database and shown publicly once approved. Legal basis: legitimate interest in running an
+          interactive blog; you choose what you share.
+        </li>
+        <li>
+          <strong>bot protection</strong> — Cloudflare Turnstile on the contact, newsletter, and
+          comment forms processes IP and browser signals to keep bots out. Legal basis: legitimate
+          interest in site security.
         </li>
         <li>
           <strong>hosting</strong> — Vercel serves this site and processes IP addresses in server
@@ -141,7 +147,8 @@ export default function PrivacyPage() {
       </h2>
       <p className={BODY_CLASSES}>
         Analytics event data is kept for 14 months, then deleted. Contact messages are kept only as
-        long as needed to handle them. Newsletter data is kept until you unsubscribe.
+        long as needed to handle them. Newsletter data is kept until you unsubscribe. Comments stay
+        published until you ask for removal via the contact form, or until I delete them.
       </p>
 
       <h2 className={H2_CLASSES}>

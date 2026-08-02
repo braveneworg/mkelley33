@@ -94,4 +94,24 @@ describe('PrivacyPage', () => {
     renderPage();
     expect(screen.getByText(/processes IP addresses in server logs/)).toBeInTheDocument();
   });
+
+  it('discloses blog comments and that approval publishes them', () => {
+    renderPage();
+    expect(screen.getByText(/shown publicly once approved/)).toBeInTheDocument();
+  });
+
+  it('promises the commenter email is never published', () => {
+    renderPage();
+    expect(screen.getByText(/never published/)).toBeInTheDocument();
+  });
+
+  it('covers the comment form under bot protection', () => {
+    renderPage();
+    expect(screen.getByText(/contact, newsletter, and comment forms/)).toBeInTheDocument();
+  });
+
+  it('states the comment retention policy', () => {
+    renderPage();
+    expect(screen.getByText(/Comments stay published until/)).toBeInTheDocument();
+  });
 });
