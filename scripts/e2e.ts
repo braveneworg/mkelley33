@@ -127,6 +127,12 @@ const setUp = async (): Promise<MongoMemoryServer | null> => {
         makeEnv(uri, FAST_DRIVER_PARAMS),
         STEP_TIMEOUT_MS
       )) &&
+      (await runStep(
+        'seed:e2e-post',
+        ['exec', 'tsx', 'scripts/seed-e2e-post.ts'],
+        makeEnv(uri, FAST_DRIVER_PARAMS),
+        STEP_TIMEOUT_MS
+      )) &&
       (await runStep('build', ['build'], makeEnv(uri, PATIENT_DRIVER_PARAMS), BUILD_TIMEOUT_MS));
     if (done) {
       return mongod;
