@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-import { MAIN_CLASSES, metadata } from '@/app/(site)/layout';
+import { MAIN_CLASSES, metadata, viewport } from '@/app/(site)/layout';
 import { siteConfig } from '@/lib/site-config';
 
 vi.mock('next/font/google', () => ({
@@ -23,6 +23,15 @@ describe('site layout metadata', () => {
 
   it('keeps the RSS feed alternate', () => {
     expect(metadata.alternates?.types?.['application/rss+xml']).toBe('/feed.xml');
+  });
+});
+
+describe('site layout viewport', () => {
+  it('pins the browser chrome color to the dark default before hydration', () => {
+    // Dark is the site default regardless of OS preference, so the SSR'd
+    // theme-color must not follow prefers-color-scheme — ThemeColorSync
+    // re-stamps it after hydration only for visitors who chose light.
+    expect(viewport.themeColor).toBe('#0b0f14');
   });
 });
 
