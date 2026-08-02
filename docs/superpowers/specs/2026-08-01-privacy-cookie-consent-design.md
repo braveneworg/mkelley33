@@ -1,17 +1,22 @@
 # Privacy page & cookie consent — design
 
 Date: 2026-08-01
-Status: approved pending user review
+Status: approved — grilled 2026-08-01, shared understanding confirmed
 Branch: `feat/privacy-cookie-consent`
 
 ## Goal
 
-1. A short `/privacy` page disclosing that the site uses Google Analytics 4
-   and Vercel Analytics to understand usage, with a link to Google's policy.
+1. A compact but **Art. 13-complete** `/privacy` notice covering all of the
+   site's data processing, with a link to Google's policy.
 2. An in-depth cookie consent form, in the site's terminal design, that
    **hard-gates all analytics**: neither Google Analytics nor Vercel
-   Analytics loads or transmits anything until the visitor grants consent
-   (EU ePrivacy/GDPR posture).
+   Analytics loads or transmits anything until the visitor grants consent.
+
+**Driver (user-confirmed):** genuine GDPR scope — the site targets EU
+consulting clients via `/services` (Art. 3(2) targeting), so this is legal
+necessity, not decoration. Accepted cost: visitors who decline or ignore
+the banner are invisible in **both** GA and Vercel Analytics; EU
+conversion numbers will read low by design.
 
 ## Decisions (user-confirmed)
 
@@ -33,7 +38,17 @@ Branch: `feat/privacy-cookie-consent`
   typewriter-caret green, **no blink**), a button with
   `aria-label="cookie preferences"`, revealing a mono `cookies` label on
   hover/focus. Visible whenever the banner is not, so preferences can be
-  changed at any time.
+  changed at any time. **All viewports** — caret-sized visually, padded
+  hit area ≥44px; footer gets enough bottom padding that the block never
+  overlaps the copyleft line.
+- **No server-side consent logging** (Art. 7(1) weighed): the hard gate's
+  technical impossibility of pre-consent collection is the defense; a
+  consent log would be new stored data and its own retention liability,
+  not better evidence.
+- **Pre-consent events are dropped, not queued.** `trackEvent` calls made
+  while undecided are lost even if the visitor later consents. An
+  in-memory queue was considered and rejected (same-page-load recovery
+  only, ordering bugs, extra state).
 - **Hand-rolled, zero new dependencies.** Consent module + UI on existing
   primitives (`dialog.tsx`, design tokens). No consent library, no CMP.
 
@@ -116,19 +131,39 @@ and cursor trigger mount beside `PaletteMount`; `GoogleAnalyticsTag` and
 ## Privacy page & footer
 
 - `src/app/(site)/privacy/page.tsx` — server page shell (same skeleton as
-  `/uses`), with the interactive pieces as small client children. Content:
-  - What is measured and why: GA4 (pages, referrers, rough geography;
-    GA4 drops IPs at collection) and Vercel Analytics (cookieless,
-    aggregate). Both run **only after consent**.
+  `/uses`), with the interactive pieces as small client children.
+  **Compact but Art. 13-complete**, terminal register (short lowercase
+  mono sections, ~350–450 words), covering the whole site's processing:
+  - `who` — Michaux Kelley as controller; contact via `/contact`.
+  - `what & why` + `legal basis`:
+    - analytics — GA4 (pages, referrers, rough geography; GA4 drops IPs
+      at collection) and Vercel Analytics (cookieless, aggregate); legal
+      basis **consent**; both run only after the cookie form grants it.
+    - contact form — name, email, message, mailed to the owner; legal
+      basis **steps prior to a contract** (Art. 6(1)(b)).
+    - newsletter — email + double-opt-in confirm/unsubscribe tokens in
+      the database; legal basis **consent**; unsubscribe = withdrawal.
+    - bot protection — Cloudflare Turnstile on the contact form
+      (IP/browser signals); legal basis **legitimate interest**; links
+      Cloudflare's policy.
+  - `who receives it` — Google LLC, Vercel Inc., Cloudflare Inc. named;
+    email delivery provider kept generic; EU→US transfers under the
+    EU-US Data Privacy Framework.
+  - `retention` — analytics event data **14 months** (GA4 console
+    setting user-confirmed as already set); contact/newsletter data kept
+    until purpose served or withdrawal.
+  - `your rights` — withdraw consent anytime (corner control), access /
+    erasure, complaint to a supervisory authority.
   - Inventory table rendered from `inventory.ts`.
   - Links: <https://policies.google.com/privacy> and
     <https://policies.google.com/technologies/partner-sites>.
   - `manage cookie preferences` button (client, opens the dialog) + note
-    about the corner control. Questions → `/contact`.
+    about the corner control.
   - Metadata title `privacy`; added to `sitemap.ts` if routes are
     enumerated there.
 - Footer: `privacy` internal `Link` beside `uses` / `rss`
-  (`link-draw` styling).
+  (`link-draw` styling), plus bottom padding so the sticky trigger never
+  overlaps the copyleft line.
 
 ## Testing (TDD, Vitest, specs adjacent)
 
@@ -142,7 +177,8 @@ and cursor trigger mount beside `PaletteMount`; `GoogleAnalyticsTag` and
 - Banner: visible only while undecided; three actions wired.
 - Dialog: toggle state, save persists, accept/decline-all shortcuts.
 - Switch primitive: label association, checked state, keyboard.
-- Cursor trigger: hidden while banner visible; opens dialog.
+- Cursor trigger: hidden while banner visible; opens dialog; hit area
+  ≥44px despite caret-sized visual.
 - Privacy page: renders inventory + links; footer link present.
 - E2E: read `e2e/AGENTS.md` in full first. Add a consent-pre-seed helper
   (init-script localStorage) so existing flows keep passing, plus one
