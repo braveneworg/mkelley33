@@ -32,6 +32,21 @@ export const updateAnalyticsConsent = (granted: boolean): void => {
   gtag?.('consent', 'update', { analytics_storage: granted ? 'granted' : 'denied' });
 };
 
+/** The one thing a reload target has to offer — `Location` satisfies it. */
+interface Reloadable {
+  reload: () => void;
+}
+
+/**
+ * Reloads the current document. Withdrawing consent cannot unload the GA and
+ * Vercel runtimes a grant already started, so the provider reloads to kill
+ * them outright. The target is a parameter because `window.location` is
+ * unforgeable in jsdom: nothing else can observe the call.
+ */
+export const reloadPage = (target: Reloadable = globalThis.location): void => {
+  target.reload();
+};
+
 const GA_COOKIE_PATTERN = /^_ga($|_)/;
 const COOKIE_EXPIRY = 'expires=Thu, 01 Jan 1970 00:00:00 GMT';
 

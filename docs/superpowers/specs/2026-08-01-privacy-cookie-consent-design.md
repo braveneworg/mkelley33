@@ -86,7 +86,8 @@ in an effect (no hydration mismatch) to `undecided` or `decided`. Exposes
 `{ status: 'loading' | 'undecided' | 'decided', analyticsGranted,
 grantAll, denyAll, save, openPreferences, closePreferences,
 preferencesOpen }`. Withdrawal side effects (consent update → denied,
-`_ga*` cookie deletion) run here when a save turns analytics off.
+`_ga*` cookie deletion, page reload) run here when a decision turns
+analytics off after it had been granted.
 
 ### Gating
 
@@ -94,8 +95,10 @@ preferencesOpen }`. Withdrawal side effects (consent update → denied,
   `NEXT_PUBLIC_GA_MEASUREMENT_ID` is set **and** `analyticsGranted`.
   Before mount it seeds Consent Mode v2 defaults on the dataLayer.
 - **Withdrawal:** consent update → `denied`, best-effort deletion of
-  `_ga` / `_ga_*` cookies; the already-loaded script stays inert until
-  the next page load.
+  `_ga` / `_ga_*` cookies, then a full page reload. Neither gtag.js nor
+  Vercel's runtime can be unloaded once mounted, and a denied signal only
+  stops storage — reloading is what actually kills both. A first-time
+  decline skips the reload: nothing was ever loaded to stop.
 - `trackEvent` (`src/lib/analytics.ts`) no-ops unless env var set **and**
   stored consent grants analytics (reads via the storage helper, staying
   framework-free).

@@ -5,6 +5,7 @@
 import {
   CONSENT_MODE_BOOTSTRAP,
   deleteGaCookies,
+  reloadPage,
   updateAnalyticsConsent,
 } from '@/lib/consent/gtag';
 
@@ -59,6 +60,20 @@ describe('updateAnalyticsConsent', () => {
 
   it('is a no-op when the bootstrap has not run', () => {
     expect(() => updateAnalyticsConsent(true)).not.toThrow();
+  });
+});
+
+describe('reloadPage', () => {
+  it('reloads the target document', () => {
+    const reload = vi.fn();
+    reloadPage({ reload });
+    expect(reload).toHaveBeenCalledTimes(1);
+  });
+
+  // Covers the default argument — jsdom cannot navigate and `location` is
+  // unforgeable there, so the real target can only be checked for safety.
+  it('is safe to call against the real location', () => {
+    expect(() => reloadPage()).not.toThrow();
   });
 });
 

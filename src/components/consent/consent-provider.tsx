@@ -8,7 +8,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import type { ReactNode } from 'react';
 
 import { readConsent, writeConsent } from '@/lib/consent/consent-storage';
-import { deleteGaCookies, updateAnalyticsConsent } from '@/lib/consent/gtag';
+import { deleteGaCookies, reloadPage, updateAnalyticsConsent } from '@/lib/consent/gtag';
 
 export type ConsentStatus = 'decided' | 'loading' | 'undecided';
 
@@ -60,16 +60,29 @@ export const ConsentProvider = ({ children }: { children: ReactNode }) => {
     setStatus('decided');
   }, []);
 
-  const apply = useCallback((analytics: boolean) => {
-    updateAnalyticsConsent(analytics);
-    if (!analytics) {
-      deleteGaCookies();
-    }
-    writeConsent(analytics);
-    setAnalyticsGranted(analytics);
-    setStatus('decided');
-    setPreferencesOpen(false);
-  }, []);
+  const apply = useCallback(
+    (analytics: boolean) => {
+      // Withdrawal only: a decline from a visitor who never granted has no
+      // loaded script to stop, so reloading would cost them their place to
+      // undo nothing.
+      const withdrawing = analyticsGranted && !analytics;
+      updateAnalyticsConsent(analytics);
+      if (!analytics) {
+        deleteGaCookies();
+      }
+      writeConsent(analytics);
+      setAnalyticsGranted(analytics);
+      setStatus('decided');
+      setPreferencesOpen(false);
+      if (withdrawing) {
+        // Neither gtag.js nor Vercel's runtime can be unloaded once mounted,
+        // and a denied Consent Mode signal only stops storage — not the
+        // beacons. Reloading is the only way to make withdrawal immediate.
+        reloadPage();
+      }
+    },
+    [analyticsGranted]
+  );
 
   const value = useMemo<ConsentContextValue>(
     () => ({

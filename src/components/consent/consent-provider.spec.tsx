@@ -7,10 +7,11 @@ import userEvent from '@testing-library/user-event';
 
 import { ConsentProvider, useConsent } from '@/components/consent/consent-provider';
 import { readConsent, writeConsent } from '@/lib/consent/consent-storage';
-import { deleteGaCookies, updateAnalyticsConsent } from '@/lib/consent/gtag';
+import { deleteGaCookies, reloadPage, updateAnalyticsConsent } from '@/lib/consent/gtag';
 
 vi.mock('@/lib/consent/gtag', () => ({
   deleteGaCookies: vi.fn(),
+  reloadPage: vi.fn(),
   updateAnalyticsConsent: vi.fn(),
 }));
 
@@ -29,6 +30,9 @@ const Probe = () => {
       </button>
       <button onClick={() => consent.save({ analytics: true })} type="button">
         save-on
+      </button>
+      <button onClick={() => consent.save({ analytics: false })} type="button">
+        save-off
       </button>
       <button onClick={consent.openPreferences} type="button">
         open
@@ -136,6 +140,50 @@ describe('ConsentProvider', () => {
     renderProbe();
     await userEvent.click(screen.getByRole('button', { name: 'save-on' }));
     expect(screen.getByTestId('analytics')).toHaveTextContent('true');
+  });
+
+  it('save persists a withdrawal made from a granted state', async () => {
+    writeConsent(true);
+    renderProbe();
+    await waitFor(() => {
+      expect(screen.getByTestId('analytics')).toHaveTextContent('true');
+    });
+    await userEvent.click(screen.getByRole('button', { name: 'save-off' }));
+    expect(readConsent()?.analytics).toBe(false);
+  });
+
+  // Withdrawal is the one decision the page cannot honor in place: the GA and
+  // Vercel runtimes are already loaded and offer no way to unload themselves,
+  // so the only way to stop them mid-session is to reload the document.
+  it('save withdrawing an existing grant reloads the page', async () => {
+    writeConsent(true);
+    renderProbe();
+    await waitFor(() => {
+      expect(screen.getByTestId('analytics')).toHaveTextContent('true');
+    });
+    await userEvent.click(screen.getByRole('button', { name: 'save-off' }));
+    expect(reloadPage).toHaveBeenCalledTimes(1);
+  });
+
+  it('denyAll after a grant in the same page load reloads the page', async () => {
+    renderProbe();
+    await userEvent.click(screen.getByRole('button', { name: 'grant' }));
+    await userEvent.click(screen.getByRole('button', { name: 'deny' }));
+    expect(reloadPage).toHaveBeenCalledTimes(1);
+  });
+
+  // A first-time decline never loaded a script, so a reload would throw the
+  // visitor's place away to undo nothing.
+  it('a first-visit decline does not reload the page', async () => {
+    renderProbe();
+    await userEvent.click(screen.getByRole('button', { name: 'deny' }));
+    expect(reloadPage).not.toHaveBeenCalled();
+  });
+
+  it('granting does not reload the page', async () => {
+    renderProbe();
+    await userEvent.click(screen.getByRole('button', { name: 'grant' }));
+    expect(reloadPage).not.toHaveBeenCalled();
   });
 
   it('a decision closes the preferences dialog', async () => {
