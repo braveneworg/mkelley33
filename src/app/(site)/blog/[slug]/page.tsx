@@ -5,8 +5,10 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { CommentsSection } from '@/components/blog/comments-section';
 import { PostBody } from '@/components/blog/post-body';
 import { serializeJsonLd } from '@/lib/json-ld';
+import { listApprovedCommentsForPost } from '@/lib/repositories/comments';
 import { getPostBySlug, listPublishedPosts } from '@/lib/repositories/posts';
 import { siteConfig } from '@/lib/site-config';
 
@@ -43,6 +45,7 @@ export default async function PostPage({ params }: PageProps) {
     notFound();
   }
   const all = await listPublishedPosts();
+  const comments = await listApprovedCommentsForPost(post.id);
   const index = all.findIndex((p) => p.slug === post.slug);
   const newer = index > 0 ? all[index - 1] : undefined;
   const older = index >= 0 ? all[index + 1] : undefined;
@@ -101,6 +104,7 @@ export default async function PostPage({ params }: PageProps) {
           </Link>
         ) : null}
       </nav>
+      <CommentsSection comments={comments} postId={post.id} />
       <script
         dangerouslySetInnerHTML={{
           __html: serializeJsonLd(jsonLd),
