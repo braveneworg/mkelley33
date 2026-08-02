@@ -11,6 +11,12 @@ import userEvent from '@testing-library/user-event';
 import { ContactForm } from '@/components/contact/contact-form';
 import { submitContact } from '@/lib/actions/contact';
 
+/**
+ * This form's own concerns: the services picker, the deep link, and the error
+ * wiring. Submitting, surfacing a server error, and retiring a spent Turnstile
+ * token belong to `useGuardedForm` and are covered in its spec.
+ */
+
 const searchParams = { value: new URLSearchParams() };
 const resetSpy = vi.hoisted(() => vi.fn());
 
@@ -121,44 +127,6 @@ describe('ContactForm', () => {
     render(<ContactForm services={services} />);
     expect(screen.getByLabelText('reason')).toHaveValue('services');
     expect(screen.getByText('AI enablement')).toBeInTheDocument();
-  });
-
-  it('surfaces a server error without clearing the form', async () => {
-    vi.mocked(submitContact).mockResolvedValueOnce({
-      error: 'verification failed — give it a beat and retry',
-      success: false,
-    });
-    const user = userEvent.setup();
-    render(<ContactForm services={services} />);
-    await user.type(screen.getByLabelText('name'), 'Ada');
-    await user.type(screen.getByLabelText('email'), 'ada@example.com');
-    await user.type(
-      screen.getByLabelText('message'),
-      'Help my team adopt AI-assisted development.'
-    );
-    await user.click(screen.getByRole('button', { name: 'solve turnstile' }));
-    await user.click(screen.getByRole('button', { name: /send-message/ }));
-    expect(await screen.findByText(/verification failed/)).toBeInTheDocument();
-    expect(screen.getByLabelText('name')).toHaveValue('Ada');
-  });
-
-  it('resets the turnstile widget after a failed submit', async () => {
-    vi.mocked(submitContact).mockResolvedValueOnce({
-      error: 'verification failed — give it a beat and retry',
-      success: false,
-    });
-    const user = userEvent.setup();
-    render(<ContactForm services={services} />);
-    await user.type(screen.getByLabelText('name'), 'Ada');
-    await user.type(screen.getByLabelText('email'), 'ada@example.com');
-    await user.type(
-      screen.getByLabelText('message'),
-      'Help my team adopt AI-assisted development.'
-    );
-    await user.click(screen.getByRole('button', { name: 'solve turnstile' }));
-    await user.click(screen.getByRole('button', { name: /send-message/ }));
-    expect(await screen.findByText(/verification failed/)).toBeInTheDocument();
-    expect(resetSpy).toHaveBeenCalled();
   });
 
   it('associates picker and turnstile errors with their controls', async () => {
