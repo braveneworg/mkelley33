@@ -51,29 +51,47 @@ test('the corner trigger reopens preferences after a decision', async ({ page })
 test('declining keeps analytics unloaded and shows the privacy page', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'decline all' }).click();
+  // Anchor on the decision having landed first: `toHaveCount(0)` passes on its
+  // first poll, and the analytics loader appends its script from a passive
+  // effect, so an unguarded count taken right after the click would read 0
+  // even from a regressed gate that was about to mount.
+  const banner = page.getByRole('region', { name: 'cookie consent' });
+  await expect(banner).toBeHidden();
   await expect(page.locator('script[src*="_vercel/insights"]')).toHaveCount(0);
   await page.goto('/privacy');
   await expect(page.getByRole('heading', { level: 1, name: /privacy/ })).toBeVisible();
   await expect(page.getByRole('button', { name: 'manage cookie preferences' })).toBeVisible();
+  // Re-checked after a full navigation carrying the declined record. The
+  // anchor is the cursor trigger, not the manage button: the manage button is
+  // server-rendered and visible before hydration, while the trigger only
+  // appears once the provider has read storage — strictly after the commit in
+  // which an ungated analytics tag would have mounted and injected.
+  await expect(page.getByRole('button', { exact: true, name: 'cookie preferences' })).toBeVisible();
+  await expect(page.locator('script[src*="_vercel/insights"]')).toHaveCount(0);
 });
 
 test('consent mode is denied by default in the initial HTML response', async ({ page }) => {
-  // The raw response body, not the hydrated DOM: this is the only proof the
-  // bootstrap runs at parse time rather than being injected by client code
-  // after GA could already have loaded. Asserted as literals rather than
-  // against CONSENT_MODE_BOOTSTRAP so that rewriting the bootstrap — an
-  // arrow function, which cannot produce the `arguments` object gtag.js
-  // requires, or a dropped `default` command — fails here instead of
-  // silently agreeing with itself.
+  // The raw response body, not the hydrated DOM: served bytes are the only
+  // proof the bootstrap runs at parse time rather than being injected later
+  // by client code. It pins presence and content, not position: nothing here
+  // asserts where the bootstrap sits relative to other scripts. Asserted as
+  // literals rather than against CONSENT_MODE_BOOTSTRAP so that
+  // rewriting the bootstrap — an arrow function, which cannot produce the
+  // `arguments` object gtag.js requires, a dropped `default` command, or a
+  // default that no longer denies — fails here instead of silently agreeing
+  // with itself.
   const response = await page.request.get('/');
   expect(response.ok()).toBe(true);
   const html = await response.text();
   expect(html).toContain('function gtag(){dataLayer.push(arguments);}');
   expect(html).toContain("'consent','default'");
+  expect(html).toContain("analytics_storage:'denied'");
 });
 
 test('the sitemap lists the privacy page', async ({ page }) => {
   const response = await page.request.get('/sitemap.xml');
   expect(response.ok()).toBe(true);
-  expect(await response.text()).toContain('/privacy');
+  // The closing tag matters: a blog slug like `privacy-policy-notes` would
+  // satisfy a bare '/privacy'.
+  expect(await response.text()).toContain('/privacy</loc>');
 });
