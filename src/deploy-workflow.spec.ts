@@ -4,7 +4,7 @@
 
 // @vitest-environment node
 
-import { readFileSync } from 'node:fs';
+import { deployJobSteps } from '@/lib/deploy/ci-workflow';
 
 /**
  * Repo-policy check, not a unit test. The production build must happen ON
@@ -27,45 +27,47 @@ import { readFileSync } from 'node:fs';
  * for sensitive names, since it sees markers rather than values — which is
  * exactly why format checks in DEPLOY_ENV_FORMATS are limited to variables
  * that are not stored as sensitive.
+ *
+ * Assertions run over the deploy job's parsed step list — comments are not
+ * steps, so a comment naming `vercel build` cannot trip anything — and
+ * `stepIndex` throws on a step that is not there. The predecessor of this
+ * spec compared raw `indexOf` results over the file's text, where a deleted
+ * preflight step yielded -1 < anything and the ordering guard passed
+ * vacuously.
  */
 
-/**
- * The `deploy:` job block, sliced out so assertions cannot match another job,
- * with comment-only lines dropped — a comment explaining why the runner must
- * not call `vercel build` would otherwise trip an assertion looking for that
- * command as a step.
- */
-const deployJob = (): string => {
-  const ci = readFileSync('.github/workflows/ci.yml', 'utf8');
-  const lines = ci.split('\n');
-  const start = lines.findIndex((line) => /^ {2}deploy:\s*$/.test(line));
-  if (start === -1) {
-    return '';
+const steps = deployJobSteps();
+
+const stepIndex = (pattern: RegExp): number => {
+  const index = steps.findIndex((step) => pattern.test(step.run ?? ''));
+  if (index === -1) {
+    throw new Error(`no deploy step runs ${String(pattern)}`);
   }
-  const rest = lines.slice(start + 1);
-  const end = rest.findIndex((line) => /^ {2}\S/.test(line));
-  return (end === -1 ? rest : rest.slice(0, end)).filter((line) => !/^\s*#/.test(line)).join('\n');
+  return index;
 };
 
 describe('deploy job', () => {
-  it('exists in the workflow', () => {
-    expect(deployJob()).not.toBe('');
+  it('exists in the workflow with steps', () => {
+    expect(steps.length).toBeGreaterThan(0);
   });
 
   it('never builds the production output on the runner', () => {
-    expect(deployJob()).not.toMatch(/vercel build/);
+    expect(steps.filter((step) => /vercel build/.test(step.run ?? ''))).toEqual([]);
   });
 
   it('never deploys a prebuilt artifact', () => {
-    expect(deployJob()).not.toMatch(/--prebuilt/);
+    expect(steps.filter((step) => /--prebuilt/.test(step.run ?? ''))).toEqual([]);
   });
 
   it('deploys to production, letting Vercel build', () => {
-    expect(deployJob()).toMatch(/vercel deploy[^\n]*--prod/);
+    expect(steps[stepIndex(/vercel deploy/)]?.run).toMatch(/--prod/);
   });
 
-  it('still runs the env preflight before deploying', () => {
-    const job = deployJob();
-    expect(job.indexOf('check-deploy-env')).toBeLessThan(job.indexOf('vercel deploy'));
+  it('runs the env preflight against the pulled env', () => {
+    expect(steps[stepIndex(/check-deploy-env/)]?.run).toMatch(/\.env\.production\.local/);
+  });
+
+  it('runs the preflight before deploying', () => {
+    expect(stepIndex(/check-deploy-env/)).toBeLessThan(stepIndex(/vercel deploy/));
   });
 });
