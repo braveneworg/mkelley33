@@ -2,12 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
+import { Comments } from '@/collections/comments';
 import { ContactSubmissions } from '@/collections/contact-submissions';
 import { Media } from '@/collections/media';
 import { Posts } from '@/collections/posts';
 import { Subscribers } from '@/collections/subscribers';
 
-import type { Access, CollectionConfig } from 'payload';
+import type { Access, CollectionConfig, FieldAccess } from 'payload';
 
 /**
  * Payload passes a large `req` to access functions; these only read `req.user`,
@@ -72,5 +73,50 @@ describe('Posts access', () => {
 describe('Media access', () => {
   it('is publicly readable so uploads render for anonymous visitors', () => {
     expect(accessOf(Media, 'read')(ANON)).toBe(true);
+  });
+});
+
+/**
+ * Same explicit-resolution rationale as {@link accessOf}: a missing or
+ * renamed field fails loudly instead of the assertion silently passing
+ * against `undefined`.
+ */
+const fieldReadAccess = (collection: CollectionConfig, name: string): FieldAccess => {
+  const field = collection.fields.find((f) => 'name' in f && f.name === name);
+  const read = field && 'access' in field ? field.access?.read : undefined;
+  if (typeof read !== 'function') {
+    throw new Error(`${collection.slug}.${name} has no field-level read access rule`);
+  }
+  return read;
+};
+
+describe('Comments access', () => {
+  it('never allows create through the API', () => {
+    expect(accessOf(Comments, 'create')(ANON)).toBe(false);
+    expect(accessOf(Comments, 'create')(ADMIN)).toBe(false);
+  });
+
+  it('restricts anonymous reads to approved comments', () => {
+    expect(accessOf(Comments, 'read')(ANON)).toEqual({ status: { equals: 'approved' } });
+  });
+
+  it('gives authenticated users unrestricted read', () => {
+    expect(accessOf(Comments, 'read')(ADMIN)).toBe(true);
+  });
+
+  it.each(['update', 'delete'] as const)('denies %s to anonymous requests', (rule) => {
+    expect(accessOf(Comments, rule)(ANON)).toBe(false);
+  });
+
+  it.each(['update', 'delete'] as const)('allows %s to authenticated users', (rule) => {
+    expect(accessOf(Comments, rule)(ADMIN)).toBe(true);
+  });
+
+  it('hides authorEmail from anonymous readers at the field level', () => {
+    expect(fieldReadAccess(Comments, 'authorEmail')(ANON as never)).toBe(false);
+  });
+
+  it('shows authorEmail to authenticated users', () => {
+    expect(fieldReadAccess(Comments, 'authorEmail')(ADMIN as never)).toBe(true);
   });
 });

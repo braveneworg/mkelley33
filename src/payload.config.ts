@@ -11,6 +11,7 @@ import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob';
 import { buildConfig } from 'payload';
 import sharp from 'sharp';
 
+import { Comments } from '@/collections/comments';
 import { ContactSubmissions } from '@/collections/contact-submissions';
 import { Media } from '@/collections/media';
 import { Posts } from '@/collections/posts';
@@ -23,7 +24,7 @@ const dirname = path.dirname(filename);
 
 export default buildConfig({
   admin: { user: 'users' },
-  collections: [Users, Media, Posts, Services, ContactSubmissions, Subscribers],
+  collections: [Users, Media, Posts, Services, ContactSubmissions, Subscribers, Comments],
   db: mongooseAdapter({ url: process.env.DATABASE_URL ?? '' }),
   editor: lexicalEditor(),
   plugins: [

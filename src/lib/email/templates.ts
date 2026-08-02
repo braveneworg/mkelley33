@@ -27,6 +27,26 @@ export const contactNotificationEmail = (input: ContactNotificationInput): Email
   };
 };
 
+export interface CommentNotificationInput {
+  /** `''` means the commenter left the optional field empty. */
+  authorEmail: string;
+  authorName: string;
+  body: string;
+  moderateUrl: string;
+  postTitle: string;
+}
+
+export const commentNotificationEmail = (input: CommentNotificationInput): EmailContent => {
+  const from =
+    input.authorEmail === ''
+      ? `${input.authorName} (email not provided)`
+      : `${input.authorName} <${input.authorEmail}>`;
+  return {
+    subject: `[mkelley33.com] new comment on "${input.postTitle}" — ${input.authorName}`,
+    text: `$ cat ./inbox/new-comment\n\nfrom:      ${from}\npost:      ${input.postTitle}\n\n${input.body}\n\nmoderate:  ${input.moderateUrl}\n`,
+  };
+};
+
 export const newsletterConfirmEmail = (confirmUrl: string): EmailContent => ({
   subject: 'confirm your subscription — mkelley33.com',
   text: `$ subscribe --newsletter\n\nalmost there — confirm your subscription:\n\n${confirmUrl}\n\nif you didn't request this, ignore this email and nothing happens.\n`,

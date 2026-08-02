@@ -4,13 +4,15 @@
 
 // @vitest-environment node
 
+import type * as postsRepo from '@/lib/repositories/posts';
+
 const find = vi.fn();
 
 vi.mock('payload', () => ({ getPayload: vi.fn(async () => ({ find })) }));
 vi.mock('@payload-config', () => ({ default: {} }));
 
 /** `cache` memoizes per module instance — re-import so each test queries afresh. */
-const importFresh = async () => {
+const importFresh = async (): Promise<typeof postsRepo> => {
   vi.resetModules();
   return import('@/lib/repositories/posts');
 };
@@ -33,6 +35,30 @@ describe('listPublishedPosts', () => {
     const { listPublishedPosts } = await importFresh();
 
     await expect(listPublishedPosts()).resolves.toEqual([]);
+    expect(console.error).toHaveBeenCalled();
+  });
+});
+
+describe('getPublishedPostById', () => {
+  it('returns the matching published post', async () => {
+    find.mockResolvedValue({ docs: [{ id: 'p1', title: 'Hello' }] });
+    const { getPublishedPostById } = await importFresh();
+
+    await expect(getPublishedPostById('p1')).resolves.toEqual({ id: 'p1', title: 'Hello' });
+  });
+
+  it('returns null when no published post matches', async () => {
+    find.mockResolvedValue({ docs: [] });
+    const { getPublishedPostById } = await importFresh();
+
+    await expect(getPublishedPostById('missing')).resolves.toBeNull();
+  });
+
+  it('returns null instead of throwing when the query fails', async () => {
+    find.mockRejectedValue(new Error('boom'));
+    const { getPublishedPostById } = await importFresh();
+
+    await expect(getPublishedPostById('p1')).resolves.toBeNull();
     expect(console.error).toHaveBeenCalled();
   });
 });
