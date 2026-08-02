@@ -4,8 +4,10 @@
 
 // @vitest-environment node
 
-import { execFileSync, spawn } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
+
+import { runChild } from '@/lib/proc/run-child';
 
 /**
  * Repo-policy check for `.husky/pre-push`, not a unit test. The branch guard
@@ -41,16 +43,22 @@ interface HookRun {
  */
 const SHELLS = ['/bin/sh', '/bin/dash'].filter((shell) => existsSync(shell));
 
-const runHook = (shell: string, refLine: string): Promise<HookRun> =>
-  new Promise((resolve) => {
-    const child = spawn(shell, ['.husky/pre-push'], { stdio: ['pipe', 'pipe', 'pipe'] });
-    child.stdout.resume();
-    child.stderr.resume();
-    child.stdin.end(`${refLine}\n`);
-    child.on('close', (code) => {
-      resolve({ code: code ?? 1, log: readFileSync(LOG, 'utf8') });
-    });
+/**
+ * Driven exactly as git drives it: the ref lines on stdin, then EOF. The
+ * hook's own diagnostics go to the log file, so the captured output is
+ * drained and discarded — an undrained pipe would stall the hook mid-run.
+ */
+const runHook = async (shell: string, refLine: string): Promise<HookRun> => {
+  const { code } = await runChild({
+    args: ['.husky/pre-push'],
+    command: shell,
+    input: `${refLine}\n`,
+    output: 'capture',
+    writeErr: () => {},
+    writeOut: () => {},
   });
+  return { code: code ?? 1, log: readFileSync(LOG, 'utf8') };
+};
 
 describe.each(SHELLS)('pre-push branch guard under %s', (shell) => {
   it('allows deleting a merged feature branch', async () => {

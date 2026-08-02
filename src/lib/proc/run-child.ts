@@ -5,8 +5,8 @@
 /**
  * One child-process adapter for every script in this repo.
  *
- * Four hand-rolled spawn helpers used to live here — in `scripts/e2e.mjs`,
- * `scripts/ci-build.mjs`, `scripts/db-tool-runner.ts` and
+ * Four hand-rolled spawn helpers used to live apart — in `scripts/e2e.ts`,
+ * `scripts/ci-build.ts`, `scripts/db-tool-runner.ts` and
  * `src/pre-push-hook.spec.ts` — and each carried a different subset of the
  * invariants below, so a fix learned in one never reached the others. This
  * module carries all of them at once:
@@ -50,6 +50,8 @@ export interface RunChildOptions {
   readonly detached?: boolean;
   /** Passed through verbatim; omit to inherit this process's environment. */
   readonly env?: NodeJS.ProcessEnv;
+  /** Written to the child's stdin, which is then closed. Forces `stdin: 'pipe'`. */
+  readonly input?: string;
   readonly output?: ChildOutputMode;
   /** Applied to every whole line before it is retained or written. */
   readonly redactLine?: (line: string) => string;
@@ -169,6 +171,17 @@ const beginCapture = (child: ChildProcess, options: RunChildOptions): Capture =>
 };
 
 /**
+ * Hands the child its whole stdin at once and closes it — the shape git uses
+ * to drive a hook, and the only way a child that reads to EOF ever finishes.
+ */
+const feedStdin = (child: ChildProcess, input: string | undefined): void => {
+  if (input === undefined) {
+    return;
+  }
+  child.stdin?.end(input);
+};
+
+/**
  * Signals the child — its whole process group when it was spawned detached,
  * since killing only the direct child would orphan its grandchildren. Never
  * throws: by the time a teardown path runs, the group is often already gone.
@@ -202,6 +215,7 @@ export const startChild = (options: RunChildOptions): ChildHandle => {
     cwd,
     detached = false,
     env,
+    input,
     output = 'inherit',
     stdin = 'inherit',
     timeoutMs,
@@ -212,8 +226,9 @@ export const startChild = (options: RunChildOptions): ChildHandle => {
     cwd,
     detached,
     env,
-    stdio: [stdin, childOutput, childOutput],
+    stdio: [input === undefined ? stdin : 'pipe', childOutput, childOutput],
   });
+  feedStdin(child, input);
   const { flush, lines } = beginCapture(child, options);
 
   const closed = new Promise<ChildResult>((resolve) => {

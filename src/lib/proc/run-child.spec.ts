@@ -389,6 +389,22 @@ describe('runChild environment', () => {
     expect(lines).toEqual(['pinned true']);
   });
 
+  /** How git drives a hook: the whole ref list, then EOF. */
+  it('feeds the child its stdin and closes it', async () => {
+    const { lines } = await runChild({
+      ...captureOnly,
+      args: [
+        '-e',
+        "let read = ''; process.stdin.setEncoding('utf8');" +
+          "process.stdin.on('data', (chunk) => { read += chunk; });" +
+          "process.stdin.on('end', () => console.log(read.trim().toUpperCase()));",
+      ],
+      command: NODE,
+      input: 'one ref line\n',
+    });
+    expect(lines).toEqual(['ONE REF LINE']);
+  });
+
   it('hands the child a real pipe when asked for one', async () => {
     const { lines } = await runChild({
       ...captureOnly,
