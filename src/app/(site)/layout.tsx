@@ -8,6 +8,7 @@ import { Analytics } from '@vercel/analytics/next';
 
 import { PaletteHotkey } from '@/components/palette/palette-hotkey';
 import { PaletteMount } from '@/components/palette/palette-mount';
+import { GoogleAnalyticsTag } from '@/components/site/google-analytics-tag';
 import { SerwistRegister } from '@/components/site/serwist-register';
 import { SiteFooter } from '@/components/site/site-footer';
 import { SiteNav } from '@/components/site/site-nav';
@@ -94,6 +95,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           />
         </SerwistRegister>
         <Analytics />
+        <GoogleAnalyticsTag />
       </body>
     </html>
   );
