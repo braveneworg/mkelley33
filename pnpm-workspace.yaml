@@ -23,29 +23,6 @@ allowBuilds:
   sharp: true
   unrs-resolver: true
 
-# Written by pnpm itself when `pnpm install --trust-lockfile` resolved the
-# merge of origin/main into feature/phase-5-polish: each of these was
-# published within the 24h minimumReleaseAge window at that moment. Each is
-# pinned to an exact version and each already appeared in a lockfile reviewed
-# on main or on this branch, so nothing unreviewed was admitted — the merged
-# lockfile contains no package version absent from both parents.
-#
-# These are meant to be temporary. Once a version is more than 24h old, delete
-# its line and prove the quarantine is satisfied without it by running a plain
-# `pnpm install` with NO --trust-lockfile: a clean install is the whole point,
-# and ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION means the entry is still needed.
-# Drop this block entirely when the last line goes. The quarantine continues
-# to apply to every package not listed here.
-#
-# Remaining eligibility (24h after publish):
-#   @hookform/resolvers@5.5.7          2026-07-27T09:47:07Z
-#   conventional-commits-parser@7.1.1  2026-07-27T11:47:45Z
-#   globals@17.8.0                     2026-07-27T16:39:39Z
-minimumReleaseAgeExclude:
-  - '@hookform/resolvers@5.5.7'
-  - conventional-commits-parser@7.1.1
-  - globals@17.8.0
-
 # Moved here from package.json's "pnpm" field, which pnpm 11 no longer reads
 # (it warns and ignores the keys). Both plugins declare a peer range stopping
 # at ESLint 9 but work correctly on the 10 this repo uses.
@@ -59,5 +36,49 @@ peerDependencyRules:
 # already safe; this lifts the one vulnerable copy — next pins postcss
 # 8.4.31 — without touching resolutions that are already patched. Scoped to
 # the advisory range so it self-retires once next's own pin catches up.
+#
+# The rest date from the 2026-08-02 `pnpm audit` sweep (33 advisories, 1
+# critical: tar GHSA-23hp-3jrh-7fpw). Each floors a vulnerable range at its
+# first patched version, scoped to the advisory range like the postcss entry
+# so it self-retires once the declaring parent catches up; caret values keep
+# resolution inside the current major so no parent crosses a breaking
+# boundary. Every floored version had been published well over 24h before
+# the sweep, so none needs a minimumReleaseAgeExclude entry. mongoose is
+# here because @payloadcms/db-mongodb pins it exactly (8.22.1), so an
+# override is the only path to the patch; sharp's direct dep in package.json
+# was bumped to ^0.35.0 alongside its entry. undici is deliberately absent:
+# the one vulnerable copy is undici@5.29.0 inside the vercel CLI
+# devDependency, no patched 5.x exists, and forcing 6.x onto the CLI risks
+# breaking `vercel deploy` in CI — accepted instead in auditConfig below.
 overrides:
+  '@tootallnate/once@<2.0.1': ^2.0.1
+  brace-expansion@<1.1.17: ^1.1.17
+  dompurify@<3.4.12: ^3.4.12
+  js-yaml@>=4.0.0 <4.3.0: ^4.3.0
+  minimatch@>=10.0.0 <10.2.3: ^10.2.3
+  mongoose@>=8.0.0 <8.24.1: ^8.24.1
+  path-to-regexp@>=8.0.0 <8.4.0: ^8.4.0
   'postcss@<8.5.18': '>=8.5.18'
+  sharp@<0.35.0: ^0.35.0
+  smol-toml@<1.6.1: ^1.6.1
+  tar@<7.5.21: ^7.5.21
+
+# The nine advisories below all describe undici@5.29.0, the HTTP client the
+# vercel CLI pins (even at its latest, 58.4.4) — a devDependency that only
+# talks to Vercel's own API during deploys. undici 5.x has no patched
+# release (fixes landed in 6.23/6.24/6.27), so the only "fix" would be an
+# override forcing the CLI onto undici 6, an API-incompatible major that
+# risks breaking `vercel deploy` in CI. Accepted instead, scoped to these
+# exact GHSAs so anything new still fails `pnpm audit` loudly. Delete this
+# block once `pnpm why undici` shows the CLI off 5.x after a vercel update.
+auditConfig:
+  ignoreGhsas:
+    - GHSA-vrm6-8vpv-qv8q
+    - GHSA-v9p9-hfj2-hcw8
+    - GHSA-vxpw-j846-p89q
+    - GHSA-g9mf-h72j-4rw9
+    - GHSA-2mjp-6q6p-2qxm
+    - GHSA-4992-7rv2-5pvq
+    - GHSA-p88m-4jfj-68fv
+    - GHSA-35p6-xmwp-9g52
+    - GHSA-g8m3-5g58-fq7m
