@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-> **Note (2026-08-02):** Task 8's cursor trigger and Task 10's footer `pb-16` were superseded post-merge-review by the content-sticky cookie trigger — see the spec doc. The tasks below are left as executed, as the historical record.
+> **Note (2026-08-02):** Task 8's cursor trigger and Task 10's footer `pb-16` were superseded by the content-sticky cookie trigger during pre-merge review of PR #43 — see the spec doc. The tasks below are left as executed, as the historical record.
 
 **Goal:** An Art. 13-complete `/privacy` page plus a banner + in-depth preferences dialog that hard-gates Google Analytics AND Vercel Analytics behind explicit consent, with a persistent phosphor cursor-block reopen trigger.
 
