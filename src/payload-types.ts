@@ -73,6 +73,7 @@ export interface Config {
     services: Service;
     'contact-submissions': ContactSubmission;
     subscribers: Subscriber;
+    comments: Comment;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -86,6 +87,7 @@ export interface Config {
     services: ServicesSelect<false> | ServicesSelect<true>;
     'contact-submissions': ContactSubmissionsSelect<false> | ContactSubmissionsSelect<true>;
     subscribers: SubscribersSelect<false> | SubscribersSelect<true>;
+    comments: CommentsSelect<false> | CommentsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -249,6 +251,24 @@ export interface Subscriber {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "comments".
+ */
+export interface Comment {
+  id: string;
+  authorName: string;
+  /**
+   * Never published — moderation contact only
+   */
+  authorEmail?: string | null;
+  body: string;
+  post: string | Post;
+  parent?: (string | null) | Comment;
+  status: 'pending' | 'approved' | 'spam';
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -294,6 +314,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'subscribers';
         value: string | Subscriber;
+      } | null)
+    | ({
+        relationTo: 'comments';
+        value: string | Comment;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -431,6 +455,20 @@ export interface SubscribersSelect<T extends boolean = true> {
   confirmToken?: T;
   confirmedAt?: T;
   unsubscribedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "comments_select".
+ */
+export interface CommentsSelect<T extends boolean = true> {
+  authorName?: T;
+  authorEmail?: T;
+  body?: T;
+  post?: T;
+  parent?: T;
+  status?: T;
   updatedAt?: T;
   createdAt?: T;
 }
