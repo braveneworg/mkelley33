@@ -59,5 +59,49 @@ peerDependencyRules:
 # already safe; this lifts the one vulnerable copy — next pins postcss
 # 8.4.31 — without touching resolutions that are already patched. Scoped to
 # the advisory range so it self-retires once next's own pin catches up.
+#
+# The rest date from the 2026-08-02 `pnpm audit` sweep (33 advisories, 1
+# critical: tar GHSA-23hp-3jrh-7fpw). Each floors a vulnerable range at its
+# first patched version, scoped to the advisory range like the postcss entry
+# so it self-retires once the declaring parent catches up; caret values keep
+# resolution inside the current major so no parent crosses a breaking
+# boundary. Every floored version had been published well over 24h before
+# the sweep, so none needs a minimumReleaseAgeExclude entry. mongoose is
+# here because @payloadcms/db-mongodb pins it exactly (8.22.1), so an
+# override is the only path to the patch; sharp's direct dep in package.json
+# was bumped to ^0.35.0 alongside its entry. undici is deliberately absent:
+# the one vulnerable copy is undici@5.29.0 inside the vercel CLI
+# devDependency, no patched 5.x exists, and forcing 6.x onto the CLI risks
+# breaking `vercel deploy` in CI — accepted instead in auditConfig below.
 overrides:
+  '@tootallnate/once@<2.0.1': ^2.0.1
+  brace-expansion@<1.1.17: ^1.1.17
+  dompurify@<3.4.12: ^3.4.12
+  js-yaml@>=4.0.0 <4.3.0: ^4.3.0
+  minimatch@>=10.0.0 <10.2.3: ^10.2.3
+  mongoose@>=8.0.0 <8.24.1: ^8.24.1
+  path-to-regexp@>=8.0.0 <8.4.0: ^8.4.0
   'postcss@<8.5.18': '>=8.5.18'
+  sharp@<0.35.0: ^0.35.0
+  smol-toml@<1.6.1: ^1.6.1
+  tar@<7.5.21: ^7.5.21
+
+# The nine advisories below all describe undici@5.29.0, the HTTP client the
+# vercel CLI pins (even at its latest, 58.4.4) — a devDependency that only
+# talks to Vercel's own API during deploys. undici 5.x has no patched
+# release (fixes landed in 6.23/6.24/6.27), so the only "fix" would be an
+# override forcing the CLI onto undici 6, an API-incompatible major that
+# risks breaking `vercel deploy` in CI. Accepted instead, scoped to these
+# exact GHSAs so anything new still fails `pnpm audit` loudly. Delete this
+# block once `pnpm why undici` shows the CLI off 5.x after a vercel update.
+auditConfig:
+  ignoreGhsas:
+    - GHSA-vrm6-8vpv-qv8q
+    - GHSA-v9p9-hfj2-hcw8
+    - GHSA-vxpw-j846-p89q
+    - GHSA-g9mf-h72j-4rw9
+    - GHSA-2mjp-6q6p-2qxm
+    - GHSA-4992-7rv2-5pvq
+    - GHSA-p88m-4jfj-68fv
+    - GHSA-35p6-xmwp-9g52
+    - GHSA-g8m3-5g58-fq7m
