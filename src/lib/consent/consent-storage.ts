@@ -37,9 +37,25 @@ const safeLocalStorage = (): null | Storage => {
 };
 
 /**
+ * Whether a stored `decidedAt` is a real instant inside the consent window.
+ * Unparseable dates fail, and so do dates ahead of `now`: the age below would
+ * be negative, so a single forward-dated write — clock skew, or a hand edit of
+ * user-writable localStorage — would pin a decision that could never age out.
+ */
+const isWithinConsentWindow = (decidedAt: string, now: Date): boolean => {
+  const decidedAtMs = Date.parse(decidedAt);
+  if (Number.isNaN(decidedAtMs)) {
+    return false;
+  }
+  const ageMs = now.getTime() - decidedAtMs;
+  return ageMs >= 0 && ageMs <= CONSENT_MAX_AGE_MS;
+};
+
+/**
  * Reads the stored decision. Missing, corrupt, wrong-version, unparseable,
- * or expired records all read as null (undecided) — never throws, so it is
- * safe in any render path. `now` exists for deterministic tests.
+ * future-dated, or expired records all read as null (undecided) — never
+ * throws, so it is safe in any render path. `now` exists for deterministic
+ * tests.
  */
 export const readConsent = (now: Date = new Date()): ConsentRecord | null => {
   const storage = safeLocalStorage();
@@ -68,11 +84,7 @@ export const readConsent = (now: Date = new Date()): ConsentRecord | null => {
   if (parsed.data.version !== CONSENT_VERSION) {
     return null;
   }
-  const decidedAtMs = Date.parse(parsed.data.decidedAt);
-  if (Number.isNaN(decidedAtMs)) {
-    return null;
-  }
-  if (now.getTime() - decidedAtMs > CONSENT_MAX_AGE_MS) {
+  if (!isWithinConsentWindow(parsed.data.decidedAt, now)) {
     return null;
   }
   return parsed.data;

@@ -59,6 +59,16 @@ describe('consent storage', () => {
     expect(readConsent()).toBeNull();
   });
 
+  // localStorage is user-editable, and clocks skew. A record dated ahead of
+  // now makes `now - decidedAt` negative, so it can never age out of the
+  // twelve-month window — one forward-dated write would pin a decision
+  // forever.
+  it('reads as undecided when the record is dated in the future', () => {
+    const now = new Date('2026-01-01T00:00:00.000Z');
+    writeConsent(true, new Date(now.getTime() + 60_000));
+    expect(readConsent(now)).toBeNull();
+  });
+
   it('expires records older than twelve months', () => {
     const decidedAt = new Date('2025-01-01T00:00:00.000Z');
     writeConsent(true, decidedAt);
@@ -87,12 +97,18 @@ describe('consent storage', () => {
     expect(hasAnalyticsConsent()).toBe(false);
   });
 
+  // Each of the three below seeds a real, valid grant *before* breaking
+  // storage. Without the seed `readConsent()` would return null anyway —
+  // nothing is stored — and the test would pass with the failure path
+  // deleted.
   it('reads as undecided where there is no localStorage at all', () => {
+    writeConsent(true);
     vi.stubGlobal('localStorage', undefined);
     expect(readConsent()).toBeNull();
   });
 
   it('reads as undecided when touching localStorage throws', () => {
+    writeConsent(true);
     vi.spyOn(globalThis, 'localStorage', 'get').mockImplementation(() => {
       throw new Error('storage disabled');
     });
@@ -100,6 +116,7 @@ describe('consent storage', () => {
   });
 
   it('reads as undecided when reading the slot throws', () => {
+    writeConsent(true);
     vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
       throw new Error('storage read denied');
     });
