@@ -1,5 +1,21 @@
 # mkelley33.com
 
+[![CI](https://github.com/braveneworg/mkelley33/actions/workflows/ci.yml/badge.svg)](https://github.com/braveneworg/mkelley33/actions/workflows/ci.yml)
+[![License: MPL 2.0](https://img.shields.io/badge/License-MPL_2.0-brightgreen.svg)](https://opensource.org/licenses/MPL-2.0)
+[![Node Version](https://img.shields.io/badge/node-24.x-brightgreen.svg)](package.json)
+[![Next.js](https://img.shields.io/badge/Next.js-16.2-black)](https://nextjs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6.0-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-Styling-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+[![Payload](https://img.shields.io/badge/Payload-CMS-000000?logo=payloadcms&logoColor=white)](https://payloadcms.com)
+[![MongoDB](https://img.shields.io/badge/MongoDB-Database-47A248?logo=mongodb&logoColor=white)](https://www.mongodb.com)
+[![Vercel](https://img.shields.io/badge/Vercel-Deployed-000000?logo=vercel&logoColor=white)](https://vercel.com)
+[![Vitest](https://img.shields.io/badge/Vitest-Testing-6E9F18?logo=vitest&logoColor=white)](https://vitest.dev)
+[![Playwright](https://img.shields.io/badge/Playwright-E2E-2EAD33?logo=playwright&logoColor=white)](https://playwright.dev)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/braveneworg/mkelley33/pulls)
+[![Contributors](https://img.shields.io/github/contributors/braveneworg/mkelley33)](https://github.com/braveneworg/mkelley33/graphs/contributors)
+[![GitHub Stars](https://img.shields.io/github/stars/braveneworg/mkelley33)](https://github.com/braveneworg/mkelley33/stargazers)
+[![GitHub Forks](https://img.shields.io/github/forks/braveneworg/mkelley33)](https://github.com/braveneworg/mkelley33/network/members)
+
 The personal site of [Michaux Kelley](https://mkelley33.com) — full-stack
 engineering, AI at the terminal. A terminal-aesthetic portfolio, blog, and
 newsletter built with Next.js and Payload CMS, deployed on Vercel.
