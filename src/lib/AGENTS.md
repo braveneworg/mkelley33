@@ -16,7 +16,7 @@ binding. Everything below it applies only once the thing it names exists.
   pattern); keep database logic out of components and routes. Read paths
   swallow connection failures and render empty so a blip cannot take a page
   down — see `listPublishedPosts`. That is deliberate at request time and
-  wrong at build time, which is why `scripts/ci-build.mjs` fails the build if
+  wrong at build time, which is why `scripts/ci-build.ts` fails the build if
   Payload never reached mongod.
 - `validation/` — Zod schemas for all external input, one module per form.
 - `email/` — `transport.ts` (nodemailer; falls back to the JSON transport when

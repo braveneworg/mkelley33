@@ -18,8 +18,9 @@ because vitest's event loop stays live.
 **Rule:** in any script that owns a `MongoMemoryServer` (or any child
 spawned with piped stdio), never call `spawnSync`/blocking work while the
 child lives. Use async `spawn` and `await` a close-promise so the event
-loop keeps draining. `scripts/e2e.mjs` does this correctly — keep it that
-way.
+loop keeps draining. Since 2026-08-01 that is not a per-script decision:
+every script spawns through `src/lib/proc/run-child.ts`, which offers no
+synchronous path at all. Reach for it rather than `node:child_process`.
 
 **History:** `scripts/ci-build.mjs` carried the same pattern and was the
 likely root cause of the historical `build:ci` prerender-hang flake class
