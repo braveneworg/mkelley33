@@ -24,9 +24,10 @@ export interface InventoryItem {
 /**
  * Single source of truth for everything the site stores or loads, rendered
  * by both the preferences dialog and the privacy page so the two can never
- * drift.
+ * drift. `readonly` throughout: this is a disclosure, and a caller that can
+ * splice an entry out of it can make the page under-report what runs.
  */
-export const CONSENT_CATEGORIES: ConsentCategory[] = [
+export const CONSENT_CATEGORIES: readonly ConsentCategory[] = [
   {
     description:
       'required for the site to work — remembers your cookie decision and theme. always on, never leaves your browser.',
@@ -41,7 +42,7 @@ export const CONSENT_CATEGORIES: ConsentCategory[] = [
   },
 ];
 
-export const CONSENT_INVENTORY: InventoryItem[] = [
+export const CONSENT_INVENTORY: readonly InventoryItem[] = [
   {
     category: 'analytics',
     duration: '2 years',
@@ -84,5 +85,5 @@ export const CONSENT_INVENTORY: InventoryItem[] = [
   },
 ];
 
-export const inventoryFor = (category: ConsentCategoryId): InventoryItem[] =>
+export const inventoryFor = (category: ConsentCategoryId): readonly InventoryItem[] =>
   CONSENT_INVENTORY.filter((item) => item.category === category);

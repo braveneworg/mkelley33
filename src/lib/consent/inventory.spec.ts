@@ -6,6 +6,13 @@ import { CONSENT_STORAGE_KEY } from '@/lib/consent/consent-storage';
 import { CONSENT_CATEGORIES, CONSENT_INVENTORY, inventoryFor } from '@/lib/consent/inventory';
 
 describe('consent inventory', () => {
+  // Order is rendered order in both the dialog and the privacy page. Essential
+  // comes first because it is the one category a visitor cannot turn off —
+  // reversing it would put a choice above a non-choice.
+  it('lists essential before analytics', () => {
+    expect(CONSENT_CATEGORIES.map((category) => category.id)).toEqual(['essential', 'analytics']);
+  });
+
   it('has at least one item in every category', () => {
     const populated = CONSENT_CATEGORIES.every((category) => inventoryFor(category.id).length > 0);
     expect(populated).toBe(true);

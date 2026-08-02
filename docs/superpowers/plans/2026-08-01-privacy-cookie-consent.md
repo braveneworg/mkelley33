@@ -420,7 +420,7 @@ git commit -m 'feat: ✨ add consent mode gtag helpers'
 
 **Interfaces:**
 - Consumes: `CONSENT_STORAGE_KEY` from `@/lib/consent/consent-storage`.
-- Produces: `type ConsentCategoryId = 'analytics' | 'essential'`, `interface ConsentCategory { description: string; id: ConsentCategoryId; title: string }`, `interface InventoryItem { category: ConsentCategoryId; duration: string; name: string; provider: string; purpose: string; type: 'cookie' | 'local storage' | 'script' }`, `CONSENT_CATEGORIES: ConsentCategory[]`, `CONSENT_INVENTORY: InventoryItem[]`, `inventoryFor(category: ConsentCategoryId): InventoryItem[]`.
+- Produces: `type ConsentCategoryId = 'analytics' | 'essential'`, `interface ConsentCategory { description: string; id: ConsentCategoryId; title: string }`, `interface InventoryItem { category: ConsentCategoryId; duration: string; name: string; provider: string; purpose: string; type: 'cookie' | 'local storage' | 'script' }`, `CONSENT_CATEGORIES: readonly ConsentCategory[]`, `CONSENT_INVENTORY: readonly InventoryItem[]`, `inventoryFor(category: ConsentCategoryId): readonly InventoryItem[]`.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -496,7 +496,7 @@ export interface InventoryItem {
  * by both the preferences dialog and the privacy page so the two can never
  * drift.
  */
-export const CONSENT_CATEGORIES: ConsentCategory[] = [
+export const CONSENT_CATEGORIES: readonly ConsentCategory[] = [
   {
     description:
       'required for the site to work — remembers your cookie decision and theme. always on, never leaves your browser.',
@@ -511,7 +511,7 @@ export const CONSENT_CATEGORIES: ConsentCategory[] = [
   },
 ];
 
-export const CONSENT_INVENTORY: InventoryItem[] = [
+export const CONSENT_INVENTORY: readonly InventoryItem[] = [
   {
     category: 'analytics',
     duration: '2 years',
@@ -554,7 +554,7 @@ export const CONSENT_INVENTORY: InventoryItem[] = [
   },
 ];
 
-export const inventoryFor = (category: ConsentCategoryId): InventoryItem[] =>
+export const inventoryFor = (category: ConsentCategoryId): readonly InventoryItem[] =>
   CONSENT_INVENTORY.filter((item) => item.category === category);
 ```
 
