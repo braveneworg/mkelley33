@@ -13,7 +13,7 @@
 import { subscribeNewsletter } from '@/lib/actions/newsletter';
 import { sendEmail } from '@/lib/email/transport';
 import { upsertPendingSubscriber } from '@/lib/repositories/subscribers';
-import { verifyTurnstileToken } from '@/lib/turnstile';
+import { verifyTurnstileToken } from '@/lib/turnstile/verify';
 
 vi.mock('@/lib/email/transport', () => ({
   sendEmail: vi.fn().mockResolvedValue(true),
@@ -21,7 +21,7 @@ vi.mock('@/lib/email/transport', () => ({
 vi.mock('@/lib/repositories/subscribers', () => ({
   upsertPendingSubscriber: vi.fn(),
 }));
-vi.mock('@/lib/turnstile', () => ({
+vi.mock('@/lib/turnstile/verify', () => ({
   verifyTurnstileToken: vi.fn(),
 }));
 

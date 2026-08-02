@@ -11,7 +11,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 
 import type { ActionResult } from '@/lib/actions/types';
-import { turnstileSiteKey } from '@/lib/turnstile';
+import { turnstileSiteKey } from '@/lib/turnstile/site-key';
 
 import type { TurnstileInstance } from '@marsidev/react-turnstile';
 import type { DefaultValues, FieldValues, Path, PathValue, UseFormReturn } from 'react-hook-form';

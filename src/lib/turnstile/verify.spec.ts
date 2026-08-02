@@ -4,7 +4,11 @@
 
 // @vitest-environment node
 
-import { TURNSTILE_TEST_SITE_KEY, turnstileSiteKey, verifyTurnstileToken } from '@/lib/turnstile';
+import { verifyTurnstileToken } from '@/lib/turnstile/verify';
+
+// The real module throws when it is loaded outside a server bundle, which is
+// exactly the guard this file exists to keep — see src/AGENTS.md.
+vi.mock('server-only', () => ({}));
 
 describe('verifyTurnstileToken', () => {
   afterEach(() => {
@@ -63,22 +67,5 @@ describe('verifyTurnstileToken', () => {
     expect(error).toHaveBeenCalledWith(expect.stringContaining('TURNSTILE_SECRET_KEY unset'));
     expect(warn).not.toHaveBeenCalled();
     vi.unstubAllEnvs();
-  });
-});
-
-describe('turnstileSiteKey', () => {
-  afterEach(() => {
-    vi.unstubAllEnvs();
-  });
-
-  it('prefers the configured site key', async () => {
-    vi.stubEnv('NEXT_PUBLIC_TURNSTILE_SITE_KEY', 'real-key');
-    expect(turnstileSiteKey()).toBe('real-key');
-  });
-
-  it('falls back to Cloudflare test key when unset', async () => {
-    // `??`, not `||` — an explicitly empty value is passed through as-is.
-    vi.stubEnv('NEXT_PUBLIC_TURNSTILE_SITE_KEY', undefined);
-    expect(turnstileSiteKey()).toBe(TURNSTILE_TEST_SITE_KEY);
   });
 });

@@ -21,11 +21,17 @@ binding. Everything below it applies only once the thing it names exists.
 - `validation/` — Zod schemas for all external input, one module per form.
 - `email/` — `transport.ts` (nodemailer; falls back to the JSON transport when
   `SMTP_HOST` is unset) and `templates.ts`.
+- `turnstile/` — split at the client/server seam. `site-key.ts` reads only
+  `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and is imported by the form hook;
+  `verify.ts` reads `TURNSTILE_SECRET_KEY`, is marked `server-only`, and is
+  imported by `actions/run-form-submission.ts` alone. Never merge them: one
+  file exporting both halves puts the secret-reading code in the client
+  graph and leaves tree-shaking as the only thing removing it.
 - Loose modules for cross-cutting concerns: `site-config.ts`, `json-ld.ts`,
-  `rss.ts`, `highlight.ts`, `newsletter-tokens.ts`, `turnstile.ts`,
-  `cv-content.ts`, `services-content.ts`, `services-seed.ts`, and
-  `db-backup.ts` (pure decisions for `scripts/db-backup.ts` /
-  `scripts/db-restore.ts` — the wrappers keep the side effects).
+  `rss.ts`, `highlight.ts`, `newsletter-tokens.ts`, `cv-content.ts`,
+  `services-content.ts`, `services-seed.ts`, and `db-backup.ts` (pure
+  decisions for `scripts/db-backup.ts` / `scripts/db-restore.ts` — the
+  wrappers keep the side effects).
 
 ## Rules
 
@@ -48,9 +54,6 @@ violate the rules attached to them.
 - **`decorators/`** — `withAuth`, `withAdmin`, `withRateLimit`. Nothing is
   gated today; the Payload admin handles its own auth. Introduce these with
   the first protected route or action, and gate every one through them.
-- **`'server-only'`** — not a dependency and no module is marked. If added,
-  mark server-only modules with it and mock it in specs
-  (`vi.mock('server-only', () => ({}))`).
 - **`docs/lessons/prisma-mongo/`** — cited by an earlier draft of this file,
   but there is no Prisma here: the data layer is Payload CMS 3 over MongoDB.
   Database lessons that do exist live in `docs/lessons/testing/`; load those

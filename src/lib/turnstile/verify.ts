@@ -2,13 +2,17 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-/** Cloudflare's official always-pass test keys — dev/CI fallback only. */
-export const TURNSTILE_TEST_SITE_KEY = '1x00000000000000000000AA';
-const TURNSTILE_TEST_SECRET_KEY = '1x0000000000000000000000000000000AA';
-const VERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
+// The server half of the Turnstile pair — the only module that reads
+// TURNSTILE_SECRET_KEY. `server-only` makes that a build error rather than a
+// code-review note: importing this from a Client Component fails the build
+// instead of leaving tree-shaking as the only thing keeping the secret out of
+// the browser bundle. The client half lives in `site-key.ts`.
+import 'server-only';
 
-export const turnstileSiteKey = (): string =>
-  process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? TURNSTILE_TEST_SITE_KEY;
+/** Cloudflare's official always-pass test secret — dev/CI fallback only. */
+const TURNSTILE_TEST_SECRET_KEY = '1x0000000000000000000000000000000AA';
+
+const VERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
 
 /** Fails closed: any verification problem counts as not-verified. */
 export const verifyTurnstileToken = async (token: string): Promise<boolean> => {

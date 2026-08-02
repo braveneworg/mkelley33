@@ -15,7 +15,7 @@
 import { submitContact } from '@/lib/actions/contact';
 import { sendEmail } from '@/lib/email/transport';
 import { createSubmission } from '@/lib/repositories/submissions';
-import { verifyTurnstileToken } from '@/lib/turnstile';
+import { verifyTurnstileToken } from '@/lib/turnstile/verify';
 
 vi.mock('@/lib/email/transport', () => ({
   sendEmail: vi.fn().mockResolvedValue(true),
@@ -27,7 +27,7 @@ vi.mock('@/lib/repositories/services', () => ({
 vi.mock('@/lib/repositories/submissions', () => ({
   createSubmission: vi.fn().mockResolvedValue({ id: 's1', status: 'new' }),
 }));
-vi.mock('@/lib/turnstile', () => ({
+vi.mock('@/lib/turnstile/verify', () => ({
   verifyTurnstileToken: vi.fn().mockResolvedValue(true),
 }));
 
