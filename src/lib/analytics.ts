@@ -4,6 +4,7 @@
 
 import { sendGAEvent } from '@next/third-parties/google';
 
+import { hasAnalyticsConsent } from '@/lib/consent/consent-storage';
 import type { ContactReason } from '@/lib/validation/contact';
 
 /**
@@ -21,14 +22,24 @@ interface AnalyticsEventMap {
 
 /**
  * Sends a custom GA4 event. A no-op unless NEXT_PUBLIC_GA_MEASUREMENT_ID is
- * set (production only), mirroring the gate on the GA tag itself — so dev,
- * preview, and E2E runs neither send hits nor warn about uninitialized GA.
+ * set (production only) AND the visitor granted analytics consent — events
+ * fired before a consent decision are dropped by design, not queued.
+ *
+ * Deliberately a second source of truth: components read consent from the
+ * provider's context, this reads storage directly so the module stays
+ * framework-free. Within a tab the two cannot disagree — `apply()` writes
+ * storage before it sets state. Across tabs they can, and it fails closed: a
+ * withdrawal elsewhere silences this tab immediately, while a grant elsewhere
+ * can only queue an event onto a tag this tab never loaded.
  */
 export const trackEvent = <Name extends keyof AnalyticsEventMap>(
   name: Name,
   params: AnalyticsEventMap[Name]
 ): void => {
   if (!process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID) {
+    return;
+  }
+  if (!hasAnalyticsConsent()) {
     return;
   }
   sendGAEvent('event', name, params);

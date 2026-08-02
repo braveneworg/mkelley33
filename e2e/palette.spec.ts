@@ -4,6 +4,12 @@
 
 import { expect, test } from '@playwright/test';
 
+import { seedDecidedConsent } from './consent-helpers';
+
+test.beforeEach(async ({ page }) => {
+  await seedDecidedConsent(page);
+});
+
 test('command palette navigates to services', async ({ page }) => {
   await page.goto('/');
   const dialog = page.getByRole('dialog');

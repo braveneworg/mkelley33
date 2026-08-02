@@ -4,8 +4,11 @@
 
 import { Inter, JetBrains_Mono } from 'next/font/google';
 
-import { Analytics } from '@vercel/analytics/next';
-
+import { ConsentBanner } from '@/components/consent/consent-banner';
+import { ConsentCursorTrigger } from '@/components/consent/consent-cursor-trigger';
+import { ConsentModeScript } from '@/components/consent/consent-mode-script';
+import { ConsentPreferencesDialog } from '@/components/consent/consent-preferences-dialog';
+import { ConsentProvider } from '@/components/consent/consent-provider';
 import { PaletteHotkey } from '@/components/palette/palette-hotkey';
 import { PaletteMount } from '@/components/palette/palette-mount';
 import { GoogleAnalyticsTag } from '@/components/site/google-analytics-tag';
@@ -14,6 +17,7 @@ import { SiteFooter } from '@/components/site/site-footer';
 import { SiteNav } from '@/components/site/site-nav';
 import { ThemeColorSync } from '@/components/site/theme-color-sync';
 import { ThemeProvider } from '@/components/site/theme-provider';
+import { VercelAnalyticsTag } from '@/components/site/vercel-analytics-tag';
 import { feedAlternateTypes } from '@/lib/feed-alternates';
 import { serializeJsonLd } from '@/lib/json-ld';
 import { siteConfig } from '@/lib/site-config';
@@ -79,26 +83,32 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         </a>
         <SerwistRegister>
           <ThemeProvider>
-            <div className="flex min-h-dvh flex-col">
-              <SiteNav />
-              {/* tabIndex={-1}: older Safari won't move sequential focus past
-                  the skip link's target unless it is programmatically
-                  focusable. */}
-              <main className="flex-1" id="main" tabIndex={-1}>
-                {children}
-              </main>
-              <SiteFooter />
-            </div>
-            <PaletteMount />
-            <ThemeColorSync />
+            <ConsentProvider>
+              <div className="flex min-h-dvh flex-col">
+                <SiteNav />
+                {/* tabIndex={-1}: older Safari won't move sequential focus past
+                    the skip link's target unless it is programmatically
+                    focusable. */}
+                <main className="flex-1" id="main" tabIndex={-1}>
+                  {children}
+                </main>
+                <SiteFooter />
+              </div>
+              <PaletteMount />
+              <ThemeColorSync />
+              <ConsentBanner />
+              <ConsentPreferencesDialog />
+              <ConsentCursorTrigger />
+              <VercelAnalyticsTag />
+              <GoogleAnalyticsTag />
+            </ConsentProvider>
           </ThemeProvider>
           <script
             dangerouslySetInnerHTML={{ __html: serializeJsonLd(personJsonLd) }}
             type="application/ld+json"
           />
         </SerwistRegister>
-        <Analytics />
-        <GoogleAnalyticsTag />
+        <ConsentModeScript />
       </body>
     </html>
   );
