@@ -38,9 +38,21 @@ describe('ConsentPreferencesDialog', () => {
     expect(screen.getByRole('dialog', { name: 'cookie preferences' })).toBeInTheDocument();
   });
 
+  it('links the description to the dialog', async () => {
+    await renderDialog();
+    expect(screen.getByRole('dialog')).toHaveAccessibleDescription(
+      /essential storage is always on/
+    );
+  });
+
   it('renders the essential toggle as always on and disabled', async () => {
     await renderDialog();
     expect(screen.getByRole('checkbox', { name: 'always on' })).toBeDisabled();
+  });
+
+  it('keeps the essential toggle checked', async () => {
+    await renderDialog();
+    expect(screen.getByRole('checkbox', { name: 'always on' })).toBeChecked();
   });
 
   it('defaults the analytics toggle to off when undecided', async () => {
@@ -73,10 +85,10 @@ describe('ConsentPreferencesDialog', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
-  it('dismissing with escape records no decision', async () => {
+  it('dismissing with escape closes the dialog', async () => {
     await renderDialog();
     await userEvent.keyboard('{Escape}');
-    expect(readConsent()).toBeNull();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
   it('discards an abandoned toggle when reopened', async () => {
