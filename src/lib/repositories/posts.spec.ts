@@ -4,13 +4,15 @@
 
 // @vitest-environment node
 
+import type * as postsRepo from '@/lib/repositories/posts';
+
 const find = vi.fn();
 
 vi.mock('payload', () => ({ getPayload: vi.fn(async () => ({ find })) }));
 vi.mock('@payload-config', () => ({ default: {} }));
 
 /** `cache` memoizes per module instance — re-import so each test queries afresh. */
-const importFresh = async () => {
+const importFresh = async (): Promise<typeof postsRepo> => {
   vi.resetModules();
   return import('@/lib/repositories/posts');
 };

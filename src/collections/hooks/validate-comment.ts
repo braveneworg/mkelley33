@@ -4,6 +4,8 @@
 
 import { APIError } from 'payload';
 
+import type { Comment, Post } from '@/payload-types';
+
 import type { CollectionBeforeValidateHook, PayloadRequest } from 'payload';
 
 /**
@@ -19,20 +21,24 @@ const idOf = (value: unknown): null | string => {
   return null;
 };
 
-const findOrNull = async (
-  req: PayloadRequest,
-  collection: 'comments' | 'posts',
-  id: string
-): Promise<null | Record<string, unknown>> => {
+const findPost = async (req: PayloadRequest, id: string): Promise<null | Post> => {
   try {
-    return (await req.payload.findByID({ collection, depth: 0, id })) as Record<string, unknown>;
+    return await req.payload.findByID({ collection: 'posts', depth: 0, id });
+  } catch {
+    return null;
+  }
+};
+
+const findComment = async (req: PayloadRequest, id: string): Promise<Comment | null> => {
+  try {
+    return await req.payload.findByID({ collection: 'comments', depth: 0, id });
   } catch {
     return null;
   }
 };
 
 const assertPublishedPost = async (req: PayloadRequest, postId: string): Promise<void> => {
-  const post = await findOrNull(req, 'posts', postId);
+  const post = await findPost(req, postId);
   if (!post || post.status !== 'published') {
     throw new APIError('comments are only accepted on published posts', 400);
   }
@@ -43,7 +49,7 @@ const assertTopLevelSamePostParent = async (
   parentId: string,
   postId: string
 ): Promise<void> => {
-  const parent = await findOrNull(req, 'comments', parentId);
+  const parent = await findComment(req, parentId);
   if (!parent) throw new APIError('parent comment not found', 400);
   if (idOf(parent.parent)) throw new APIError('replies to replies are not allowed', 400);
   if (idOf(parent.post) !== postId) {

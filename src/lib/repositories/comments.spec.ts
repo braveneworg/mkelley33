@@ -4,6 +4,8 @@
 
 // @vitest-environment node
 
+import type * as commentsRepo from '@/lib/repositories/comments';
+
 const create = vi.fn();
 const find = vi.fn();
 
@@ -11,7 +13,7 @@ vi.mock('payload', () => ({ getPayload: vi.fn(async () => ({ create, find })) })
 vi.mock('@payload-config', () => ({ default: {} }));
 
 /** `cache` memoizes per module instance — re-import so each test queries afresh. */
-const importFresh = async () => {
+const importFresh = async (): Promise<typeof commentsRepo> => {
   vi.resetModules();
   return import('@/lib/repositories/comments');
 };
