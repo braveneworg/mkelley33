@@ -13,6 +13,7 @@ import { SiteFooter } from '@/components/site/site-footer';
 import { SiteNav } from '@/components/site/site-nav';
 import { ThemeColorSync } from '@/components/site/theme-color-sync';
 import { ThemeProvider } from '@/components/site/theme-provider';
+import { feedAlternateTypes } from '@/lib/feed-alternates';
 import { serializeJsonLd } from '@/lib/json-ld';
 import { siteConfig } from '@/lib/site-config';
 
@@ -30,8 +31,10 @@ export const metadata: Metadata = {
   alternates: {
     // './' resolves against the request pathname, so every page gets a
     // self-referencing canonical (e.g. /blog/foo → siteConfig.url/blog/foo).
+    // Except the root: its internal pathname is '/index', so the homepage
+    // pins its own canonical in (site)/page.tsx.
     canonical: './',
-    types: { 'application/rss+xml': '/feed.xml' },
+    types: feedAlternateTypes,
   },
   description: siteConfig.description,
   metadataBase: new URL(siteConfig.url),

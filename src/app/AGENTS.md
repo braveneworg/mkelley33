@@ -82,8 +82,8 @@ Aspirational — nothing in the tree can currently violate these.
 - **TanStack Query as the client cache.** Used in one component only; see the
   "Not here yet" entry in [`src/AGENTS.md`](../AGENTS.md) before leaning on it
   as the answer to client caching.
-- **`docs/lessons/react-nextjs/`.** Referenced by earlier drafts of this file
-  but never created — including
-  `next-dynamic-loading-only-ssr.md`, which was cited for the App Router
-  caveat that `next/dynamic` with `ssr: false` skips server rendering. Treat
-  that caveat as true and unwritten; create the lesson when it next bites.
+- **`docs/lessons/react-nextjs/next-dynamic-loading-only-ssr.md`.** The
+  category directory exists now (created 2026-08-01), but this particular
+  lesson is still unwritten: `next/dynamic` with `ssr: false` skips server
+  rendering in the App Router. Treat the caveat as true; write the lesson
+  when it next bites.
