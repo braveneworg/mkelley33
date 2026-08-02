@@ -80,7 +80,7 @@ describe('ConsentProvider', () => {
     writeConsent(false);
     renderProbe();
     await waitFor(() => {
-      expect(screen.getByTestId('status')).toHaveTextContent('decided');
+      expect(screen.getByTestId('status')).toHaveTextContent(/^decided$/);
     });
   });
 
@@ -88,7 +88,7 @@ describe('ConsentProvider', () => {
     writeConsent(false);
     renderProbe();
     await waitFor(() => {
-      expect(screen.getByTestId('status')).toHaveTextContent('decided');
+      expect(screen.getByTestId('status')).toHaveTextContent(/^decided$/);
     });
     expect(updateAnalyticsConsent).not.toHaveBeenCalled();
   });
@@ -103,6 +103,21 @@ describe('ConsentProvider', () => {
     renderProbe();
     await userEvent.click(screen.getByRole('button', { name: 'grant' }));
     expect(updateAnalyticsConsent).toHaveBeenCalledWith(true);
+  });
+
+  // Anchored: `toHaveTextContent('decided')` matches a substring, and
+  // 'undecided' contains 'decided' — the unanchored form passes even when the
+  // decision never flips the status, so the banner would never dismiss.
+  it('grantAll marks the visitor as decided', async () => {
+    renderProbe();
+    await userEvent.click(screen.getByRole('button', { name: 'grant' }));
+    expect(screen.getByTestId('status')).toHaveTextContent(/^decided$/);
+  });
+
+  it('grantAll leaves the GA cookies in place', async () => {
+    renderProbe();
+    await userEvent.click(screen.getByRole('button', { name: 'grant' }));
+    expect(deleteGaCookies).not.toHaveBeenCalled();
   });
 
   it('denyAll persists a declined record', async () => {
