@@ -27,7 +27,7 @@
     "e2e": "tsx scripts/e2e.ts",
     "e2e:test": "playwright test",
     "payload": "payload",
-    "generate:icons": "node scripts/generate-icons.mjs",
+    "generate:icons": "tsx scripts/generate-icons.ts",
     "generate:types": "tsx scripts/generate-types.mjs",
     "generate:importmap": "payload generate:importmap",
     "db:backup": "tsx --env-file-if-exists=.env.local scripts/db-backup.ts",
