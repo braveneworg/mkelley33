@@ -5,7 +5,7 @@
 import { Inter, JetBrains_Mono } from 'next/font/google';
 
 import { ConsentBanner } from '@/components/consent/consent-banner';
-import { ConsentCursorTrigger } from '@/components/consent/consent-cursor-trigger';
+import { ConsentCookieTrigger } from '@/components/consent/consent-cookie-trigger';
 import { ConsentModeScript } from '@/components/consent/consent-mode-script';
 import { ConsentPreferencesDialog } from '@/components/consent/consent-preferences-dialog';
 import { ConsentProvider } from '@/components/consent/consent-provider';
@@ -91,6 +91,11 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                     focusable. */}
                 <main className="flex-1" id="main" tabIndex={-1}>
                   {children}
+                  {/* Inside `<main>`, not beside it: the trigger is sticky, and
+                      sticky resolves against the parent box — only this tall
+                      one lets it ride the viewport and then park above the
+                      footer. */}
+                  <ConsentCookieTrigger />
                 </main>
                 <SiteFooter />
               </div>
@@ -98,7 +103,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               <ThemeColorSync />
               <ConsentBanner />
               <ConsentPreferencesDialog />
-              <ConsentCursorTrigger />
               <VercelAnalyticsTag />
               <GoogleAnalyticsTag />
             </ConsentProvider>

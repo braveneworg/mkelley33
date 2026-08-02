@@ -122,7 +122,7 @@ export default function PrivacyPage() {
       </h2>
       <p className={BODY_CLASSES}>
         Analytics never runs before you allow it. Change your mind anytime — with the button below
-        or the phosphor block pinned to the bottom-left corner of every page.
+        or the green cookie stuck to the bottom-left of the content on every page.
       </p>
       {CONSENT_CATEGORIES.map((category) => (
         <section className="mt-6" key={category.id}>

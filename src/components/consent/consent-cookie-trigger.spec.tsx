@@ -5,7 +5,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import { ConsentCursorTrigger } from '@/components/consent/consent-cursor-trigger';
+import { ConsentCookieTrigger } from '@/components/consent/consent-cookie-trigger';
 import { ConsentProvider, useConsent } from '@/components/consent/consent-provider';
 import { writeConsent } from '@/lib/consent/consent-storage';
 
@@ -22,7 +22,7 @@ const ConsentProbe = () => {
 const renderTrigger = () =>
   render(
     <ConsentProvider>
-      <ConsentCursorTrigger />
+      <ConsentCookieTrigger />
       <ConsentProbe />
     </ConsentProvider>
   );
@@ -42,7 +42,30 @@ const waitForUndecided = async () => {
 
 const findTrigger = () => screen.findByRole('button', { name: 'cookie preferences' });
 
-describe('ConsentCursorTrigger', () => {
+/**
+ * The sticky element is the button's wrapper, not the button: sticky
+ * positioning resolves against the wrapper's parent (`<main>`), and only a
+ * tall parent gives the control room to ride the viewport before parking.
+ * Throws rather than asserting, so a missing wrapper reads as a broken
+ * fixture instead of a confusing class-name diff.
+ */
+const findStickyWrapper = async (): Promise<HTMLElement> => {
+  const { parentElement } = await findTrigger();
+  if (parentElement === null) {
+    throw new Error('the trigger rendered without its sticky wrapper');
+  }
+  return parentElement;
+};
+
+const findIconClass = async (): Promise<null | string> => {
+  const icon = (await findTrigger()).querySelector('svg');
+  if (icon === null) {
+    throw new Error('the trigger rendered without its cookie icon');
+  }
+  return icon.getAttribute('class');
+};
+
+describe('ConsentCookieTrigger', () => {
   afterEach(() => {
     localStorage.clear();
   });
@@ -73,16 +96,66 @@ describe('ConsentCursorTrigger', () => {
     expect(trigger.className).toContain('h-11');
   });
 
-  it('keeps a 44px minimum hit width for the caret-sized block', async () => {
+  it('keeps a 44px minimum hit width for the icon-sized button', async () => {
     writeConsent(true);
     renderTrigger();
     const trigger = await findTrigger();
     expect(trigger.className).toContain('min-w-11');
   });
 
+  // Sticky, not fixed: the control belongs to the content column, so it rides
+  // the viewport while there is content left to scroll and then parks at the
+  // end of it — never floating over the footer.
+  it('sticks the wrapper to the content instead of the viewport', async () => {
+    writeConsent(true);
+    renderTrigger();
+    expect((await findStickyWrapper()).className).toContain('sticky');
+  });
+
+  it('pins the sticky wrapper near the bottom edge', async () => {
+    writeConsent(true);
+    renderTrigger();
+    expect((await findStickyWrapper()).className).toContain('bottom-3');
+  });
+
+  // The wrapper spans the whole content column so the button lines up with the
+  // page gutter; left clickable it would be a full-width strip swallowing
+  // clicks meant for the content beside it.
+  it('keeps the full-width wrapper from intercepting clicks', async () => {
+    writeConsent(true);
+    renderTrigger();
+    expect((await findStickyWrapper()).className).toContain('pointer-events-none');
+  });
+
+  it('restores pointer events on the button itself', async () => {
+    writeConsent(true);
+    renderTrigger();
+    expect((await findTrigger()).className).toContain('pointer-events-auto');
+  });
+
+  // The cookie is the whole visual; its meaning lives on the button's
+  // aria-label, matching how every other glyph in this codebase is handled.
+  it('hides the cookie icon from assistive tech', async () => {
+    writeConsent(true);
+    renderTrigger();
+    expect((await findTrigger()).querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
+  });
+
+  it('tints the cookie icon from the text color', async () => {
+    writeConsent(true);
+    renderTrigger();
+    expect(await findIconClass()).toContain('fill-current');
+  });
+
+  it('paints the cookie in phosphor green', async () => {
+    writeConsent(true);
+    renderTrigger();
+    expect(await findIconClass()).toContain('text-phosphor');
+  });
+
   // A transparent label still occupies its box, and that box sits inside the
   // button — so a fading-only label left an invisible strip of clickable page
-  // beside the caret. Collapsing the width takes the region away with it.
+  // beside the cookie. Collapsing the width takes the region away with it.
   it('collapses the label box while it is hidden', async () => {
     writeConsent(true);
     renderTrigger();
@@ -133,10 +206,10 @@ describe('ConsentCursorTrigger', () => {
     expect(trigger.className.split(' ')).toContain('group');
   });
 
-  // The site's typewriter caret blinks; this one is its steady twin. A blink
-  // pinned to every page is a vestibular hazard, so guard against one creeping
-  // back in on the button or either span.
-  it('renders a steady block with no blink animation', async () => {
+  // A control that sits on every page must not move on its own: an animated
+  // cookie riding the scroll is a vestibular hazard, so guard against one
+  // creeping back in on the button, the icon, or the label.
+  it('renders a steady control with no blink animation', async () => {
     writeConsent(true);
     renderTrigger();
     const trigger = await findTrigger();
