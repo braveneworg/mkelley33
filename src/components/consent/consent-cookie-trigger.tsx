@@ -47,11 +47,13 @@ export const ConsentCookieTrigger = () => {
             they cut out of it rather than needing their own fill. */}
         <svg
           aria-hidden="true"
-          className="text-phosphor h-5 w-5 shrink-0 fill-current"
+          className="text-phosphor h-6 w-6 shrink-0 fill-current"
           viewBox="0 0 24 24"
         >
+          {/* Chips are scattered and unevenly sized on purpose — a symmetric
+              grid reads as a shirt button at this size, not a cookie. */}
           <path
-            d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20Zm-3.5 5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Zm6 1a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Zm-6 6a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Zm6.5 1a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Z"
+            d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20ZM6.6 8.6a1.6 1.6 0 1 0 3.2 0 1.6 1.6 0 1 0-3.2 0Zm7.1-.8a1.1 1.1 0 1 0 2.2 0 1.1 1.1 0 1 0-2.2 0Zm1.1 5.8a1.4 1.4 0 1 0 2.8 0 1.4 1.4 0 1 0-2.8 0Zm-6.6 1.8a1.2 1.2 0 1 0 2.4 0 1.2 1.2 0 1 0-2.4 0Zm3.2-3.8a1 1 0 1 0 2 0 1 1 0 1 0-2 0Zm.9 5.6a.9.9 0 1 0 1.8 0 .9.9 0 1 0-1.8 0Z"
             fillRule="evenodd"
           />
         </svg>
