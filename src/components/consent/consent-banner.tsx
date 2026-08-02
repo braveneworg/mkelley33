@@ -26,6 +26,10 @@ export const ConsentBanner = () => {
   return (
     <section
       aria-label="cookie consent"
+      // Mounted only after the provider reads storage, i.e. after the page has
+      // already been announced. Polite so it queues behind that rather than
+      // interrupting it — a consent bar is not an emergency.
+      aria-live="polite"
       className="border-edge bg-surface fixed inset-x-0 bottom-0 z-40 border-t"
     >
       <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center gap-3 px-5 py-4">

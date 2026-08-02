@@ -88,6 +88,17 @@ describe('ConsentBanner', () => {
     expect(screen.getByTestId('preferences-open')).toHaveTextContent('true');
   });
 
+  // The banner is never in the server-rendered HTML — it appears only once
+  // the provider has read storage, which is after a screen reader has already
+  // announced the page. Without a live region its arrival is silent.
+  it('announces its arrival politely', async () => {
+    renderBanner();
+    expect(await screen.findByRole('region', { name: 'cookie consent' })).toHaveAttribute(
+      'aria-live',
+      'polite'
+    );
+  });
+
   it('links to the privacy page', async () => {
     renderBanner();
     expect(await screen.findByRole('link', { name: 'privacy' })).toHaveAttribute(
