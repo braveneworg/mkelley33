@@ -8,6 +8,12 @@ import { expect, test } from '@playwright/test';
 
 import { CONFIRM_TOKEN_PATTERN } from '@/lib/e2e/harness-config';
 
+import { seedDecidedConsent } from './consent-helpers';
+
+test.beforeEach(async ({ page }) => {
+  await seedDecidedConsent(page);
+});
+
 test('newsletter opt-in confirm round trip', async ({ page }) => {
   await page.goto('/');
   const form = page.locator('form').filter({ hasText: 'subscribe' });

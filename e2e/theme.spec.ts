@@ -4,6 +4,12 @@
 
 import { expect, test } from '@playwright/test';
 
+import { seedDecidedConsent } from './consent-helpers';
+
+test.beforeEach(async ({ page }) => {
+  await seedDecidedConsent(page);
+});
+
 test('theme toggle persists across reload', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.goto('/');

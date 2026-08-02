@@ -4,6 +4,12 @@
 
 import { expect, test } from '@playwright/test';
 
+import { seedDecidedConsent } from './consent-helpers';
+
+test.beforeEach(async ({ page }) => {
+  await seedDecidedConsent(page);
+});
+
 test('contact happy path with services picker', async ({ page }) => {
   await page.goto('/contact?reason=services&service=ai-enablement');
   // Scoped to the contact form: the page also renders the newsletter form,
