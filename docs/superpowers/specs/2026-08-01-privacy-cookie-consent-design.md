@@ -80,12 +80,13 @@ conversion numbers will read low by design.
 ### `src/components/consent/consent-provider.tsx`
 
 Client context component (lives with the other consent components, not in
-`src/lib/`). SSR-safe: starts `undecided`, hydrates from storage in an
-effect (no hydration mismatch). Exposes `{ status: 'undecided' |
-'decided', analyticsGranted, grantAll, denyAll, save, openPreferences,
-closePreferences, preferencesOpen }`. Withdrawal side effects (consent
-update → denied, `_ga*` cookie deletion) run here when a save turns
-analytics off.
+`src/lib/`). SSR-safe: starts `loading` (banner and trigger both
+unrendered — no banner flash for decided visitors), hydrates from storage
+in an effect (no hydration mismatch) to `undecided` or `decided`. Exposes
+`{ status: 'loading' | 'undecided' | 'decided', analyticsGranted,
+grantAll, denyAll, save, openPreferences, closePreferences,
+preferencesOpen }`. Withdrawal side effects (consent update → denied,
+`_ga*` cookie deletion) run here when a save turns analytics off.
 
 ### Gating
 
