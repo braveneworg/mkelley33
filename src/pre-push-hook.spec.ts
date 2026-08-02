@@ -99,9 +99,10 @@ interface SandboxRun extends HookRun {
  * origin already exists. Every sandbox process gets this scrubbed
  * environment so the sandbox stays a sandbox wherever the suite runs.
  */
-const sandboxEnv: NodeJS.ProcessEnv = Object.fromEntries(
-  Object.entries(process.env).filter(([name]) => !name.startsWith('GIT_'))
-);
+const sandboxEnv: NodeJS.ProcessEnv = {
+  ...Object.fromEntries(Object.entries(process.env).filter(([name]) => !name.startsWith('GIT_'))),
+  NODE_ENV: process.env.NODE_ENV,
+};
 
 const createSandbox = (): Sandbox => {
   const root = mkdtempSync(join(tmpdir(), 'pre-push-gate-'));

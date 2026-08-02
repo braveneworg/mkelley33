@@ -26,9 +26,10 @@ the suite was green everywhere else: direct runs, `pnpm gate`, CI.
   the repository:
 
   ```ts
-  const sandboxEnv: NodeJS.ProcessEnv = Object.fromEntries(
-    Object.entries(process.env).filter(([name]) => !name.startsWith('GIT_'))
-  );
+  const sandboxEnv: NodeJS.ProcessEnv = {
+    ...Object.fromEntries(Object.entries(process.env).filter(([name]) => !name.startsWith('GIT_'))),
+    NODE_ENV: process.env.NODE_ENV, // Next.js requires it on ProcessEnv
+  };
   ```
 
   and pass `env: sandboxEnv` to every `execFileSync`/`spawn` in the fixture,
