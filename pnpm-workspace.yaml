@@ -45,11 +45,13 @@ peerDependencyRules:
 # boundary. Every floored version had been published well over 24h before
 # the sweep, so none needs a minimumReleaseAgeExclude entry. mongoose is
 # here because @payloadcms/db-mongodb pins it exactly (8.22.1), so an
-# override is the only path to the patch; sharp's direct dep in package.json
-# was bumped to ^0.35.0 alongside its entry. undici is deliberately absent:
+# override is the only path to the patch. undici is deliberately absent:
 # the one vulnerable copy is undici@5.29.0 inside the vercel CLI
 # devDependency, no patched 5.x exists, and forcing 6.x onto the CLI risks
 # breaking `vercel deploy` in CI — accepted instead in auditConfig below.
+# sharp is also absent: the sweep's `sharp@<0.35.0: ^0.35.0` override took
+# production down (see src/sharp-pin.spec.ts) and was reverted, with its
+# advisory accepted in auditConfig below.
 overrides:
   '@tootallnate/once@<2.0.1': ^2.0.1
   brace-expansion@<1.1.17: ^1.1.17
@@ -59,20 +61,32 @@ overrides:
   mongoose@>=8.0.0 <8.24.1: ^8.24.1
   path-to-regexp@>=8.0.0 <8.4.0: ^8.4.0
   'postcss@<8.5.18': '>=8.5.18'
-  sharp@<0.35.0: ^0.35.0
   smol-toml@<1.6.1: ^1.6.1
   tar@<7.5.21: ^7.5.21
 
-# The nine advisories below all describe undici@5.29.0, the HTTP client the
-# vercel CLI pins (even at its latest, 58.4.4) — a devDependency that only
-# talks to Vercel's own API during deploys. undici 5.x has no patched
-# release (fixes landed in 6.23/6.24/6.27), so the only "fix" would be an
-# override forcing the CLI onto undici 6, an API-incompatible major that
-# risks breaking `vercel deploy` in CI. Accepted instead, scoped to these
-# exact GHSAs so anything new still fails `pnpm audit` loudly. Delete this
-# block once `pnpm why undici` shows the CLI off 5.x after a vercel update.
+# The nine undici advisories below all describe undici@5.29.0, the HTTP
+# client the vercel CLI pins (even at its latest, 58.4.4) — a devDependency
+# that only talks to Vercel's own API during deploys. undici 5.x has no
+# patched release (fixes landed in 6.23/6.24/6.27), so the only "fix" would
+# be an override forcing the CLI onto undici 6, an API-incompatible major
+# that risks breaking `vercel deploy` in CI. Accepted instead, scoped to
+# these exact GHSAs so anything new still fails `pnpm audit` loudly. Delete
+# those nine entries once `pnpm why undici` shows the CLI off 5.x after a
+# vercel update.
+#
+# GHSA-f88m-g3jw-g9cj (sharp <0.35.0, libvips-inherited CVEs, patched only
+# in 0.35.0): accepted because sharp 0.35.x is unusable on Vercel — its
+# @img/sharp-libvips-linux-x64 shared library is not traced into the
+# function bundle (lovell/sharp#4567), so every lambda throws
+# ERR_DLOPEN_FAILED at cold start and the whole dynamic layer 500s. That
+# outage ran 2026-08-02 → 2026-09-03 in production; the vulnerable surface,
+# by contrast, is image parsing of admin-uploaded media only — no untrusted
+# user uploads reach sharp. src/sharp-pin.spec.ts enforces the pin. Delete
+# this entry and re-bump sharp once 0.35.x is confirmed traceable on Vercel
+# and /admin is verified on a deploy.
 auditConfig:
   ignoreGhsas:
+    - GHSA-f88m-g3jw-g9cj
     - GHSA-vrm6-8vpv-qv8q
     - GHSA-v9p9-hfj2-hcw8
     - GHSA-vxpw-j846-p89q
