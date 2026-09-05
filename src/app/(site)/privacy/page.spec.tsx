@@ -58,6 +58,16 @@ describe('PrivacyPage', () => {
     );
   });
 
+  it('links to cloudflare’s turnstile privacy addendum', () => {
+    renderPage();
+    // Cloudflare makes this reference a condition of running the widget
+    // without a visible challenge (appearance 'interaction-only').
+    expect(screen.getByRole('link', { name: /turnstile privacy addendum/ })).toHaveAttribute(
+      'href',
+      'https://www.cloudflare.com/turnstile-privacy-policy/'
+    );
+  });
+
   it('states the 14-month analytics retention', () => {
     renderPage();
     expect(screen.getByText(/14 months/)).toBeInTheDocument();
