@@ -261,9 +261,20 @@ reviewed commit.
 `TURNSTILE_SECRET_KEY` is the exception: `src/lib/turnstile/verify.ts` fails
 **closed** when it is unset and `NODE_ENV` is `production`, so removing it
 from the manifest does not soft-launch the spam gate — it rejects every
-contact and newsletter submission. An explicitly configured secret is always
-honored, whatever its value, so pointing production at Cloudflare's test
-key remains a deliberate choice rather than a silent default.
+contact, newsletter, and comment submission. It also fails closed when
+`VERCEL_ENV` is `production` and the value is one of Cloudflare's published
+test secrets: a test secret makes siteverify accept every token, and the
+preflight cannot tell it from a real one because a sensitive value pulls as a
+redaction marker. Production ran on the always-pass test secret for 38 days
+before the Turnstile dashboard's "Siteverify isn't being called for this
+widget" banner gave it away — see
+`docs/lessons/deploy/presence-preflight-cannot-see-a-test-secret.md`. A
+preview deployment may still use the test pair deliberately.
+
+To confirm the stored secret is the widget's own, submit one real form on the
+deployed site and watch the widget's **Token validation** panel in the
+Turnstile dashboard: the Siteverify request count must move. Nothing on the
+Vercel side can check it.
 
 When the app starts reading a new env var, add it to the manifest — the
 spec in `src/lib/deploy/env-manifest.spec.ts` pins the list, so the change

@@ -50,7 +50,14 @@ binding. Everything below it applies only once the thing it names exists.
   permissive default. `turnstile/verify.ts` is the pattern: an explicitly
   configured value is honored in every environment (the E2E harness pins
   Cloudflare's test secret into a production build), and only the implicit
-  fallback is withheld once `NODE_ENV === 'production'`.
+  fallback is withheld once `NODE_ENV === 'production'`. One exception, keyed
+  off `VERCEL_ENV === 'production'` rather than `NODE_ENV`: Cloudflare's
+  published test secrets are refused there, because a test secret makes
+  siteverify accept every token and the deploy preflight cannot see a
+  sensitive value. Production ran on one for 38 days — see
+  `docs/lessons/deploy/presence-preflight-cannot-see-a-test-secret.md`.
+- Log why a verification was refused, never what was verified: Cloudflare's
+  `error-codes` go to the server log; the token and the secret never do.
 
 ## Not here yet
 
