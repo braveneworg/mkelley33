@@ -71,10 +71,14 @@ export const makeEnv = (uri: string, driverParams: string): NodeJS.ProcessEnv =>
   // without this opt-in the JSON transport never logs message content.
   EMAIL_LOG_UNSENT: 'true',
   // Cloudflare's official always-pass Turnstile test keys (public values,
-  // already hardcoded as the dev/CI fallback in src/lib/turnstile.ts).
+  // already hardcoded as the dev/CI fallback in src/lib/turnstile/site-key.ts).
   NEXT_PUBLIC_TURNSTILE_SITE_KEY: '1x00000000000000000000AA',
   PAYLOAD_SECRET: 'e2e-secret',
   // '' forces the JSON transport so no real email can ever leave the suite.
   SMTP_HOST: '',
   TURNSTILE_SECRET_KEY: '1x0000000000000000000000000000000AA',
+  // This is a production build running the test secret above, which
+  // src/lib/turnstile/verify.ts refuses only on Vercel's production target.
+  // Pinned to '' so a developer's shell cannot make the suite look like one.
+  VERCEL_ENV: '',
 });
