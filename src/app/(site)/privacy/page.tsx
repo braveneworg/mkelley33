@@ -74,8 +74,19 @@ export default function PrivacyPage() {
         </li>
         <li>
           <strong>bot protection</strong> — Cloudflare Turnstile on the contact, newsletter, and
-          comment forms processes IP and browser signals to keep bots out. Legal basis: legitimate
-          interest in site security.
+          comment forms processes IP and browser signals to keep bots out. It runs once you start
+          filling in a form and usually shows nothing unless Cloudflare needs you to confirm you are
+          human; see the{' '}
+          <a
+            className="link-draw text-phosphor"
+            href="https://www.cloudflare.com/turnstile-privacy-policy/"
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            cloudflare turnstile privacy addendum
+            <span className="sr-only"> (opens in new tab)</span>
+          </a>
+          . Legal basis: legitimate interest in site security.
         </li>
         <li>
           <strong>hosting</strong> — Vercel serves this site and processes IP addresses in server

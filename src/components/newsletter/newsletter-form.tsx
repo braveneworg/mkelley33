@@ -14,7 +14,7 @@ import type { NewsletterFormValues } from '@/lib/validation/newsletter';
 import { newsletterSchema } from '@/lib/validation/newsletter';
 
 export const NewsletterForm = () => {
-  const { form, isPending, onSubmit, serverError, succeeded, turnstileProps } =
+  const { form, isPending, onFocus, onSubmit, serverError, succeeded, turnstileProps } =
     useGuardedForm<NewsletterFormValues>({
       defaultValues: { email: '', turnstileToken: '', website: '' },
       schema: newsletterSchema,
@@ -37,7 +37,7 @@ export const NewsletterForm = () => {
   }
 
   return (
-    <form className="max-w-md space-y-3" noValidate onSubmit={onSubmit}>
+    <form className="max-w-md space-y-3" noValidate onFocus={onFocus} onSubmit={onSubmit}>
       <div className="flex gap-2">
         <div className="flex-1">
           <label className="sr-only" htmlFor="newsletter-email">

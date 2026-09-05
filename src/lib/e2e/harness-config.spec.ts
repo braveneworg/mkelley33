@@ -44,6 +44,7 @@ const PINNED = [
   'PAYLOAD_SECRET',
   'SMTP_HOST',
   'TURNSTILE_SECRET_KEY',
+  'VERCEL_ENV',
 ] as const;
 
 const HOSTILE = 'value-from-the-developers-own-environment';
@@ -75,6 +76,10 @@ describe('makeEnv hermeticity', () => {
     expect(envFor(URI, PARAMS).get('TURNSTILE_SECRET_KEY')).toBe(
       '1x0000000000000000000000000000000AA'
     );
+  });
+
+  it("never presents itself as Vercel production, so the test secret stays honored ('' VERCEL_ENV)", () => {
+    expect(envFor(URI, PARAMS).get('VERCEL_ENV')).toBe('');
   });
 
   it('points the app at the throwaway in-memory database, with the driver params', () => {

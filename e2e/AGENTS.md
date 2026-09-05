@@ -10,7 +10,11 @@ invariants below into assertions, so weakening one also fails the unit suite.
 
 `makeEnv()` pins every env-sensitive key: throwaway in-memory Mongo URI,
 always-pass Turnstile test keys, `SMTP_HOST=''` (forces the JSON email
-transport — nothing can leave the suite), `BLOB_READ_WRITE_TOKEN=''`.
+transport — nothing can leave the suite), `BLOB_READ_WRITE_TOKEN=''`, and
+`VERCEL_ENV=''` (the suite is a production build, and
+`src/lib/turnstile/verify.ts` refuses the pinned test secret only when
+`VERCEL_ENV` says Vercel production — a developer shell must not be able to
+make it say so).
 Seeding runs via `pnpm exec tsx` so `.env.local` is never loaded;
 `next build`/`next start` do load it, but explicit process env always wins.
 Never weaken a pinned key or read `.env*` to "fix" a failure.

@@ -12,11 +12,24 @@ vi.mock('server-only', () => ({}));
 
 /**
  * Cloudflare's always-pass test secret, spelled out here rather than imported:
- * the module keeps it private, and `scripts/e2e.mjs` pins this same literal
- * into the E2E environment. A copy that drifts breaks the E2E suite, so the
- * duplication is the assertion.
+ * the module keeps it private, and `src/lib/e2e/harness-config.ts` pins this
+ * same literal into the E2E environment. A copy that drifts breaks the E2E
+ * suite, so the duplication is the assertion.
  */
 const TEST_SECRET = '1x0000000000000000000000000000000AA';
+
+/**
+ * Every test secret Cloudflare publishes — always-pass, always-fail,
+ * always-spent. None of them belongs to a widget, so siteverify accepts them
+ * without ever attributing the call to the site's widget. Production ran on
+ * the first one for 38 days before the dashboard's "siteverify isn't being
+ * called" banner gave it away.
+ */
+const PUBLISHED_TEST_SECRETS = [
+  TEST_SECRET,
+  '2x0000000000000000000000000000000AA',
+  '3x0000000000000000000000000000000AA',
+];
 
 const CONFIGURED_SECRET = 'configured-secret';
 
@@ -29,12 +42,24 @@ const stubVerifyResponse = (body: string, status: number) => {
 
 const stubSuccess = () => stubVerifyResponse(JSON.stringify({ success: true }), 200);
 
+const stubRejection = (codes: string[]) =>
+  stubVerifyResponse(JSON.stringify({ 'error-codes': codes, success: false }), 200);
+
 /** Reads back a field of the form body the module POSTed to Cloudflare. */
 const sentField = (fetchMock: ReturnType<typeof stubVerifyResponse>, field: string) =>
   new URLSearchParams(String(fetchMock.mock.calls[0][1]?.body)).get(field);
 
+/** Everything `console.error` was handed, flattened, for asserting what was NOT logged. */
+const loggedErrorText = (): string =>
+  vi
+    .mocked(console.error)
+    .mock.calls.flat()
+    .map((arg) => (typeof arg === 'string' ? arg : JSON.stringify(arg)))
+    .join('\n');
+
 beforeEach(() => {
   vi.stubEnv('TURNSTILE_SECRET_KEY', undefined);
+  vi.stubEnv('VERCEL_ENV', undefined);
   vi.spyOn(console, 'error').mockImplementation(() => undefined);
   vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 });
@@ -71,6 +96,32 @@ describe('verifyTurnstileToken with a configured secret', () => {
     await expect(verifyTurnstileToken('tok')).resolves.toBe(false);
   });
 
+  it('logs the error codes cloudflare returns with a rejection', async () => {
+    stubRejection(['invalid-input-secret']);
+    await verifyTurnstileToken('tok');
+    expect(console.error).toHaveBeenCalledWith('turnstile verify rejected:', [
+      'invalid-input-secret',
+    ]);
+  });
+
+  it('logs a rejection even when cloudflare omits the error codes', async () => {
+    stubVerifyResponse(JSON.stringify({ success: false }), 200);
+    await verifyTurnstileToken('tok');
+    expect(console.error).toHaveBeenCalledWith('turnstile verify rejected:', []);
+  });
+
+  it('never logs the secret when cloudflare rejects', async () => {
+    stubRejection(['invalid-input-secret']);
+    await verifyTurnstileToken('tok');
+    expect(loggedErrorText()).not.toContain(CONFIGURED_SECRET);
+  });
+
+  it('never logs the token when cloudflare rejects', async () => {
+    stubRejection(['invalid-input-response']);
+    await verifyTurnstileToken('tok-that-must-not-be-logged');
+    expect(loggedErrorText()).not.toContain('tok-that-must-not-be-logged');
+  });
+
   it('fails closed on a non-200 reply', async () => {
     stubVerifyResponse('upstream is unwell', 500);
     await expect(verifyTurnstileToken('tok')).resolves.toBe(false);
@@ -89,10 +140,11 @@ describe('verifyTurnstileToken with a configured secret', () => {
 
 /**
  * The E2E harness pins TURNSTILE_SECRET_KEY to Cloudflare's test secret and
- * runs a production build, so "explicitly set" has to beat "is production" —
- * fail-closed keys off the absence of a value, never off the value itself.
+ * runs a production build with no VERCEL_ENV, so "explicitly set" has to beat
+ * "NODE_ENV is production" — fail-closed keys off the absence of a value here.
+ * Only Vercel's own production target (below) is allowed to know better.
  */
-describe('verifyTurnstileToken in production', () => {
+describe('verifyTurnstileToken in a production build', () => {
   beforeEach(() => {
     vi.stubEnv('NODE_ENV', 'production');
   });
@@ -103,7 +155,7 @@ describe('verifyTurnstileToken in production', () => {
     await expect(verifyTurnstileToken('tok')).resolves.toBe(true);
   });
 
-  it('honors the test secret when it is the one configured', async () => {
+  it('honors the test secret when it is the one configured (the E2E shape)', async () => {
     vi.stubEnv('TURNSTILE_SECRET_KEY', TEST_SECRET);
     stubSuccess();
     await expect(verifyTurnstileToken('tok')).resolves.toBe(true);
@@ -124,6 +176,67 @@ describe('verifyTurnstileToken in production', () => {
     const fetchMock = stubSuccess();
     await verifyTurnstileToken('tok');
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * VERCEL_ENV === 'production' is the one place a test secret can only be a
+ * mistake: nothing hermetic runs there, and a test secret makes siteverify
+ * say yes to every token. The preflight cannot catch it — a sensitive value
+ * pulls as a redaction marker — so this is the only guard there is.
+ */
+describe('verifyTurnstileToken on Vercel production', () => {
+  beforeEach(() => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('VERCEL_ENV', 'production');
+  });
+
+  it('honors a real configured secret', async () => {
+    vi.stubEnv('TURNSTILE_SECRET_KEY', CONFIGURED_SECRET);
+    stubSuccess();
+    await expect(verifyTurnstileToken('tok')).resolves.toBe(true);
+  });
+
+  it.each(PUBLISHED_TEST_SECRETS)('refuses the published test secret %s', async (testSecret) => {
+    vi.stubEnv('TURNSTILE_SECRET_KEY', testSecret);
+    stubSuccess();
+    await expect(verifyTurnstileToken('tok')).resolves.toBe(false);
+  });
+
+  it('never reaches cloudflare with a test secret', async () => {
+    vi.stubEnv('TURNSTILE_SECRET_KEY', TEST_SECRET);
+    const fetchMock = stubSuccess();
+    await verifyTurnstileToken('tok');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('says on the server log why submissions are being rejected', async () => {
+    vi.stubEnv('TURNSTILE_SECRET_KEY', TEST_SECRET);
+    stubSuccess();
+    await verifyTurnstileToken('tok');
+    expect(console.error).toHaveBeenCalledWith(expect.stringMatching(/test secret/));
+  });
+
+  it('never logs the secret it refused', async () => {
+    vi.stubEnv('TURNSTILE_SECRET_KEY', TEST_SECRET);
+    stubSuccess();
+    await verifyTurnstileToken('tok');
+    expect(loggedErrorText()).not.toContain(TEST_SECRET);
+  });
+});
+
+/** Previews are production builds too, but a test secret there is a legitimate choice. */
+describe('verifyTurnstileToken on a Vercel preview', () => {
+  beforeEach(() => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('VERCEL_ENV', 'preview');
+  });
+
+  it('honors the test secret when it is the one configured', async () => {
+    vi.stubEnv('TURNSTILE_SECRET_KEY', TEST_SECRET);
+    const fetchMock = stubSuccess();
+    await expect(verifyTurnstileToken('tok')).resolves.toBe(true);
+    expect(fetchMock).toHaveBeenCalledOnce();
   });
 });
 

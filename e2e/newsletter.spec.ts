@@ -17,16 +17,19 @@ test.beforeEach(async ({ page }) => {
 test('newsletter opt-in confirm round trip', async ({ page }) => {
   await page.goto('/');
   const form = page.locator('form').filter({ hasText: 'subscribe' });
+  const token = form.locator('input[name="cf-turnstile-response"]');
+  // The challenge waits for the visitor: the widget is rendered but has not
+  // run, so the test key's instant auto-solve has nothing to fill in yet.
+  await expect(token).toHaveValue('');
   await form.getByLabel('email').fill('optin@example.com');
-  // The Turnstile test key auto-solves; wait for the token, not a fixed delay.
-  await expect(form.locator('input[name="cf-turnstile-response"]')).toHaveValue(/.+/, {
-    timeout: 20_000,
-  });
+  // Focusing the field started the challenge; the test key auto-solves it.
+  // Wait for the token, not a fixed delay.
+  await expect(token).toHaveValue(/.+/, { timeout: 20_000 });
   await form.getByRole('button', { name: /subscribe/ }).click();
   await expect(page.getByText(/check your inbox to confirm/)).toBeVisible({
     timeout: 15_000,
   });
-  let token = '';
+  let confirmToken = '';
   await expect(async () => {
     const log = await readFile('e2e-server.log', 'utf8');
     // Shared with the harness, which pins a NON-matching token for its own
@@ -36,8 +39,8 @@ test('newsletter opt-in confirm round trip', async ({ page }) => {
     if (!match) {
       throw new Error('confirm link not in server log yet');
     }
-    token = match[1];
+    confirmToken = match[1];
   }).toPass({ timeout: 15_000 });
-  await page.goto(`/newsletter/confirm?token=${token}`);
+  await page.goto(`/newsletter/confirm?token=${confirmToken}`);
   await expect(page.getByText('subscribed ✓')).toBeVisible();
 });

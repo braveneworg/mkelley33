@@ -38,7 +38,7 @@ export const ContactForm = ({ services }: { services: ContactServiceOption[] }) 
   const validSlugs = new Set(services.map((service) => service.slug));
   const reasonParam = searchParams.get('reason');
   const initialServices = searchParams.getAll('service').filter((slug) => validSlugs.has(slug));
-  const { form, isPending, onSubmit, serverError, succeeded, turnstileProps } =
+  const { form, isPending, onFocus, onSubmit, serverError, succeeded, turnstileProps } =
     useGuardedForm<ContactFormValues>({
       defaultValues: {
         email: '',
@@ -87,7 +87,7 @@ export const ContactForm = ({ services }: { services: ContactServiceOption[] }) 
   }
 
   return (
-    <form className="max-w-xl space-y-5" noValidate onSubmit={onSubmit}>
+    <form className="max-w-xl space-y-5" noValidate onFocus={onFocus} onSubmit={onSubmit}>
       <div>
         <label className="text-fg font-mono text-sm" htmlFor="contact-name">
           name

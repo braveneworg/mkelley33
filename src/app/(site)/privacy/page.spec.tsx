@@ -58,6 +58,16 @@ describe('PrivacyPage', () => {
     );
   });
 
+  it('links to cloudflare’s turnstile privacy addendum', () => {
+    renderPage();
+    // Cloudflare makes this reference a condition of running the widget
+    // without a visible challenge (appearance 'interaction-only').
+    expect(screen.getByRole('link', { name: /turnstile privacy addendum/ })).toHaveAttribute(
+      'href',
+      'https://www.cloudflare.com/turnstile-privacy-policy/'
+    );
+  });
+
   it('states the 14-month analytics retention', () => {
     renderPage();
     expect(screen.getByText(/14 months/)).toBeInTheDocument();
@@ -105,9 +115,11 @@ describe('PrivacyPage', () => {
     expect(screen.getByText(/never published/)).toBeInTheDocument();
   });
 
-  it('covers the comment form under bot protection', () => {
+  it('covers the comment form under bot protection in both disclosures', () => {
     renderPage();
-    expect(screen.getByText(/contact, newsletter, and comment forms/)).toBeInTheDocument();
+    // The processing bullet and the consent inventory row each name the
+    // forms Turnstile runs on; the inventory once omitted comments.
+    expect(screen.getAllByText(/contact, newsletter, and comment forms/)).toHaveLength(2);
   });
 
   it('states the comment retention policy', () => {

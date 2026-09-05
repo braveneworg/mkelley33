@@ -27,9 +27,11 @@ vi.mock('next/navigation', () => ({
 vi.mock('@marsidev/react-turnstile', () => ({
   Turnstile: forwardRef(function Turnstile(
     { onSuccess }: { onSuccess?: (token: string) => void },
-    ref: ForwardedRef<{ reset: () => void }>
+    ref: ForwardedRef<{ execute: () => void; reset: () => void }>
   ) {
-    useImperativeHandle(ref, () => ({ reset: resetSpy }));
+    // execute() is what the hook calls on first focus; the timing contract is
+    // covered in the useGuardedForm spec, so here it only has to exist.
+    useImperativeHandle(ref, () => ({ execute: vi.fn(), reset: resetSpy }));
     return (
       <button onClick={() => onSuccess?.('test-token')} type="button">
         solve turnstile
