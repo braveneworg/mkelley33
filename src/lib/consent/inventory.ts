@@ -88,7 +88,7 @@ export const CONSENT_INVENTORY: readonly InventoryItem[] = [
     duration: 'per form challenge',
     name: 'turnstile',
     provider: 'cloudflare',
-    purpose: 'bot protection on the contact and newsletter forms',
+    purpose: 'bot protection on the contact, newsletter, and comment forms',
     type: 'script',
   },
 ];

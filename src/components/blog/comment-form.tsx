@@ -31,7 +31,7 @@ const inputClasses =
  */
 export const CommentForm = ({ parentId, postId }: CommentFormProps) => {
   const idPrefix = useId();
-  const { form, isPending, onSubmit, serverError, succeeded, turnstileProps } =
+  const { form, isPending, onFocus, onSubmit, serverError, succeeded, turnstileProps } =
     useGuardedForm<CommentFormValues>({
       defaultValues: {
         authorEmail: '',
@@ -57,7 +57,7 @@ export const CommentForm = ({ parentId, postId }: CommentFormProps) => {
   }
 
   return (
-    <form className="max-w-xl space-y-3" noValidate onSubmit={onSubmit}>
+    <form className="max-w-xl space-y-3" noValidate onFocus={onFocus} onSubmit={onSubmit}>
       <div>
         <label className="text-fg-muted font-mono text-xs" htmlFor={fieldId('name')}>
           name

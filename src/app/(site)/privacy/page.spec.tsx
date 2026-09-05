@@ -105,9 +105,11 @@ describe('PrivacyPage', () => {
     expect(screen.getByText(/never published/)).toBeInTheDocument();
   });
 
-  it('covers the comment form under bot protection', () => {
+  it('covers the comment form under bot protection in both disclosures', () => {
     renderPage();
-    expect(screen.getByText(/contact, newsletter, and comment forms/)).toBeInTheDocument();
+    // The processing bullet and the consent inventory row each name the
+    // forms Turnstile runs on; the inventory once omitted comments.
+    expect(screen.getAllByText(/contact, newsletter, and comment forms/)).toHaveLength(2);
   });
 
   it('states the comment retention policy', () => {
