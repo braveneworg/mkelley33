@@ -1,0 +1,5 @@
+# The one Node version declaration besides `engines.node` in package.json.
+# They must name the same version — src/node-version.spec.ts enforces it,
+# and docs/deploy.md explains why and when it is safe to raise.
+[tools]
+node = "24.22.1"

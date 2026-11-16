@@ -19,24 +19,37 @@ would silently restore the double-build.
 
 ## Node version
 
-`.nvmrc` and `engines.node` in `package.json` must name the same version, and
-that version is capped by Vercel: `nodejs24.x`, the runtime the deployed
-functions execute on, tops out at **24.15.0**. The runner uses that Node for
-typecheck, lint, unit tests, and the whole `e2e` job, so a newer version there
-validates the code against a Node the deployed functions never run — a skew
-nothing else would report. `src/node-version.spec.ts` pins the two files
-together.
+`mise.toml` and `engines.node` in `package.json` must name the same version;
+`src/node-version.spec.ts` pins the two together. `mise.toml` is the only
+version file — `mise install` reads it locally and `actions/setup-node` reads
+it in every CI job — and the same spec fails if an `.nvmrc`,
+`.node-version` or `.tool-versions` reappears beside it.
 
-Raise the pin only after confirming Vercel supports the newer version, and
-edit both files in the same commit.
+The version is capped by Vercel's build image. Vercel lets a project choose
+only the major (`24.x`) and rolls patch releases out on its own schedule, and
+its install enforces this floor exactly as the runner's does: `engineStrict`
+in `pnpm-workspace.yaml` turns an unmet `engines.node` into a failed install
+(`ERR_PNPM_UNSUPPORTED_ENGINE`), for this package and for every dependency.
+A floor above the image therefore fails every Vercel build. The runner uses
+the pinned Node for typecheck, lint, unit tests, and the whole `e2e` job, so
+a newer version there would also validate the code against a Node the deploy
+never builds on.
 
-The same ceiling caps Payload. `payload` 3.92 and later declare
-`engines.node` as `^22.23.4 || >=24.22.1`, above this pin, and `engineStrict`
-in `pnpm-workspace.yaml` turns that into a failed install
-(`ERR_PNPM_UNSUPPORTED_ENGINE`) rather than a warning. `package.json`
-therefore holds `payload` and the four `@payloadcms/*` packages at `~3.91.0`
-— a caret would resolve to a release this Node cannot install. Widen them
-back to a caret only after the Node pin has moved to 24.22.1 or later.
+The pin is **24.22.1**, raised from 24.15.0 on 2026-11-15. It is the Node 24
+release that fixed CVE-2026-111497 (2026-10-21) and the floor `payload` 3.92
+and later declare (`^22.23.4 || >=24.22.1`), which is what forced the move.
+The evidence that Vercel's image has it: Vercel's security bulletin says every
+new deployment uses a patched Node from 2026-10-28, and a build there was
+reported on 24.22.1 on 2026-10-30. That is a public report, not this
+project's own build log — the first deploy after the bump is the real proof.
+
+The functions' Node is a separate thing and can trail the build image: the
+same report saw `process.version` at v24.21.0 at request time. Nothing checks
+engines at request time, so that does not fail a deploy, but the pin is a
+statement about the build, not about the function runtime.
+
+Raise the pin only after confirming Vercel's build image has reached the
+newer version, and edit both files in the same commit.
 
 ## One-time bootstrap
 

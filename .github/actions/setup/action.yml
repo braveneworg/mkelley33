@@ -1,6 +1,6 @@
 name: Set up the toolchain
 description: >-
-  pnpm, Node from .nvmrc, the caches a job needs, and a frozen-lockfile
+  pnpm, Node from mise.toml, the caches a job needs, and a frozen-lockfile
   install — the block every job in ci.yml used to repeat verbatim.
 
 # Callers must run actions/checkout FIRST. A local composite action is read
@@ -21,9 +21,11 @@ runs:
   using: composite
   steps:
     - uses: pnpm/action-setup@v4
-    - uses: actions/setup-node@v4
+    # v7.1.0 is the first setup-node that reads the node tool out of
+    # mise.toml; earlier majors accept the input and then fail to parse it.
+    - uses: actions/setup-node@v7
       with:
-        node-version-file: .nvmrc
+        node-version-file: mise.toml
         cache: pnpm
     - if: inputs.mongodb-binaries-cache == 'true'
       uses: actions/cache@v4
