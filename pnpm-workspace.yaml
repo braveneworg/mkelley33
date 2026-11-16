@@ -46,19 +46,18 @@ peerDependencyRules:
 # a breaking boundary. Every floored version had been published well over
 # 24h before its sweep, so none needs a minimumReleaseAgeExclude entry.
 # mongoose is here because @payloadcms/db-mongodb pins it exactly (8.24.1 as
-# of payload 3.91), so an override is the only path to the patch. The
+# of payload 3.93), so an override is the only path to the patch. The
 # 2026-09-03 sweep raised the dompurify and js-yaml floors (their previous
 # floors became the newly vulnerable versions) and floored undici's 7.x line
-# (payload's copy); the vercel CLI's undici@5.29.0 stays unfixable and
-# accepted in auditConfig below, as does sharp (the `sharp@<0.35.0: ^0.35.0`
-# override took production down — see src/sharp-pin.spec.ts — and was
-# reverted).
+# (payload's copy).
 #
 # The 2026-11-15 Dependabot sweep raised the brace-expansion, dompurify,
-# fast-uri, mongoose and undici 7.x floors the same way, and added four:
-# follow-redirects, source-map-js, undici's 6.x line (@vercel/blob's copy)
-# and vite (vitest's copy). It also added the two entries that are not plain
-# advisory floors:
+# fast-uri, mongoose, smol-toml and undici 7.x floors the same way, and added
+# six: fast-copy, follow-redirects, source-map-js, undici's 6.x line
+# (@vercel/blob's copy), vite (vitest's copy) and zod's 4.x line (the vercel
+# CLI's copies). It also added the entries that are not plain advisory
+# floors, because each one crosses a major the declaring parent did not ask
+# for:
 #
 #   happy-dom@<21.0.4 — the only release clear of GHSA-834v-8h66-3h79 is a
 #   major up from the ^20.9.0 that @lexical/headless@0.50.0 declares
@@ -66,70 +65,62 @@ peerDependencyRules:
 #   identical move — @lexical/headless 0.53 declares ^21.0.4 — so this
 #   self-retires when payload's lexical pin reaches it.
 #
-#   next>sharp — every next release that patches the 16.x advisories
-#   (>=16.3.3) declares an optional sharp ^0.35, which would put a second,
-#   0.35.x copy in the graph beside the pinned 0.34.5. This holds next's
-#   copy to the same range as the direct dependency in package.json, so the
-#   graph keeps one sharp. Delete this entry together with the pin (see the
-#   sharp note under auditConfig and src/sharp-pin.spec.ts).
+#   glob@<14.0.2 and minimatch@<11.0.1 — both advisories are patched only in
+#   the next major, and the two have to move together: glob 13 is written
+#   against the minimatch 10 internals that 11 replaced. They reach eslint,
+#   typescript-eslint and @serwist/build, so `pnpm gate` and `pnpm build`
+#   are what prove them. minimatch 3.x (eslint 9's copy) is outside the
+#   advisory range and untouched.
+#
+#   undici@5.x — the vercel CLI pins undici 5.29.0 exactly, still does at
+#   its latest release (65.16.0), and 5.x has no patched release. The CLI
+#   only builds an `Agent` and a `ProxyAgent` from it, which 6.x constructs
+#   and dispatches identically; `vercel whoami` and `vercel project ls` were
+#   run through both the direct and the proxy branch on 6.29.1. What that
+#   cannot cover is the upload in `vercel deploy`. If the deploy job fails
+#   inside the CLI rather than in the build, delete this entry first.
 overrides:
   '@tootallnate/once@<2.0.1': ^2.0.1
   brace-expansion@<1.1.21: ^1.1.21
   brace-expansion@>=4.0.0 <5.0.12: ^5.0.12
   browserslist@<=4.28.6: ^4.28.7
   dompurify@<3.4.17: ^3.4.17
+  fast-copy@>=3.0.0 <3.1.0: ^3.1.0
   fast-uri@>=3.0.0 <3.1.9: ^3.1.9
   follow-redirects@>=1.16.0 <1.16.2: ^1.16.2
+  glob@>=9.0.0 <14.0.2: ^14.0.2
   happy-dom@<21.0.4: ^21.0.4
   js-yaml@>=4.0.0 <4.3.1: ^4.3.1
-  minimatch@>=10.0.0 <10.2.3: ^10.2.3
+  minimatch@>=7.0.0 <11.0.1: ^11.0.1
   mongoose@>=8.0.0 <8.24.7: ^8.24.7
   nanoid@>=3.0.0 <3.3.18: ^3.3.18
-  next>sharp: ^0.34.5
   path-to-regexp@>=8.0.0 <8.4.0: ^8.4.0
   'postcss@<8.5.18': '>=8.5.18'
-  smol-toml@<1.6.1: ^1.6.1
+  smol-toml@<1.8.1: ^1.8.1
   source-map-js@>=1.0.0 <1.2.2: ^1.2.2
   tar@<7.5.21: ^7.5.21
+  undici@>=5.0.0 <6.0.0: ^6.29.1
   undici@>=6.0.0 <6.29.1: ^6.29.1
   undici@>=7.0.0 <7.30.1: ^7.30.1
   vite@>=8.0.0 <8.1.6: ^8.1.6
+  zod@>=4.0.0 <4.6.6: ^4.6.6
 
-# The twelve undici advisories below all describe undici@5.29.0, the HTTP
-# client the vercel CLI pins (still, even at 59.11.2, its latest as of
-# 2026-09-03) — a devDependency that only talks to Vercel's own API during
-# deploys. undici 5.x has no patched release, so the only "fix" would be an
-# override forcing the CLI onto a newer API-incompatible major that risks
-# breaking `vercel deploy` in CI. Accepted instead, scoped to these exact
-# GHSAs so anything new still fails `pnpm audit` loudly. The last three
-# (8xcm/m8rv/v3r7, added by the 2026-09-03 sweep) also matched payload's
-# undici@7.28.0, but that instance is FIXED by the 7.x override above —
-# the acceptance only masks the CLI's 5.29.0 copy. Delete those twelve
-# entries once `pnpm why undici` shows the CLI off 5.x after a vercel
-# update.
+# Accepted advisories: each has no usable fix, and is scoped to its exact
+# GHSA so anything new still fails `pnpm audit` loudly.
 #
-# GHSA-f88m-g3jw-g9cj (sharp <0.35.0, libvips-inherited CVEs, patched only
-# in 0.35.0): accepted because sharp 0.35.x is unusable on Vercel — its
-# @img/sharp-libvips-linux-x64 shared library is not traced into the
-# function bundle (lovell/sharp#4567), so every lambda throws
-# ERR_DLOPEN_FAILED at cold start and the whole dynamic layer 500s. That
-# outage ran 2026-08-02 → 2026-09-03 in production; the vulnerable surface,
-# by contrast, is image parsing of admin-uploaded media only — no untrusted
-# user uploads reach sharp. src/sharp-pin.spec.ts enforces the pin. Delete
-# this entry and re-bump sharp once 0.35.x is confirmed traceable on Vercel
-# and /admin is verified on a deploy.
+# GHSA-mrhx-c7xc-m3w5 (zod <4.6.6, memory exhaustion validating oversized
+# collections): every 4.x copy is floored above, but @vercel/python-analysis
+# pins zod 3.22.4 exactly — still does at its latest release — and no 3.x
+# patch exists. Forcing zod 4 into code written against zod 3 is an API
+# break that nothing here can exercise: the package only analyses Python
+# projects during `vercel build`, which the runner never runs. Delete once
+# `pnpm why zod` shows no 3.x.
+#
+# GHSA-gcqx-w48m-w2h4 (deepmerge <=4.3.1, prototype poisoning of the
+# returned object, low): payload depends on deepmerge 4.3.1, which is the
+# latest release — the advisory names 4.3.2 but it has not been published.
+# Delete and floor deepmerge instead once it is.
 auditConfig:
   ignoreGhsas:
-    - GHSA-f88m-g3jw-g9cj
-    - GHSA-vrm6-8vpv-qv8q
-    - GHSA-v9p9-hfj2-hcw8
-    - GHSA-vxpw-j846-p89q
-    - GHSA-g9mf-h72j-4rw9
-    - GHSA-2mjp-6q6p-2qxm
-    - GHSA-4992-7rv2-5pvq
-    - GHSA-p88m-4jfj-68fv
-    - GHSA-35p6-xmwp-9g52
-    - GHSA-g8m3-5g58-fq7m
-    - GHSA-8xcm-r25x-g524
-    - GHSA-m8rv-5g2x-5cg5
-    - GHSA-v3r7-h72x-cjcm
+    - GHSA-mrhx-c7xc-m3w5
+    - GHSA-gcqx-w48m-w2h4

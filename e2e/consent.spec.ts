@@ -4,8 +4,8 @@
 
 import { expect, test } from '@playwright/test';
 
-import { seedDecidedConsent } from './consent-helpers';
 import { CONSENT_STORAGE_KEY } from '../src/lib/consent/consent-storage';
+import { seedDecidedConsent } from './consent-helpers';
 
 test('banner gates analytics until a custom save decision', async ({ page }) => {
   await page.goto('/');
