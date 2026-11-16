@@ -30,6 +30,14 @@ together.
 Raise the pin only after confirming Vercel supports the newer version, and
 edit both files in the same commit.
 
+The same ceiling caps Payload. `payload` 3.92 and later declare
+`engines.node` as `^22.23.4 || >=24.22.1`, above this pin, and `engineStrict`
+in `pnpm-workspace.yaml` turns that into a failed install
+(`ERR_PNPM_UNSUPPORTED_ENGINE`) rather than a warning. `package.json`
+therefore holds `payload` and the four `@payloadcms/*` packages at `~3.91.0`
+— a caret would resolve to a release this Node cannot install. Widen them
+back to a caret only after the Node pin has moved to 24.22.1 or later.
+
 ## One-time bootstrap
 
 1. `pnpm exec vercel link` locally, once, to create/attach the Vercel
