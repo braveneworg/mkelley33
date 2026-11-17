@@ -61,10 +61,10 @@ with Google Analytics and Vercel Analytics.
 
 ### Prerequisites
 
-- **Node 24.15.0** — pinned by [`.nvmrc`](.nvmrc) and `engines` in
-  `package.json` (capped at the Vercel runtime version; see
-  [`docs/deploy.md`](docs/deploy.md) before raising it)
-- **pnpm ≥ 11.17.0** (`corepack enable` or install directly)
+- **Node 24.22.1** — pinned by [`mise.toml`](mise.toml) and `engines` in
+  `package.json`; `mise install` fetches it (capped by Vercel's build image;
+  see [`docs/deploy.md`](docs/deploy.md) before raising it)
+- **pnpm 11**, 11.17.0 or later (`corepack enable` or install directly)
 - A **MongoDB** database (local or hosted) for local development
 
 ### Setup
