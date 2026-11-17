@@ -36,6 +36,13 @@ import { existsSync, readFileSync } from 'node:fs';
  * src/deploy-workflow.spec.ts). That removes one way a skew could ship, and
  * leaves this pin covering what the runner still does on `mise.toml` Node —
  * typecheck, lint, unit tests, and the whole `e2e` job.
+ *
+ * `@types/node` is a third declaration, and the one a dependency sweep moves
+ * without anyone deciding to: it is versioned after the Node line it
+ * describes, so "latest" is always the newest Node's types. Types a major
+ * ahead of the runtime let the typecheck accept APIs the installed Node does
+ * not have. Its patch numbers are DefinitelyTyped's own and its minors lag
+ * Node's, so only the major is comparable — that is what is pinned here.
  */
 
 /**
@@ -48,13 +55,27 @@ const ENGINES_FLOOR = /^\^(\d+\.\d+\.\d+)$/;
 /** `mise.toml`: the same version as an exact `node = "x.y.z"` tool entry. */
 const MISE_NODE = /^node = "(\d+\.\d+\.\d+)"$/m;
 
+/** `@types/node`: a caret range, of which only the major is captured. */
+const TYPES_NODE_MAJOR = /^\^(\d+)\.\d+\.\d+$/;
+
+/** The leading major of a bare `x.y.z`. */
+const MAJOR = /^(\d+)\./;
+
 /** Version files other tools read, which would compete with `mise.toml`. */
 const RIVAL_VERSION_FILES = ['.nvmrc', '.node-version', '.tool-versions'] as const;
 
-const enginesNode = (): string => {
-  const packageJson: unknown = JSON.parse(readFileSync('package.json', 'utf8'));
-  return (packageJson as { engines?: { node?: string } }).engines?.node ?? '';
-};
+/** The two parts of `package.json` that say which Node this repo is for. */
+interface NodeDeclarations {
+  devDependencies?: { '@types/node'?: string };
+  engines?: { node?: string };
+}
+
+const packageJson = (): NodeDeclarations =>
+  JSON.parse(readFileSync('package.json', 'utf8')) as NodeDeclarations;
+
+const enginesNode = (): string => packageJson().engines?.node ?? '';
+
+const typesNode = (): string => packageJson().devDependencies?.['@types/node'] ?? '';
 
 const miseToml = (): string => readFileSync('mise.toml', 'utf8');
 
@@ -79,6 +100,12 @@ describe('Node version declarations', () => {
 
   it('installs exactly the Node the engines floor names', () => {
     expect(versionIn(miseToml(), MISE_NODE)).toBe(versionIn(enginesNode(), ENGINES_FLOOR));
+  });
+
+  it('types Node against the major the engines floor names', () => {
+    const enginesMajor = versionIn(versionIn(enginesNode(), ENGINES_FLOOR), MAJOR);
+
+    expect(versionIn(typesNode(), TYPES_NODE_MAJOR)).toBe(enginesMajor);
   });
 
   it.each(RIVAL_VERSION_FILES)('keeps %s out of the repo', (file) => {

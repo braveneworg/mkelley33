@@ -23,7 +23,10 @@ would silently restore the double-build.
 `src/node-version.spec.ts` pins the two together. `mise.toml` is the only
 version file — `mise install` reads it locally and `actions/setup-node` reads
 it in every CI job — and the same spec fails if an `.nvmrc`,
-`.node-version` or `.tool-versions` reappears beside it.
+`.node-version` or `.tool-versions` reappears beside it. The same spec holds
+`@types/node` to the major `engines.node` names, because a dependency sweep
+otherwise carries it to the newest Node's types and the typecheck starts
+accepting APIs the installed Node does not have.
 
 The version is capped by Vercel's build image. Vercel lets a project choose
 only the major (`24.x`) and rolls patch releases out on its own schedule, and
