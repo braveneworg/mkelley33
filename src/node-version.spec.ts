@@ -18,10 +18,12 @@ import { existsSync, readFileSync } from 'node:fs';
  * because the binding constraint is a ceiling: Vercel installs and builds on
  * whichever 24.x patch its build image carries, and it enforces this floor
  * the same way the runner does. A floor above that image fails every Vercel
- * install, and a `>=` floor cannot express a ceiling. Left to satisfy the
- * floor alone, `mise.toml` could drift upward and the suite would validate
- * the code against a Node the deploy never builds on — silently, since the
- * two values sit in different files and neither mentions the other. Raising
+ * install, and a range cannot express that ceiling: the caret in
+ * `^24.22.1` caps the major, so Node 25 is refused, but every later 24.x
+ * patch still satisfies it. Left to satisfy the range alone, `mise.toml`
+ * could drift upward and the suite would validate the code against a Node
+ * the deploy never builds on — silently, since the two values sit in
+ * different files and neither mentions the other. Raising
  * this pin means editing both files together, and confirming Vercel's build
  * image has reached the new version before you do (see docs/deploy.md).
  *
@@ -36,8 +38,12 @@ import { existsSync, readFileSync } from 'node:fs';
  * typecheck, lint, unit tests, and the whole `e2e` job.
  */
 
-/** `engines.node`: a `>=` floor naming one exact version, not a range. */
-const ENGINES_FLOOR = /^>=(\d+\.\d+\.\d+)$/;
+/**
+ * `engines.node`: a caret range whose floor names one exact version. The
+ * caret keeps a future major out; the full `x.y.z` is what `mise.toml` must
+ * match, so a bare `^24` or a compound range is rejected.
+ */
+const ENGINES_FLOOR = /^\^(\d+\.\d+\.\d+)$/;
 
 /** `mise.toml`: the same version as an exact `node = "x.y.z"` tool entry. */
 const MISE_NODE = /^node = "(\d+\.\d+\.\d+)"$/m;
@@ -63,7 +69,7 @@ const versionIn = (declaration: string, pattern: RegExp): string => {
 };
 
 describe('Node version declarations', () => {
-  it('states engines.node as a plain >=x.y.z floor', () => {
+  it('states engines.node as a plain ^x.y.z floor', () => {
     expect(enginesNode()).toMatch(ENGINES_FLOOR);
   });
 
