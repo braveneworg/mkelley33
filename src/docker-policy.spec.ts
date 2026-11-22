@@ -34,6 +34,11 @@ import {
  * convenience (an `env_file:`, a `.:/app` mount for faster rebuilds), and the
  * build would stay green. These assertions are what turns that into a red
  * gate.
+ *
+ * The last block covers the same decision's other half, in
+ * `.github/workflows/ci.yml` and the shared setup action: the runner gets its
+ * database from the same compose file, and only the job that runs the gate
+ * still needs a memory-server binary.
  */
 
 const ignoreLines = new Set(
@@ -61,6 +66,50 @@ const { services } = composeSchema.parse(parse(readFileSync('docker/compose.yaml
 const { mongo, toolchain } = services;
 
 const dockerfile = readFileSync('docker/Dockerfile', 'utf8');
+
+const SETUP_ACTION = './.github/actions/setup';
+
+const workflowSchema = z.object({
+  jobs: z.record(
+    z.string(),
+    z.object({
+      services: z.unknown().optional(),
+      steps: z.array(
+        z.object({
+          run: z.string().optional(),
+          uses: z.string().optional(),
+          with: z.record(z.string(), z.string()).optional(),
+        })
+      ),
+    })
+  ),
+});
+
+const jobs = new Map(
+  Object.entries(workflowSchema.parse(parse(readFileSync('.github/workflows/ci.yml', 'utf8'))).jobs)
+);
+
+/** The `with:` inputs a job passes to the shared setup action. */
+const setupInputs = (jobId: string): Map<string, string> => {
+  const step = jobs.get(jobId)?.steps.find(({ uses }) => uses === SETUP_ACTION);
+  if (step === undefined) {
+    throw new Error(`job "${jobId}" does not use ${SETUP_ACTION}`);
+  }
+  return new Map(Object.entries(step.with ?? {}));
+};
+
+const runSteps = (jobId: string): string[] =>
+  (jobs.get(jobId)?.steps ?? []).flatMap(({ run }) => (run === undefined ? [] : [run.trim()]));
+
+const setupAction = z
+  .object({
+    runs: z.object({
+      steps: z.array(
+        z.object({ env: z.record(z.string(), z.string()).optional(), run: z.string().optional() })
+      ),
+    }),
+  })
+  .parse(parse(readFileSync('.github/actions/setup/action.yml', 'utf8')));
 
 /**
  * The files hard constraint #2 in `AGENTS.md` names that can live inside a
@@ -213,5 +262,48 @@ describe('docker/Dockerfile', () => {
    */
   it('skips the mongodb-memory-server binary download', () => {
     expect(dockerfile).toMatch(/MONGOMS_DISABLE_POSTINSTALL=1/);
+  });
+});
+
+describe('the CI workflow', () => {
+  /**
+   * One database path per command: the scripts start the Mongo container
+   * themselves, through the same compose file as a developer's machine. A
+   * `services:` block would be a second way to get a database, used only on
+   * the runner.
+   */
+  it('declares no service containers of its own', () => {
+    expect([...jobs.values()].filter(({ services }) => services !== undefined)).toEqual([]);
+  });
+
+  it('still runs the build check through its script', () => {
+    expect(runSteps('ci')).toContain('pnpm build:ci');
+  });
+
+  it('still runs the suite through its script', () => {
+    expect(runSteps('e2e')).toContain('pnpm e2e');
+  });
+
+  /** The gate runs here, and its integration specs start a memory server. */
+  it('keeps the memory-server binary cache for the job that runs the gate', () => {
+    expect(setupInputs('ci').get('mongodb-binaries-cache')).toBeUndefined();
+  });
+
+  /** Nothing in the E2E job starts a memory server any more. */
+  it('drops the memory-server binary cache from the e2e job', () => {
+    expect(setupInputs('e2e').get('mongodb-binaries-cache')).toBe('false');
+  });
+
+  /**
+   * Opting out of the cache must also skip the download: the memory
+   * server's postinstall would otherwise fetch the binary on every run of a
+   * job that never starts it.
+   */
+  it('skips the memory-server download in a job that opted out of its cache', () => {
+    const install = setupAction.runs.steps.find(({ run }) => run?.startsWith('pnpm install'));
+
+    expect(install?.env?.MONGOMS_DISABLE_POSTINSTALL).toBe(
+      "${{ inputs.mongodb-binaries-cache == 'true' && '0' || '1' }}"
+    );
   });
 });

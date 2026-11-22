@@ -11,9 +11,11 @@ description: >-
 inputs:
   mongodb-binaries-cache:
     description: >-
-      Restore the mongodb-memory-server binary cache. The suites that start a
-      memory server need it; the deploy job never does, and paying for the
-      restore there would slow a production deploy for nothing.
+      Restore the mongodb-memory-server binary cache, and let the package's
+      postinstall download the binary on a cache miss. The gate's integration
+      specs start a memory server and need it; the e2e and deploy jobs never
+      do, and paying for the restore or the download there would slow them
+      for nothing.
     required: false
     default: 'true'
 
@@ -42,3 +44,8 @@ runs:
     # dependency was published within the last 24h.
     - run: pnpm install --frozen-lockfile --trust-lockfile
       shell: bash
+      env:
+        # mongodb-memory-server fetches its mongod binary at install time. A
+        # job that opted out of the cache above never starts one, so it skips
+        # the download as well. src/docker-policy.spec.ts pins this.
+        MONGOMS_DISABLE_POSTINSTALL: ${{ inputs.mongodb-binaries-cache == 'true' && '0' || '1' }}

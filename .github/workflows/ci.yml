@@ -24,14 +24,23 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
       - run: pnpm gate
+      # Starts its own Mongo container (docker/compose.yaml) and builds on the
+      # runner against it.
       - run: pnpm build:ci
 
+  # `pnpm e2e` starts its own Mongo container (docker/compose.yaml) and runs
+  # the build, the server and Playwright on the runner beside it. See
+  # docs/adr/0003-builds-and-e2e-run-in-docker.md.
   e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
+        with:
+          # Nothing here starts a memory server; only the gate's integration
+          # specs in the `ci` job do.
+          mongodb-binaries-cache: 'false'
       - uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
