@@ -1,6 +1,6 @@
 # mkelley33 — Agent & Contributor Guidelines
 
-Last updated: 2026-08-01
+Last updated: 2026-11-22
 
 Single source of truth for how to work in this repository — for humans and for
 every AI coding agent. Tool-specific files (e.g. `CLAUDE.md`) defer to this
@@ -130,7 +130,6 @@ See `docs/agents/triage-labels.md`.
 ### Domain docs
 
 Single-context: `CONTEXT.md` at the root is the glossary; decisions live in
-`docs/adr/`. Neither exists yet, and that is expected — `/domain-modeling`
-creates them lazily when a term or decision is actually resolved, so proceed
-silently rather than treating their absence as a gap. See
-`docs/agents/domain.md`.
+`docs/adr/`. `/domain-modeling` adds to them lazily, when a term or decision
+is actually resolved — a concept missing from either is not a gap to fill up
+front. See `docs/agents/domain.md`.
