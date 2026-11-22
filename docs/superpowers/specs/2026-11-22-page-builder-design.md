@@ -142,8 +142,7 @@ each PR's plan, written against the Payload 3 documentation at that time.
 - **Uploads** go through Payload, so files land wherever that environment's
   storage points: Vercel Blob in production, local disk in the E2E harness,
   where the blob token is pinned empty.
-- **The Seed** lives beside the code as data files plus the two binary
-  inputs. The Seed command and Capture are two ends of one module: Capture
+- **The Seed** lives in `seed/` as JSON files plus the two binary inputs. The Seed command and Capture are two ends of one module: Capture
   must be able to rewrite mechanically exactly what the Seed reads.
 
 ### Where today's content goes
@@ -181,11 +180,13 @@ Five PRs. Each is merged and deployed before the next starts.
    `mongodb-memory-server` leaves both scripts and stays only for the gate's
    integration specs. `e2e/AGENTS.md`, `src/lib/e2e/harness-config.spec.ts`,
    the README, and the `testing/` row in `AGENTS.md` are updated to match.
-2. **Site settings without the menus**, the headshot in Media, the Resume
-   upload with its permanent address, and the fill-only Seed.
-3. **Pages and Blocks** with draft, preview, and publish, and the header and
-   footer menus in Site settings. Every page except privacy moves; the
-   hard-coded content is deleted.
+2. **Site settings without the menus**, with draft, publish, and version
+   history; the Resume upload with its permanent address; and the fill-only
+   Seed.
+3. **Pages and Blocks** with draft, preview, and publish; the header and
+   footer menus in Site settings; the new-tab preview, for Pages and Site
+   settings together; and the headshot in Media. Every page except privacy
+   moves; the hard-coded content is deleted.
 4. **The privacy Page** with its guards.
 5. **The Capture command.**
 
@@ -198,6 +199,13 @@ not exist until PR 3. The header and footer menus stay hard-coded through
 PR 2's deploy. The owner chose this over menus that hold plain addresses in
 PR 2 and are converted in PR 3, which would have built a field and a data
 migration that live for one PR.
+
+**Why the headshot and the preview wait for PR 3.** The owner decided both
+on 2026-11-22. What points at the headshot is the Terminal Block's picture,
+and Blocks arrive in PR 3; moving it earlier would need a lookup by filename
+that PR 3 deletes. The preview is built once, for Pages and Site settings
+together. Until then a draft of Site settings can be saved but not viewed on
+the site.
 
 **The reach of the Docker rule** was settled by the owner on 2026-11-22 and
 is recorded in ADR 0003. The first draft of that record had it wrong: it said
@@ -214,8 +222,6 @@ None of these blocks PR 1.
   Pages.
 - `handle` in `site-config.ts` is not in the Site settings list. It stays in
   code beside the domain unless the owner says otherwise.
-- The on-disk format of the Seed files. PR 2 chooses it, under the
-  constraint that Capture can rewrite it.
 
 ## Out of scope
 
