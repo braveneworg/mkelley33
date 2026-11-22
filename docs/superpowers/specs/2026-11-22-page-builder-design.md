@@ -204,7 +204,10 @@ migration that live for one PR.
 - "Runs in Docker" means only the Mongo server is a container. Builds and
   tests still run on the host.
 - The GitHub runner uses Docker too, so each command has one database path.
-- `db:backup` and `db:restore` keep using the `.env.local` database.
+
+A third reading was confirmed by the owner on 2026-11-22: `db:backup` and
+`db:restore` keep using the `.env.local` database, although they are neither
+seed commands nor `pnpm dev`.
 
 **Not discussed.**
 
