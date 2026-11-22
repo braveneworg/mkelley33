@@ -78,9 +78,12 @@ runner path has no such wall.
 
 ## Seed BEFORE build (ISR)
 
-Every page uses ISR (`revalidate = 300`); building against an empty database
-would bake empty services into the prerendered HTML and serve that stale
-markup to the specs' first visit. The harness seeds first — keep it so.
+The database is the only copy of Owner content (`docs/adr/0001`), so a build
+against an empty one has no Site settings to render and fails. The harness
+runs the Seed (`scripts/seed.ts`, the same file `pnpm seed` runs) and then
+adds the E2E post, before it builds — keep it so. The pages that read the
+database use ISR (`revalidate = 300`), so whatever the build saw is also what
+the specs' first visit is served.
 
 A failed setup is retried against a fresh database: a new database name on
 the same Mongo container, not a new container.
