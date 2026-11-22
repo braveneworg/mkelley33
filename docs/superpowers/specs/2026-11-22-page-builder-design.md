@@ -199,15 +199,15 @@ migration that live for one PR.
 ## Open points
 
 **Stated back to the owner and not objected to, but never confirmed.** ADR
-0003 already records them as decided; correct it if any is wrong.
+0003 already records it as decided; correct it if it is wrong.
 
 - "Runs in Docker" means only the Mongo server is a container. Builds and
   tests still run on the host.
-- The GitHub runner uses Docker too, so each command has one database path.
 
-A third reading was confirmed by the owner on 2026-11-22: `db:backup` and
-`db:restore` keep using the `.env.local` database, although they are neither
-seed commands nor `pnpm dev`.
+Two further readings were confirmed by the owner on 2026-11-22. The GitHub
+runner uses Docker too, so each command has one database path. And
+`db:backup` and `db:restore` keep using the `.env.local` database, although
+they are neither seed commands nor `pnpm dev`.
 
 **Not discussed.**
 

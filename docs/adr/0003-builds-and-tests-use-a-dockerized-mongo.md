@@ -19,6 +19,9 @@ means the same thing as a pass on the runner.
 ## Consequences
 
 - Docker is required to run the build check and the E2E suite anywhere.
+- On the runner, a failed or rate-limited pull of the Mongo image turns CI
+  red for a reason unrelated to the code. The owner accepted that cost for
+  having one database path.
 - `mongodb-memory-server` and the harness rules that exist only because of it
   are removed; the other E2E invariants in `e2e/AGENTS.md` stand unchanged.
 - The commands that may use the `.env.local` database are the seed commands
