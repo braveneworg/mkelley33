@@ -6,6 +6,8 @@
 
 import { existsSync, readFileSync } from 'node:fs';
 
+import { MISE_NODE_VERSION } from '@/lib/harness/compose';
+
 /**
  * Repo-policy check, not a unit test. Two files name a Node version and
  * nothing links them. `mise.toml` is the version actually installed — by
@@ -52,9 +54,6 @@ import { existsSync, readFileSync } from 'node:fs';
  */
 const ENGINES_FLOOR = /^\^(\d+\.\d+\.\d+)$/;
 
-/** `mise.toml`: the same version as an exact `node = "x.y.z"` tool entry. */
-const MISE_NODE = /^node = "(\d+\.\d+\.\d+)"$/m;
-
 /** `@types/node`: a caret range, of which only the major is captured. */
 const TYPES_NODE_MAJOR = /^\^(\d+)\.\d+\.\d+$/;
 
@@ -95,11 +94,11 @@ describe('Node version declarations', () => {
   });
 
   it('states the mise.toml node tool as one exact version', () => {
-    expect(miseToml()).toMatch(MISE_NODE);
+    expect(miseToml()).toMatch(MISE_NODE_VERSION);
   });
 
   it('installs exactly the Node the engines floor names', () => {
-    expect(versionIn(miseToml(), MISE_NODE)).toBe(versionIn(enginesNode(), ENGINES_FLOOR));
+    expect(versionIn(miseToml(), MISE_NODE_VERSION)).toBe(versionIn(enginesNode(), ENGINES_FLOOR));
   });
 
   it('types Node against the major the engines floor names', () => {
