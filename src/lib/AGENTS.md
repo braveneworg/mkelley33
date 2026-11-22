@@ -17,8 +17,16 @@ binding. Everything below it applies only once the thing it names exists.
   swallow connection failures and render empty so a blip cannot take a page
   down — see `listPublishedPosts`. That is deliberate at request time and
   wrong at build time, which is why `scripts/ci-build.ts` fails the build if
-  Payload never reached mongod.
+  Payload never reached Mongo.
 - `validation/` — Zod schemas for all external input, one module per form.
+- `harness/` — where `pnpm build:ci` and `pnpm e2e` run and how they get
+  their throwaway Mongo: `run-mode.ts` decides (a container on a developer's
+  machine, the runner in CI), `compose.ts` holds what `docker compose` is
+  told (the commands, and the image's Node version from `mise.toml`),
+  `mongo-url.ts` the connection strings, and `docker-harness.ts` runs the
+  commands and always tears down. Nothing here may give a build a path to
+  `.env.local` — see `docs/adr/0003-builds-and-e2e-run-in-docker.md` and
+  `e2e/AGENTS.md`.
 - `email/` — the mailer, split along its seam: `mailer-config.ts` resolves the
   `SMTP_*`/`EMAIL_*` environment into a typed config with no I/O, `mailer.ts`
   turns that config into a `Mailer` (the nodemailer SMTP transport, or the JSON

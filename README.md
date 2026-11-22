@@ -53,7 +53,7 @@ with Google Analytics and Vercel Analytics.
 - **Forms**: React Hook Form + Zod, Cloudflare Turnstile anti-spam
 - **Email**: Nodemailer over SMTP
 - **Testing**: Vitest (unit, with coverage thresholds) and Playwright (E2E
-  against a hermetic in-memory MongoDB harness)
+  in a hermetic Docker harness with a throwaway MongoDB)
 - **Tooling**: TypeScript strict, ESLint 9 flat config, Prettier, Husky +
   lint-staged + commitlint, pnpm
 
@@ -66,6 +66,11 @@ with Google Analytics and Vercel Analytics.
   see [`docs/deploy.md`](docs/deploy.md) before raising it)
 - **pnpm 11**, 11.17.0 or later (`corepack enable` or install directly)
 - A **MongoDB** database (local or hosted) for local development
+- **Docker** with Compose, running, for `pnpm build:ci` and `pnpm e2e` — both
+  run inside containers so they can never reach the database `.env.local`
+  names (see
+  [ADR 0003](docs/adr/0003-builds-and-e2e-run-in-docker.md)). The gate and
+  `pnpm dev` do not need it.
 
 ### Setup
 
@@ -94,12 +99,12 @@ pnpm dev               # http://localhost:3000, admin at /admin
 
 ### Develop & build
 
-| Script     | What it does                                                                         |
-| ---------- | ------------------------------------------------------------------------------------ |
-| `dev`      | Start the Next.js dev server on port 3000.                                           |
-| `build`    | Production build: `next build`, then `serwist build` to generate the service worker. |
-| `build:ci` | CI build wrapper (`scripts/ci-build.ts`) used by the GitHub Actions pipeline.        |
-| `start`    | Serve the production build locally (run `build` first).                              |
+| Script     | What it does                                                                                                                                                              |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dev`      | Start the Next.js dev server on port 3000.                                                                                                                                |
+| `build`    | Production build: `next build`, then `serwist build` to generate the service worker.                                                                                      |
+| `build:ci` | Production build against a throwaway Mongo container, plus checks a green exit cannot give (`scripts/ci-build.ts`). Runs inside a container locally; on the runner in CI. |
+| `start`    | Serve the production build locally (run `build` first).                                                                                                                   |
 
 ### Quality gate
 
@@ -115,15 +120,15 @@ pnpm dev               # http://localhost:3000, admin at /admin
 
 ### Tests
 
-| Script          | What it does                                                                                                                                                                    |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `test`          | Vitest in watch mode with quiet dot reporter.                                                                                                                                   |
-| `test:run`      | Single Vitest pass, no watch.                                                                                                                                                   |
-| `test:watch`    | Vitest watch mode with full output.                                                                                                                                             |
-| `test:ui`       | Vitest browser UI for exploring the suite.                                                                                                                                      |
-| `test:coverage` | Single Vitest pass with a coverage report.                                                                                                                                      |
-| `e2e`           | **The only supported way to run E2E**: builds and serves the site against an in-memory MongoDB on port 4310, then runs Playwright. Read [`e2e/AGENTS.md`](e2e/AGENTS.md) first. |
-| `e2e:test`      | Raw `playwright test` — used _by_ the harness; never point it at a running server yourself (the specs write data).                                                              |
+| Script          | What it does                                                                                                                                                                                                                   |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `test`          | Vitest in watch mode with quiet dot reporter.                                                                                                                                                                                  |
+| `test:run`      | Single Vitest pass, no watch.                                                                                                                                                                                                  |
+| `test:watch`    | Vitest watch mode with full output.                                                                                                                                                                                            |
+| `test:ui`       | Vitest browser UI for exploring the suite.                                                                                                                                                                                     |
+| `test:coverage` | Single Vitest pass with a coverage report.                                                                                                                                                                                     |
+| `e2e`           | **The only supported way to run E2E**: seeds, builds and serves the site against a throwaway Mongo container on port 4310, then runs Playwright — all inside a container locally. Read [`e2e/AGENTS.md`](e2e/AGENTS.md) first. |
+| `e2e:test`      | Raw `playwright test` — used _by_ the harness; never point it at a running server yourself (the specs write data).                                                                                                             |
 
 ### Database & seeding
 
@@ -152,9 +157,13 @@ enforced as tests — MPL license headers, the gate script's contents, git
 hook behavior, Node version pins — so the suite failing on a "docs-only"
 change usually means a real invariant broke.
 
-E2E runs only through `pnpm e2e`: the harness seeds an in-memory MongoDB,
-builds, serves on a dedicated port, and never reads `.env*`, so nothing can
-touch a real database or send real email. The invariants are documented in
+E2E runs only through `pnpm e2e`. On your machine the harness builds a
+toolchain image, starts it beside a throwaway Mongo container, and seeds,
+builds, serves and tests inside it; the image holds no `.env*` file, so
+nothing can touch a real database or send real email. The first run builds
+the image and takes several minutes; later runs reuse its cached layers. A
+failed run leaves Playwright's traces and `e2e-server.log` in
+`test-results/`. The invariants are documented in
 [`e2e/AGENTS.md`](e2e/AGENTS.md) — read it in full before changing anything
 under `e2e/`, the harness, or seed scripts.
 
