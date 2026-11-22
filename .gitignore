@@ -22,3 +22,6 @@ e2e-server.log
 
 # vercel CLI artifacts (pulled project settings + production env values)
 .vercel/
+
+# uploads written to disk whenever no blob storage is configured
+resume-files/

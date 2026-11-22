@@ -15,23 +15,39 @@ import { Comments } from '@/collections/comments';
 import { ContactSubmissions } from '@/collections/contact-submissions';
 import { Media } from '@/collections/media';
 import { Posts } from '@/collections/posts';
+import { ResumeFiles } from '@/collections/resume-files';
 import { Services } from '@/collections/services';
 import { Subscribers } from '@/collections/subscribers';
 import { Users } from '@/collections/users';
+import { SiteSettings } from '@/globals/site-settings';
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
 
 export default buildConfig({
   admin: { user: 'users' },
-  collections: [Users, Media, Posts, Services, ContactSubmissions, Subscribers, Comments],
+  collections: [
+    Users,
+    Media,
+    ResumeFiles,
+    Posts,
+    Services,
+    ContactSubmissions,
+    Subscribers,
+    Comments,
+  ],
   db: mongooseAdapter({ url: process.env.DATABASE_URL ?? '' }),
   editor: lexicalEditor(),
+  globals: [SiteSettings],
   plugins: [
     ...(process.env.BLOB_READ_WRITE_TOKEN
       ? [
           vercelBlobStorage({
-            collections: { media: true },
+            // Every upload gets a key of its own. Without this the key is
+            // the bare file name, and uploading a second file of the same
+            // name — the Seed's Resume, say — replaces the first in storage.
+            addRandomSuffix: true,
+            collections: { media: true, 'resume-files': true },
             token: process.env.BLOB_READ_WRITE_TOKEN,
           }),
         ]
