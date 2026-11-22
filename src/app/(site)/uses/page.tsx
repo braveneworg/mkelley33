@@ -2,9 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-import { siteConfig } from '@/lib/site-config';
+import { getSiteSettings } from '@/lib/repositories/site-settings';
 
 import type { Metadata } from 'next';
+
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   description: 'Hardware, editor, terminal, AI toolbox, and stack defaults — what I actually use.',
@@ -83,7 +85,8 @@ const SECTIONS: UsesSection[] = [
   },
 ];
 
-export default function UsesPage() {
+export default async function UsesPage() {
+  const { repoUrl } = await getSiteSettings();
   return (
     <div className="mx-auto w-full max-w-5xl px-5 py-16 sm:py-20">
       <p className="text-fg-muted font-mono text-sm">
@@ -111,12 +114,12 @@ export default function UsesPage() {
           </ul>
         </section>
       ))}
-      {siteConfig.repoUrl ? (
+      {repoUrl ? (
         <p className="text-fg-muted mt-12 font-mono text-sm">
           <span aria-hidden="true"># </span>
           <a
             className="text-phosphor underline underline-offset-4"
-            href={siteConfig.repoUrl}
+            href={repoUrl}
             rel="noopener noreferrer"
             target="_blank"
           >

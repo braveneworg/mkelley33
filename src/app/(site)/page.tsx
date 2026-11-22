@@ -13,6 +13,7 @@ import { ServicesBeat } from '@/components/home/services-beat';
 import { feedAlternateTypes } from '@/lib/feed-alternates';
 import { listPublishedPosts } from '@/lib/repositories/posts';
 import { listServices } from '@/lib/repositories/services';
+import { getSiteSettings } from '@/lib/repositories/site-settings';
 
 import type { Metadata } from 'next';
 
@@ -28,16 +29,20 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const [allPosts, services] = await Promise.all([listPublishedPosts(), listServices()]);
+  const [allPosts, services, { name, repoUrl, tagline }] = await Promise.all([
+    listPublishedPosts(),
+    listServices(),
+    getSiteSettings(),
+  ]);
   const posts = allPosts.slice(0, 3);
   return (
     <>
-      <Hero />
-      <AboutBeat />
+      <Hero name={name} tagline={tagline} />
+      <AboutBeat name={name} />
       <AiToolboxBeat />
       <ServicesBeat services={services} />
       <CareerBeat />
-      <OpenSourceBeat />
+      <OpenSourceBeat repoUrl={repoUrl} />
       <LatestPostsBeat posts={posts} />
       <NewsletterBeat />
     </>

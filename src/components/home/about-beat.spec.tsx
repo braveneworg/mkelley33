@@ -8,29 +8,29 @@ import { AboutBeat } from '@/components/home/about-beat';
 
 describe('AboutBeat', () => {
   it('renders the bio and interests line', () => {
-    render(<AboutBeat headshotSrc={null} />);
+    render(<AboutBeat headshotSrc={null} name="Owner Name" />);
     expect(screen.getByText('cat ./about.md')).toBeInTheDocument();
     expect(screen.getByText(/10\+ years shipping production React/)).toBeInTheDocument();
     expect(screen.getByText(/music, meditation/)).toBeInTheDocument();
   });
 
   it('renders a placeholder while the headshot is pending', () => {
-    render(<AboutBeat headshotSrc={null} />);
+    render(<AboutBeat headshotSrc={null} name="Owner Name" />);
     // The comment glyph is decorative, so only the plain text is exposed.
     expect(screen.getByText('headshot: pending')).toBeInTheDocument();
     expect(screen.queryByRole('img')).not.toBeInTheDocument();
   });
 
   it('defaults the headshot to siteConfig.headshot when no prop is passed', () => {
-    render(<AboutBeat />);
-    const image = screen.getByRole('img', { name: 'Michaux Kelley' });
+    render(<AboutBeat name="Owner Name" />);
+    const image = screen.getByRole('img', { name: 'Owner Name' });
     expect(image).toHaveAttribute('src', expect.stringContaining('headshot.webp'));
     expect(screen.queryByText('headshot: pending')).not.toBeInTheDocument();
   });
 
   it('renders the headshot image when supplied', () => {
-    render(<AboutBeat headshotSrc="/headshot.jpg" />);
-    expect(screen.getByRole('img', { name: 'Michaux Kelley' })).toBeInTheDocument();
+    render(<AboutBeat headshotSrc="/headshot.jpg" name="Owner Name" />);
+    expect(screen.getByRole('img', { name: 'Owner Name' })).toBeInTheDocument();
     expect(screen.queryByText('headshot: pending')).not.toBeInTheDocument();
   });
 });

@@ -9,15 +9,17 @@ import { siteConfig } from '@/lib/site-config';
 
 export const AboutBeat = ({
   headshotSrc = siteConfig.headshot,
+  name,
 }: {
   headshotSrc?: string | null;
+  name: string;
 }) => (
   <TerminalSection command="cat ./about.md">
     <div className="flex flex-col gap-8 sm:flex-row sm:items-start">
       <div className="shrink-0">
         {headshotSrc ? (
           <Image
-            alt={siteConfig.name}
+            alt={name}
             className="border-edge rounded-full border"
             height={120}
             src={headshotSrc}

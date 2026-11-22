@@ -10,6 +10,7 @@ import { PostBody } from '@/components/blog/post-body';
 import { serializeJsonLd } from '@/lib/json-ld';
 import { listApprovedCommentsForPost } from '@/lib/repositories/comments';
 import { getPostBySlug, listPublishedPosts } from '@/lib/repositories/posts';
+import { getSiteSettings } from '@/lib/repositories/site-settings';
 import { siteConfig } from '@/lib/site-config';
 
 import type { Metadata } from 'next';
@@ -45,6 +46,7 @@ export default async function PostPage({ params }: PageProps) {
     notFound();
   }
   const all = await listPublishedPosts();
+  const { name: authorName } = await getSiteSettings();
   const comments = await listApprovedCommentsForPost(post.id);
   const index = all.findIndex((p) => p.slug === post.slug);
   const newer = index > 0 ? all[index - 1] : undefined;
@@ -52,7 +54,7 @@ export default async function PostPage({ params }: PageProps) {
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
-    author: { '@type': 'Person', name: siteConfig.name },
+    author: { '@type': 'Person', name: authorName },
     datePublished: post.publishedAt,
     description: post.excerpt ?? undefined,
     headline: post.title,

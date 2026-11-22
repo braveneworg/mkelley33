@@ -5,15 +5,14 @@
 import { render, screen } from '@testing-library/react';
 
 import { OpenSourceBeat } from '@/components/home/open-source-beat';
-import type * as SiteConfigModule from '@/lib/site-config';
 
 describe('OpenSourceBeat', () => {
   it('renders this site, boudreaux, and contributions entries', () => {
-    render(<OpenSourceBeat />);
+    render(<OpenSourceBeat repoUrl="https://example.com/repo" />);
     expect(screen.getByText('ls ./open-source')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /this-site\// })).toHaveAttribute(
       'href',
-      'https://github.com/braveneworg/mkelley33'
+      'https://example.com/repo'
     );
     expect(screen.getByRole('link', { name: /boudreaux\// })).toHaveAttribute(
       'href',
@@ -23,15 +22,8 @@ describe('OpenSourceBeat', () => {
     expect(screen.getByText(/mean\.io/)).toBeInTheDocument();
   });
 
-  it('renders this-site as plain text when no repo url is configured', async () => {
-    vi.resetModules();
-    vi.doMock('@/lib/site-config', async (importOriginal) => {
-      const actual = await importOriginal<typeof SiteConfigModule>();
-      return { siteConfig: { ...actual.siteConfig, repoUrl: null } };
-    });
-    const { OpenSourceBeat: Unlinked } = await import('@/components/home/open-source-beat');
-
-    render(<Unlinked />);
+  it('renders this-site as plain text when no repo url is configured', () => {
+    render(<OpenSourceBeat repoUrl={null} />);
 
     expect(screen.queryByRole('link', { name: /this-site\// })).not.toBeInTheDocument();
     expect(screen.getByText('this-site/')).toBeInTheDocument();

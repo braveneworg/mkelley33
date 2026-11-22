@@ -3,16 +3,15 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 import { TerminalSection } from '@/components/home/terminal-section';
-import { siteConfig } from '@/lib/site-config';
 
-export const OpenSourceBeat = () => (
+export const OpenSourceBeat = ({ repoUrl }: { repoUrl: null | string }) => (
   <TerminalSection command="ls ./open-source">
     <ul className="max-w-2xl space-y-5">
       <li>
-        {siteConfig.repoUrl ? (
+        {repoUrl ? (
           <a
             className="text-phosphor font-mono text-sm underline underline-offset-4"
-            href={siteConfig.repoUrl}
+            href={repoUrl}
             rel="noopener noreferrer"
             target="_blank"
           >

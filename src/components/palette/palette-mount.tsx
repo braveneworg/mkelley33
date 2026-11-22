@@ -6,9 +6,11 @@
 
 import dynamic from 'next/dynamic';
 
+import type { PaletteProps } from '@/components/palette/command-palette';
+
 const CommandPalette = dynamic(
   () => import('@/components/palette/command-palette').then((module_) => module_.CommandPalette),
   { ssr: false }
 );
 
-export const PaletteMount = () => <CommandPalette />;
+export const PaletteMount = ({ socials }: PaletteProps) => <CommandPalette socials={socials} />;
