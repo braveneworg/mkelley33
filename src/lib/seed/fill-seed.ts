@@ -30,17 +30,25 @@ export const SITE_SETTINGS_LABEL = 'site settings';
 
 const SITE_SETTINGS = 'site-settings';
 
+/** How the report names a service. */
+export const serviceLabel = ({ slug }: ServiceSeed): string => `service ${slug}`;
+
+/** True when a service already holds this slug. */
+export const serviceExists = async (payload: Payload, { slug }: ServiceSeed): Promise<boolean> => {
+  const existing = await payload.count({
+    collection: 'services',
+    where: { slug: { equals: slug } },
+  });
+  return existing.totalDocs > 0;
+};
+
 /** True when the service was created, false when one already held its slug. */
 const fillService = async (
   payload: Payload,
   service: ServiceSeed,
   order: number
 ): Promise<boolean> => {
-  const existing = await payload.count({
-    collection: 'services',
-    where: { slug: { equals: service.slug } },
-  });
-  if (existing.totalDocs > 0) {
+  if (await serviceExists(payload, service)) {
     return false;
   }
   await payload.create({ collection: 'services', data: { ...service, order } });
@@ -53,13 +61,35 @@ const fillService = async (
  * before anything was published leaves no record at all, only a version —
  * and it is still the owner's work, so it counts.
  */
-const siteSettingsExist = async (payload: Payload): Promise<boolean> => {
+export const siteSettingsExist = async (payload: Payload): Promise<boolean> => {
   const record = await payload.findGlobal({ slug: SITE_SETTINGS });
   if (record.createdAt) {
     return true;
   }
   const versions = await payload.countGlobalVersions({ global: SITE_SETTINGS });
   return versions.totalDocs > 0;
+};
+
+/**
+ * Tidies up after a failed settings save: removes the Resume that was
+ * uploaded for it, so the next run does not upload a second copy beside it.
+ *
+ * Two things it must not do. It must not delete an upload that is in use: a
+ * save can fail after it has written the record, because the version
+ * history is saved second. And it must not throw: the failure worth
+ * reporting is the one that stopped the Seed, not the cleanup's. An upload
+ * left behind is private and harmless.
+ */
+const removeUnusedUpload = async (payload: Payload, uploadId: string): Promise<void> => {
+  try {
+    const record = await payload.findGlobal({ depth: 0, slug: SITE_SETTINGS });
+    if (record.resume === uploadId) {
+      return;
+    }
+    await payload.delete({ collection: 'resume-files', id: uploadId });
+  } catch {
+    // Best effort — see above.
+  }
 };
 
 /** True when the Site settings were created, false when the owner already had some. */
@@ -89,10 +119,8 @@ const fillSiteSettings = async (
       slug: SITE_SETTINGS,
     });
   } catch (error) {
-    // Nothing points at the upload now. Left behind, the next run would
-    // upload a second copy beside it.
     if (resume !== null) {
-      await payload.delete({ collection: 'resume-files', id: resume.id });
+      await removeUnusedUpload(payload, resume.id);
     }
     throw error;
   }
@@ -108,7 +136,7 @@ export const fillSeed = async (payload: Payload, seed: Seed): Promise<SeedReport
 
   record(SITE_SETTINGS_LABEL, await fillSiteSettings(payload, seed));
   for (const [order, service] of seed.services.entries()) {
-    record(`service ${service.slug}`, await fillService(payload, service, order));
+    record(serviceLabel(service), await fillService(payload, service, order));
   }
   return report;
 };
