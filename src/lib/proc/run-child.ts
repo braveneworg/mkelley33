@@ -11,9 +11,10 @@
  * invariants below, so a fix learned in one never reached the others. This
  * module carries all of them at once:
  *
- * - **Async spawn only.** Never `spawnSync`: a script that owns a
- *   `MongoMemoryServer` must keep draining mongod's piped output, and a
- *   blocking call wedges it on a full pipe buffer. See
+ * - **Async spawn only.** Never `spawnSync`: a script that owns a child with
+ *   piped output must keep draining it, and a blocking call wedges the child
+ *   on a full pipe buffer. The scripts learned this while each owned a
+ *   `MongoMemoryServer`; see
  *   `docs/lessons/testing/spawnsync-starves-owned-child-pipes.md`.
  * - **An `error` listener.** Without one, a missing binary reports a bare
  *   non-zero status (or crashes the process on an unhandled `error` event)

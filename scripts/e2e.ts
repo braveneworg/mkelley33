@@ -7,24 +7,26 @@
  * point for every invariant in `e2e/AGENTS.md`. The pure decisions — the
  * pinned hermetic env, the dedicated port, the readiness-probe token — live
  * in `@/lib/e2e/harness-config`, where a unit spec holds them to that prose.
- * The side effects are here: mongod, spawning, probing, teardown.
+ * The side effects are here: seeding, building, spawning, probing, teardown.
  *
- * mongodb-memory-server pipes mongod's stdout/stderr into THIS process and
- * relies on our event loop to drain them. Every child step therefore runs
- * through `runChild`, which spawns asynchronously — a spawnSync would block
- * the loop, the ~64KB pipe buffer would fill during mongod's log bursts, and
- * mongod would block mid-operation, leaving the client on
- * established-but-silent connections forever. Hard step timeouts plus a
- * fresh-mongod retry guard the setup against any residual environmental
- * flakes. Runs under tsx so it can import the modules above, with no
+ * Where it runs is `@/lib/harness/docker-harness`'s decision: on a
+ * developer's machine the whole script is re-run inside the toolchain
+ * container, beside a Mongo container, so neither the build nor the server
+ * ever shares a filesystem with `.env.local`; on the CI runner it runs in
+ * place against a Mongo container. See
+ * docs/adr/0003-builds-and-e2e-run-in-docker.md.
+ *
+ * Every child goes through `@/lib/proc/run-child`, which has no synchronous
+ * path. The steps this file starts — seed, build, server, Playwright — are
+ * spawned detached, so a timeout kill reaches the whole process group. Hard
+ * step timeouts plus a fresh-database retry guard the setup against
+ * environmental flakes. Runs under tsx so it can import the modules above, with no
  * `--env-file` flag, so `.env.local` is never loaded into the harness.
  */
 
-import { createWriteStream } from 'node:fs';
+import { copyFileSync, createWriteStream, existsSync } from 'node:fs';
 import { connect } from 'node:net';
 import { setTimeout as sleep } from 'node:timers/promises';
-
-import { MongoMemoryServer } from 'mongodb-memory-server';
 
 import {
   dbProbeUrl,
@@ -34,11 +36,21 @@ import {
   makeEnv,
   PATIENT_DRIVER_PARAMS,
 } from '@/lib/e2e/harness-config';
+import { runInHarness, type HarnessContext } from '@/lib/harness/docker-harness';
+import { databaseUrl } from '@/lib/harness/mongo-url';
 import { runChild, startChild } from '@/lib/proc/run-child';
+
+import { harnessDeps } from './harness-deps';
 
 const SETUP_ATTEMPTS = 3;
 const STEP_TIMEOUT_MS = 240_000;
 const BUILD_TIMEOUT_MS = 1_500_000;
+
+const SERVER_LOG = 'e2e-server.log';
+
+// The one directory the toolchain container shares with the host (see
+// docker/compose.yaml). Playwright writes its traces here.
+const SHARED_RESULTS = 'test-results';
 
 /**
  * Runs one `pnpm` step to completion, detached so a timeout kill reaches the
@@ -112,12 +124,13 @@ const assertPortFree = async (): Promise<boolean> => {
 // Seed BEFORE building: every page uses ISR (`revalidate = 300`), so a build
 // against an empty database would bake empty services into the prerendered
 // HTML and serve that stale markup to the specs' first visit.
-const setUp = async (): Promise<MongoMemoryServer | null> => {
+//
+// Resolves to the database the build was seeded and built against, or null
+// when every attempt failed. The Mongo container outlives an attempt, so a
+// fresh database is a new name on the same server.
+const setUp = async (mongoUrl: string): Promise<null | string> => {
   for (let attempt = 1; attempt <= SETUP_ATTEMPTS; attempt += 1) {
-    const mongod = await MongoMemoryServer.create({
-      instance: { args: ['--wiredTigerCacheSizeGB', '0.25'] },
-    });
-    const uri = mongod.getUri();
+    const uri = databaseUrl(mongoUrl, `e2e-${attempt}`);
     const done =
       // Seeding gets the fail-fast driver params so a real connection failure
       // surfaces quickly; the build keeps the patient ones.
@@ -135,12 +148,11 @@ const setUp = async (): Promise<MongoMemoryServer | null> => {
       )) &&
       (await runStep('build', ['build'], makeEnv(uri, PATIENT_DRIVER_PARAMS), BUILD_TIMEOUT_MS));
     if (done) {
-      return mongod;
+      return uri;
     }
-    await mongod.stop();
     console.error(
       `[e2e] setup attempt ${attempt}/${SETUP_ATTEMPTS} failed${
-        attempt < SETUP_ATTEMPTS ? ' — retrying with a fresh mongod' : ''
+        attempt < SETUP_ATTEMPTS ? ' — retrying with a fresh database' : ''
       }`
     );
   }
@@ -180,7 +192,7 @@ const serveAndTest = async (uri: string): Promise<number> => {
     stdin: 'pipe',
   });
   try {
-    const log = createWriteStream('e2e-server.log');
+    const log = createWriteStream(SERVER_LOG);
     server.stdout?.pipe(log);
     server.stderr?.pipe(log);
     const staticReady = await pollUntilOk(E2E_BASE_URL, 90);
@@ -209,23 +221,34 @@ const serveAndTest = async (uri: string): Promise<number> => {
   }
 };
 
-const run = async (): Promise<number> => {
-  // Fail fast before paying for mongod + seed + build.
-  if (!(await assertPortFree())) {
-    return 1;
-  }
-  const mongod = await setUp();
-  if (!mongod) {
-    return 1;
-  }
-  try {
-    return await serveAndTest(mongod.getUri());
-  } finally {
-    await mongod.stop();
+/**
+ * Inside the container the server log would vanish with it. Copying it into
+ * the shared directory leaves it on the host beside Playwright's traces —
+ * after the suite, because Playwright empties that directory when it starts.
+ */
+const keepServerLog = (mode: HarnessContext['mode']): void => {
+  if (mode === 'in-container' && existsSync(SERVER_LOG)) {
+    copyFileSync(SERVER_LOG, `${SHARED_RESULTS}/${SERVER_LOG}`);
   }
 };
 
-run()
+const work = async ({ mode, mongoUrl }: HarnessContext): Promise<number> => {
+  // Fail fast before paying for seed + build.
+  if (!(await assertPortFree())) {
+    return 1;
+  }
+  const uri = await setUp(mongoUrl);
+  if (uri === null) {
+    return 1;
+  }
+  try {
+    return await serveAndTest(uri);
+  } finally {
+    keepServerLog(mode);
+  }
+};
+
+runInHarness({ kind: 'e2e', script: 'scripts/e2e.ts', work }, harnessDeps('[e2e]'))
   .then((status) => {
     process.exit(status);
   })

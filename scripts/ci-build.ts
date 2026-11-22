@@ -3,25 +3,34 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 /**
- * `pnpm build` against a throwaway mongod, with the three checks a green exit
- * cannot give on its own: that the build actually reached the database, that
- * the service worker was emitted, and that every function bundle carrying
- * sharp also carries the libvips it loads. Runs under tsx so it can share
- * `@/lib/proc/run-child` with the E2E harness — the same async spawn, the
- * same `error` listener, the same capture.
+ * `pnpm build` against a throwaway Mongo container, with the three checks a
+ * green exit cannot give on its own: that the build actually reached the
+ * database, that the service worker was emitted, and that every function
+ * bundle carrying sharp also carries the libvips it loads.
+ *
+ * Where it runs is `@/lib/harness/docker-harness`'s decision, not this
+ * file's: on a developer's machine the whole script is re-run inside the
+ * toolchain container, so the build never shares a filesystem with
+ * `.env.local`; on the CI runner it runs in place. See
+ * docs/adr/0003-builds-and-e2e-run-in-docker.md. Runs under tsx so it can
+ * share `@/lib/proc/run-child` with the E2E harness — the same async spawn,
+ * the same `error` listener, the same capture.
  */
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { MongoMemoryServer } from 'mongodb-memory-server';
 import { z } from 'zod';
 
 import { summarizeSharpTraces, type OutputFileTrace } from '@/lib/deploy/sharp-trace';
+import { runInHarness, type HarnessContext } from '@/lib/harness/docker-harness';
+import { databaseUrl } from '@/lib/harness/mongo-url';
 import { runChild, type ChildResult } from '@/lib/proc/run-child';
 
+import { harnessDeps } from './harness-deps';
+
 // Cold Turbopack builds intermittently hang forever while prerendering the
-// heavy Payload routes (/blog, /feed.xml) — connections to mongod sit idle
+// heavy Payload routes (/blog, /feed.xml) — connections to Mongo sit idle
 // and every in-process attempt times out (known Next 16 build-hang class;
 // `next build --webpack` is the upstream escape hatch if this worsens).
 // Attempt 1 leaves a warm .next cache, and a fresh `pnpm build` then renders
@@ -35,7 +44,7 @@ const DRIVER_PARAMS = 'connectTimeoutMS=120000&serverSelectionTimeoutMS=120000';
 // The repositories swallow database failures and render empty (see
 // listPublishedPosts) so a transient blip can't take a page down. That is the
 // right call at request time and the wrong one at build time: without this
-// guard a build that never reached mongod prerenders a postless site, emits a
+// guard a build that never reached Mongo prerenders a postless site, emits a
 // service worker precaching that empty output, and still exits 0.
 const DB_UNREACHABLE = /cannot connect to MongoDB|payloadInitError/;
 
@@ -103,17 +112,12 @@ const runBuild = (uri: string): Promise<ChildResult> =>
     output: 'capture',
   });
 
-/** One build against a fresh mongod. Resolves to the exit status it earned. */
-const buildOnce = async (): Promise<number> => {
-  const mongod = await MongoMemoryServer.create({
-    instance: { args: ['--wiredTigerCacheSizeGB', '0.25'] },
-  });
-  let result: ChildResult;
-  try {
-    result = await runBuild(mongod.getUri());
-  } finally {
-    await mongod.stop();
-  }
+/**
+ * One build against a database of its own. The Mongo container outlives the
+ * attempt, so a fresh database is a new name on the same server.
+ */
+const buildOnce = async (mongoUrl: string, attempt: number): Promise<number> => {
+  const result = await runBuild(databaseUrl(mongoUrl, `build-${attempt}`));
 
   if (result.spawnError) {
     console.error(`build:ci could not spawn the build: ${result.spawnError.message}`);
@@ -123,7 +127,7 @@ const buildOnce = async (): Promise<number> => {
   const status = result.code ?? 1;
   if (status === 0 && DB_UNREACHABLE.test(result.output)) {
     console.error(
-      'build:ci: the build exited 0 but Payload never reached mongod — every ' +
+      'build:ci: the build exited 0 but Payload never reached Mongo — every ' +
         'database-backed route prerendered empty. Failing instead of shipping ' +
         'a site with no content.'
     );
@@ -132,16 +136,16 @@ const buildOnce = async (): Promise<number> => {
   return status;
 };
 
-const run = async (): Promise<number> => {
+const work = async ({ mongoUrl }: HarnessContext): Promise<number> => {
   let status = 1;
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
-    status = await buildOnce();
+    status = await buildOnce(mongoUrl, attempt);
     if (status === 0) {
       break;
     }
     if (attempt < MAX_ATTEMPTS) {
       console.error(
-        `build:ci attempt ${attempt} failed (exit ${status}) — retrying with a fresh mongod`
+        `build:ci attempt ${attempt} failed (exit ${status}) — retrying with a fresh database`
       );
     }
   }
@@ -155,7 +159,7 @@ const run = async (): Promise<number> => {
   return status;
 };
 
-run()
+runInHarness({ kind: 'build', script: 'scripts/ci-build.ts', work }, harnessDeps('build:ci:'))
   .then((status) => {
     process.exit(status);
   })
