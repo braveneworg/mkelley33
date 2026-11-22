@@ -178,10 +178,11 @@ Five PRs. Each is merged and deployed before the next starts.
 1. **Docker Mongo** for `build:ci` and `e2e`. `mongodb-memory-server` is
    removed; `e2e/AGENTS.md`, `src/lib/e2e/harness-config.spec.ts`, the
    README, and the `testing/` row in `AGENTS.md` are updated to match.
-2. **Site settings**, the headshot in Media, the Resume upload with its
-   permanent address, and the fill-only Seed.
-3. **Pages and Blocks** with draft, preview, and publish. Every page except
-   privacy moves; the hard-coded content is deleted.
+2. **Site settings without the menus**, the headshot in Media, the Resume
+   upload with its permanent address, and the fill-only Seed.
+3. **Pages and Blocks** with draft, preview, and publish, and the header and
+   footer menus in Site settings. Every page except privacy moves; the
+   hard-coded content is deleted.
 4. **The privacy Page** with its guards.
 5. **The Capture command.**
 
@@ -189,15 +190,13 @@ The owner seeds production before PRs 2, 3, and 4 deploy, and runs the first
 Capture after PR 5. Neither can be done by an agent: both need production
 credentials, which are never read.
 
-## Open points
+**Why the menus wait for PR 3.** A menu item references a Page, and Pages do
+not exist until PR 3. The header and footer menus stay hard-coded through
+PR 2's deploy. The owner chose this over menus that hold plain addresses in
+PR 2 and are converted in PR 3, which would have built a field and a data
+migration that live for one PR.
 
-**A sequencing conflict in the delivery list.** A menu item references a
-Page, and Site settings ship in PR 2, but Pages do not exist until PR 3.
-PR 2 cannot build menus as designed. Recommended: the header and footer
-menus move to PR 3, and PR 2 ships the rest of Site settings. The
-alternative — menus that hold plain addresses in PR 2 and are converted to
-Page references in PR 3 — builds a field and a data migration that live for
-one PR.
+## Open points
 
 **Stated back to the owner and not objected to, but never confirmed.** ADR
 0003 already records them as decided; correct it if any is wrong.
