@@ -67,6 +67,7 @@ subdirectories:
 | `deploy/`       | CI deploy job, Vercel env/secrets, the env preflight                |
 | `design/`       | design interviews, specs, decision records, the glossary            |
 | `git-workflow/` | branching, committing, pushing, PRs, code review                    |
+| `payload/`      | Payload collections, globals, fields, access rules, or uploads      |
 | `react-nextjs/` | App Router metadata, rendering, or `next/dynamic` work              |
 | `seed/`         | the Seed, Capture, or moving content from code into the CMS         |
 | `testing/`      | test harnesses, E2E, Docker, mongodb-memory-server, child processes |
