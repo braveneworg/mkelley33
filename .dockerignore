@@ -1,0 +1,44 @@
+# What `docker build` may NOT read from this directory. The image built from
+# docker/Dockerfile runs `pnpm build:ci` and `pnpm e2e`, and the reason it
+# exists is that those two must never see the database `.env.local` names
+# (docs/adr/0003-builds-and-e2e-run-in-docker.md). A file listed here is never
+# sent to the Docker daemon, so it cannot end up in the image.
+#
+# src/docker-policy.spec.ts fails the gate if a line below is removed, and if
+# a `!` line is added to re-include anything.
+
+# Secret-bearing files — AGENTS.md hard constraint #2. The `**` forms cover
+# nested directories; a bare pattern only matches at the context root.
+.env*
+**/.env*
+**/.envrc
+**/*.pem
+**/*.key
+**/id_*
+**/.aws
+**/.npmrc
+.vercel
+
+# Other checkouts (`.claude/worktrees/` holds whole ones, with their own
+# ignored files) and the repository's full history.
+.claude
+.git
+
+# The host's dependencies and build are for the host's OS; the image installs
+# and builds its own.
+**/node_modules
+.next
+next-env.d.ts
+public/sw.js
+public/sw.js.map
+*.tsbuildinfo
+
+# Run output and local state.
+coverage
+media
+test-results
+playwright-report
+e2e-server.log
+test-results.xml
+.superpowers
+**/.DS_Store
