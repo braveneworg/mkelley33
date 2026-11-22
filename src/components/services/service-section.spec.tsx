@@ -5,9 +5,9 @@
 import { render, screen } from '@testing-library/react';
 
 import { ServiceSection } from '@/components/services/service-section';
-import { SERVICES } from '@/lib/services-content';
+import { makeService } from '@/test/make-service';
 
-const service = SERVICES[0];
+const service = makeService({ slug: 'ai-enablement' });
 
 describe('ServiceSection', () => {
   it('anchors on the slug and renders name, pitch, credibility', () => {

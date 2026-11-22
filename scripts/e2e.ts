@@ -121,9 +121,10 @@ const assertPortFree = async (): Promise<boolean> => {
   return true;
 };
 
-// Seed BEFORE building: every page uses ISR (`revalidate = 300`), so a build
-// against an empty database would bake empty services into the prerendered
-// HTML and serve that stale markup to the specs' first visit.
+// Seed BEFORE building: the database is the only copy of Owner content
+// (docs/adr/0001), so a build against an empty one has no Site settings to
+// render and fails. What the build saw is also what the specs' first visit
+// is served, because the pages that read the database use ISR.
 //
 // Resolves to the database the build was seeded and built against, or null
 // when every attempt failed. The Mongo container outlives an attempt, so a
@@ -135,8 +136,8 @@ const setUp = async (mongoUrl: string): Promise<null | string> => {
       // Seeding gets the fail-fast driver params so a real connection failure
       // surfaces quickly; the build keeps the patient ones.
       (await runStep(
-        'seed:services',
-        ['exec', 'tsx', 'scripts/seed-services.ts'],
+        'seed',
+        ['exec', 'tsx', 'scripts/seed.ts'],
         makeEnv(uri, FAST_DRIVER_PARAMS),
         STEP_TIMEOUT_MS
       )) &&

@@ -4,7 +4,7 @@
 
 // @vitest-environment node
 
-import { SERVICES } from '@/lib/services-content';
+import type * as servicesRepo from '@/lib/repositories/services';
 
 const find = vi.fn();
 
@@ -16,7 +16,7 @@ vi.mock('@payload-config', () => ({ default: {} }));
  * instance — each test re-imports through a fresh registry so one test's result
  * can't satisfy the next one's call.
  */
-const importFresh = async () => {
+const importFresh = async (): Promise<typeof servicesRepo> => {
   vi.resetModules();
   return import('@/lib/repositories/services');
 };
@@ -52,19 +52,24 @@ describe('listServices', () => {
     ]);
   });
 
-  it('falls back to the static list when the collection is empty', async () => {
+  /** An empty collection is a state the owner can create, not a fault. */
+  it('returns an empty list when the collection is empty', async () => {
     find.mockResolvedValue({ docs: [] });
     const { listServices } = await importFresh();
 
-    await expect(listServices()).resolves.toEqual(SERVICES);
+    await expect(listServices()).resolves.toEqual([]);
   });
 
-  it('falls back to the static list when the database is unreachable', async () => {
+  /**
+   * No fallback to source (docs/adr/0001): a failure has to reach Next, which
+   * fails the build, or keeps serving the last good page when it happens
+   * during revalidation.
+   */
+  it('lets a database failure surface', async () => {
     find.mockRejectedValue(new Error('ECONNREFUSED'));
     const { listServices } = await importFresh();
 
-    await expect(listServices()).resolves.toEqual(SERVICES);
-    expect(console.error).toHaveBeenCalled();
+    await expect(listServices()).rejects.toThrow('ECONNREFUSED');
   });
 });
 
