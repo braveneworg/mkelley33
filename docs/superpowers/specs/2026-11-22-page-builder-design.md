@@ -27,8 +27,8 @@ This document does not repeat them.
   — the database is the only copy of Owner content; no source fallback.
 - [ADR 0002](../../adr/0002-the-privacy-page-is-editable-but-guarded.md) —
   the privacy Page is editable, but guarded.
-- [ADR 0003](../../adr/0003-builds-and-tests-use-a-dockerized-mongo.md) —
-  builds and tests use a dockerized Mongo.
+- [ADR 0003](../../adr/0003-builds-and-tests-run-in-docker.md) — builds and
+  tests run in Docker.
 - [The seed lesson](../../lessons/seed/seed-inputs-stay-in-the-repo.md) — a
   file the Seed uploads has not left the repo.
 
@@ -175,9 +175,11 @@ mapping; the PR 3 plan confirms it Block by Block.
 
 Five PRs. Each is merged and deployed before the next starts.
 
-1. **Docker Mongo** for `build:ci` and `e2e`. `mongodb-memory-server` is
-   removed; `e2e/AGENTS.md`, `src/lib/e2e/harness-config.spec.ts`, the
-   README, and the `testing/` row in `AGENTS.md` are updated to match.
+1. **Docker for builds and tests.** Locally, `build:ci` and `e2e` run inside
+   containers beside a Mongo container, and `.env.local` is never given to
+   them. `mongodb-memory-server` is removed; `e2e/AGENTS.md`,
+   `src/lib/e2e/harness-config.spec.ts`, the README, and the `testing/` row
+   in `AGENTS.md` are updated to match.
 2. **Site settings without the menus**, the headshot in Media, the Resume
    upload with its permanent address, and the fill-only Seed.
 3. **Pages and Blocks** with draft, preview, and publish, and the header and
@@ -198,16 +200,23 @@ migration that live for one PR.
 
 ## Open points
 
-**Stated back to the owner and not objected to, but never confirmed.** ADR
-0003 already records it as decided; correct it if it is wrong.
+**The reach of the Docker rule.** The owner settled three readings of it on
+2026-11-22. Locally the build and the tests themselves run inside containers,
+not only the Mongo server — the first draft of ADR 0003 said the opposite.
+The GitHub runner uses a Mongo container too. And `db:backup` and
+`db:restore` keep using the `.env.local` database, although they are neither
+seed commands nor `pnpm dev`. Two questions follow, and PR 1 cannot be
+scoped until both are answered:
 
-- "Runs in Docker" means only the Mongo server is a container. Builds and
-  tests still run on the host.
-
-Two further readings were confirmed by the owner on 2026-11-22. The GitHub
-runner uses Docker too, so each command has one database path. And
-`db:backup` and `db:restore` keep using the `.env.local` database, although
-they are neither seed commands nor `pnpm dev`.
+- **Does "the tests" include the gate?** The gate is not database-free: five
+  integration specs start an in-memory Mongo through
+  `src/test/payload-harness.ts`, so removing `mongodb-memory-server` reaches
+  the gate whatever the answer. The pre-push hook runs the gate and
+  pre-commit runs `vitest --changed`. If the gate runs in a container, every
+  commit and push needs the Docker daemon up.
+- **What does the runner do with the build and the tests?** The owner's
+  statement was about this machine. The runner either wraps them in the same
+  containers, or runs them on the runner beside a Mongo container.
 
 **Not discussed.**
 
