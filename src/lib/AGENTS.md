@@ -41,8 +41,10 @@ binding. Everything below it applies only once the thing it names exists.
   file exporting both halves puts the secret-reading code in the client
   graph and leaves tree-shaking as the only thing removing it.
 - `seed/` — the Seed: `seed-files.ts` reads and validates the JSON in the
-  repo's `seed/` directory, and `fill-seed.ts` writes it into a database,
-  fill-only. Read `docs/lessons/seed/` before changing either.
+  repo's `seed/` directory, `fill-seed.ts` writes it into a database,
+  fill-only, and `inspect-seed.ts` reports what a fill would do without
+  writing (`pnpm seed:check`). Read `docs/lessons/seed/` before changing
+  any of them.
 - Loose modules for cross-cutting concerns: `site-config.ts` (what stays in
   code — the domain, the Resume's permanent address, `handle`, and the
   headshot's path until it moves into Media; the owner's identity and links

@@ -138,6 +138,7 @@ pnpm dev               # http://localhost:3000, admin at /admin
 | `db:restore`      | Restore a previously created dump (`scripts/db-restore.ts`).                                                                                                            |
 | `seed:first-user` | Create the initial Payload admin user if none exists.                                                                                                                   |
 | `seed`            | Fill the database from the Seed in `seed/`: Site settings, the Resume, and the services. Fill-only — it creates what is missing and never changes a record that exists. |
+| `seed:check`      | Report what `seed` would create and keep, and the state of the Site settings and their Resume. Reads only; writes nothing.                                              |
 
 ### Code generation & misc
 

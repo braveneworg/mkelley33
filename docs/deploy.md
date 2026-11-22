@@ -256,7 +256,28 @@ database, and the site answers 502 at the Resume's address. The command
 warns when it uploaded to disk; the repair is to upload the Resume again in
 the admin under Site settings.
 
-Only the owner can do this. It needs the production database and blob
+Look before you fill. `pnpm seed:check` takes the same environment, reads
+the database, and writes nothing. It lists what a fill would create and what
+it would keep, and says what state the Site settings and their Resume are
+in:
+
+```text
+seed check — nothing was written
+  would create: [site settings]
+  would keep: [service ai-enablement, …]
+  site settings: missing
+  resume: none
+  resume uploads nothing points at: 0
+```
+
+**If a fill fails part-way**, run `pnpm seed:check` again before anything
+else. A fill uploads the Resume and then saves the Site settings, so a
+failure between the two can leave an upload nothing points at. It is private
+and harmless, and can be deleted in the admin under Resume files once the
+site is deployed. Running the fill again is always safe: it will create the
+settings if they are still missing and leave them alone if they are not.
+
+Only the owner can do any of this. It needs the production database and blob
 storage credentials, which no agent may read.
 
 ## Why Vercel builds, not the runner
