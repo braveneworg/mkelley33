@@ -21,7 +21,7 @@ import {
  * it. Prose alone has already drifted from code once in this repo — a rule
  * nothing verifies is a rule that rots.
  */
-const URI = 'mongodb://127.0.0.1:45678/e2e';
+const URI = 'mongodb://mongo:27017/e2e-1';
 const PARAMS = 'connectTimeoutMS=15000';
 
 /**
@@ -82,7 +82,7 @@ describe('makeEnv hermeticity', () => {
     expect(envFor(URI, PARAMS).get('VERCEL_ENV')).toBe('');
   });
 
-  it('points the app at the throwaway in-memory database, with the driver params', () => {
+  it('points the app at the throwaway database it is handed, with the driver params', () => {
     expect(envFor(URI, PARAMS).get('DATABASE_URL')).toBe(`${URI}?${PARAMS}`);
   });
 

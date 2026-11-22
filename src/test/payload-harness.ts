@@ -4,6 +4,8 @@
 
 import { MongoMemoryServer } from 'mongodb-memory-server';
 
+import { retryOnPortCollision } from '@/test/retry-port-collision';
+
 import type { Payload } from 'payload';
 
 export interface TestPayload {
@@ -17,7 +19,7 @@ export interface TestPayload {
  * dynamically here — callers must not import `@payload-config` themselves.
  */
 export const createTestPayload = async (): Promise<TestPayload> => {
-  const mongod = await MongoMemoryServer.create();
+  const mongod = await retryOnPortCollision(() => MongoMemoryServer.create());
   process.env.DATABASE_URL = mongod.getUri();
   process.env.PAYLOAD_SECRET ??= 'test-secret';
   const { getPayload } = await import('payload');

@@ -5,7 +5,8 @@
 /**
  * The E2E harness's pure decisions — the pinned environment, the dedicated
  * port, and the two tokens that must never be confused for one another.
- * `scripts/e2e.ts` keeps the side effects (mongod, spawning, probing).
+ * `scripts/e2e.ts` keeps the side effects (seeding, spawning, probing), and
+ * `@/lib/harness/docker-harness` decides where it runs and starts its Mongo.
  *
  * Every invariant here is stated in prose in `e2e/AGENTS.md` and asserted in
  * `harness-config.spec.ts`, so weakening one fails the unit suite instead of

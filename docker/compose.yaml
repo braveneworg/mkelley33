@@ -1,0 +1,56 @@
+# The two containers behind `pnpm build:ci` and `pnpm e2e`. Never run this
+# file by hand — the scripts start it under a project name of their own and
+# tear it down afterwards (src/lib/harness/). See
+# docs/adr/0003-builds-and-e2e-run-in-docker.md and e2e/AGENTS.md.
+#
+# src/docker-policy.spec.ts pins the properties that keep the `.env.local`
+# database out of reach: no env file, no working-tree mount, in-memory data.
+
+services:
+  # The throwaway database. On a developer's machine the toolchain container
+  # reaches it by service name; on the CI runner the build runs on the runner
+  # itself and reaches it through the published loopback port.
+  mongo:
+    image: mongo:8.2
+    command: ['mongod', '--bind_ip_all', '--wiredTigerCacheSizeGB', '0.25']
+    # Nothing written here outlives the container.
+    tmpfs:
+      - /data/db
+    # Loopback only, host port chosen by Docker: unreachable from the network
+    # and unable to collide with a developer's own mongod on 27017.
+    ports:
+      - '127.0.0.1::27017'
+    healthcheck:
+      test: ['CMD', 'mongosh', '--quiet', '--eval', 'db.runCommand({ ping: 1 }).ok']
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  # Node, pnpm, the installed dependencies, Chromium, and a copy of the
+  # working tree as .dockerignore filters it. Used only on a developer's
+  # machine.
+  toolchain:
+    # No `image:` name on purpose. Each run builds under its own project name,
+    # so two runs can never start from each other's copy of the source.
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        NODE_VERSION: ${HARNESS_NODE_VERSION:?set by the launcher from mise.toml}
+    depends_on:
+      mongo:
+        condition: service_healthy
+    # Compose passes a container only what is listed here — nothing from the
+    # host's shell, and there is deliberately no `env_file`.
+    environment:
+      HARNESS_IN_CONTAINER: '1'
+      HARNESS_MONGO_URL: mongodb://mongo:27017
+    # Reaps the orphans a killed build or browser leaves behind.
+    init: true
+    # Chromium keeps its shared memory in /dev/shm; Docker's 64 MB default
+    # crashes tabs.
+    shm_size: 1gb
+    # The one path shared with the host: Playwright's traces and the server
+    # log, so a failed run can be diagnosed after the container is gone.
+    volumes:
+      - ../test-results:/app/test-results
