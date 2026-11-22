@@ -26,4 +26,7 @@ note did flag it as unconfirmed; the record did not.
 
 **History:** 2026-11-22, PR #54. Caught before any code was written, because
 the three readings were asked one at a time. The first two were confirmed;
-the third was not.
+the third was not. The correction itself needed a follow-up question: the gate and
+the unit tests stay on the host, and it is `build:ci` and `e2e` that run in
+containers. That was asked with the options spelled out before the record
+was rewritten.

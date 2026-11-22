@@ -27,8 +27,8 @@ This document does not repeat them.
   — the database is the only copy of Owner content; no source fallback.
 - [ADR 0002](../../adr/0002-the-privacy-page-is-editable-but-guarded.md) —
   the privacy Page is editable, but guarded.
-- [ADR 0003](../../adr/0003-builds-and-tests-run-in-docker.md) — builds and
-  tests run in Docker.
+- [ADR 0003](../../adr/0003-builds-and-e2e-run-in-docker.md) — builds and
+  E2E run in Docker; the gate does not.
 - [The seed lesson](../../lessons/seed/seed-inputs-stay-in-the-repo.md) — a
   file the Seed uploads has not left the repo.
 
@@ -175,11 +175,12 @@ mapping; the PR 3 plan confirms it Block by Block.
 
 Five PRs. Each is merged and deployed before the next starts.
 
-1. **Docker for builds and tests.** Locally, `build:ci` and `e2e` run inside
+1. **Docker for builds and E2E.** Locally, `build:ci` and `e2e` run inside
    containers beside a Mongo container, and `.env.local` is never given to
-   them. `mongodb-memory-server` is removed; `e2e/AGENTS.md`,
-   `src/lib/e2e/harness-config.spec.ts`, the README, and the `testing/` row
-   in `AGENTS.md` are updated to match.
+   them. On the runner they run directly, beside a Mongo container.
+   `mongodb-memory-server` leaves both scripts and stays only for the gate's
+   integration specs. `e2e/AGENTS.md`, `src/lib/e2e/harness-config.spec.ts`,
+   the README, and the `testing/` row in `AGENTS.md` are updated to match.
 2. **Site settings without the menus**, the headshot in Media, the Resume
    upload with its permanent address, and the fill-only Seed.
 3. **Pages and Blocks** with draft, preview, and publish, and the header and
@@ -198,25 +199,13 @@ PR 2's deploy. The owner chose this over menus that hold plain addresses in
 PR 2 and are converted in PR 3, which would have built a field and a data
 migration that live for one PR.
 
+**The reach of the Docker rule** was settled by the owner on 2026-11-22 and
+is recorded in ADR 0003. The first draft of that record had it wrong: it said
+only the Mongo server was a container.
+
 ## Open points
 
-**The reach of the Docker rule.** The owner settled three readings of it on
-2026-11-22. Locally the build and the tests themselves run inside containers,
-not only the Mongo server — the first draft of ADR 0003 said the opposite.
-The GitHub runner uses a Mongo container too. And `db:backup` and
-`db:restore` keep using the `.env.local` database, although they are neither
-seed commands nor `pnpm dev`. Two questions follow, and PR 1 cannot be
-scoped until both are answered:
-
-- **Does "the tests" include the gate?** The gate is not database-free: five
-  integration specs start an in-memory Mongo through
-  `src/test/payload-harness.ts`, so removing `mongodb-memory-server` reaches
-  the gate whatever the answer. The pre-push hook runs the gate and
-  pre-commit runs `vitest --changed`. If the gate runs in a container, every
-  commit and push needs the Docker daemon up.
-- **What does the runner do with the build and the tests?** The owner's
-  statement was about this machine. The runner either wraps them in the same
-  containers, or runs them on the runner beside a Mongo container.
+None of these blocks PR 1.
 
 **Not discussed.**
 
