@@ -4,11 +4,7 @@
 
 import { parseEnv } from 'node:util';
 
-import {
-  auditDeployEnv,
-  auditDeployEnvFormats,
-  DEPLOY_ENV_FORMATS,
-} from '@/lib/deploy/env-manifest';
+import { auditDeployEnv } from '@/lib/deploy/env-manifest';
 
 /**
  * Audits the raw contents of an env file `vercel pull` wrote. This is the
@@ -21,29 +17,25 @@ import {
  *
  * A key counts as present only when it has a non-empty value: `KEY=` or
  * `KEY=""` behaves like an unset var in this app (falsy checks gate the
- * email transport and Turnstile fallbacks), so it audits as missing, and an
- * empty value is never format-checked.
+ * email transport and Turnstile fallbacks), so it audits as missing.
+ *
+ * Nothing here judges what a value looks like. A variable stored as
+ * sensitive pulls as a redaction marker, so presence is all this file can
+ * know — see `RequiredDeployEnvVar` in env-manifest.ts.
  */
 
 export interface DeployEnvFileAudit {
   forbidden: string[];
-  malformed: string[];
   missing: string[];
   passed: boolean;
 }
 
 export const auditEnvFile = (contents: string): DeployEnvFileAudit => {
-  const entries = Object.entries(parseEnv(contents)).flatMap(([name, value]) =>
-    typeof value === 'string' && value.length > 0 ? [[name, value] as const] : []
+  const present = Object.entries(parseEnv(contents)).flatMap(([name, value]) =>
+    typeof value === 'string' && value.length > 0 ? [name] : []
   );
-  const { forbidden, missing } = auditDeployEnv(entries.map(([name]) => name));
-  const malformed = auditDeployEnvFormats(entries);
-  return {
-    forbidden,
-    malformed,
-    missing,
-    passed: forbidden.length === 0 && malformed.length === 0 && missing.length === 0,
-  };
+  const { forbidden, missing } = auditDeployEnv(present);
+  return { forbidden, missing, passed: forbidden.length === 0 && missing.length === 0 };
 };
 
 export interface DeployEnvFileReport {
@@ -55,12 +47,11 @@ export interface DeployEnvFileReport {
 /**
  * Renders an audit as the preflight's CLI contract: per-name fix-it lines
  * and a counting summary on stderr with exit 1, or the single pass line on
- * stdout with exit 0. Only KEY NAMES ever appear — rejected values stay
- * inside the audit, so the output is safe for CI logs.
+ * stdout with exit 0. Only KEY NAMES ever appear — values never leave the
+ * audit, so the output is safe for CI logs.
  */
 export const renderEnvFileAudit = ({
   forbidden,
-  malformed,
   missing,
   passed,
 }: DeployEnvFileAudit): DeployEnvFileReport => {
@@ -77,11 +68,7 @@ export const renderEnvFileAudit = ({
       ...forbidden.map(
         (name) => `forbidden: ${name} — remove it from the Vercel project env (Production)`
       ),
-      ...malformed.map(
-        (name) =>
-          `malformed: ${name} — set it to a value shaped like ${DEPLOY_ENV_FORMATS.get(name)?.hint ?? 'its documented format'}`
-      ),
-      `deploy env audit failed (${String(missing.length)} missing, ${String(forbidden.length)} forbidden, ${String(malformed.length)} malformed) — see docs/deploy.md`,
+      `deploy env audit failed (${String(missing.length)} missing, ${String(forbidden.length)} forbidden) — see docs/deploy.md`,
     ],
     stdoutLines: [],
   };

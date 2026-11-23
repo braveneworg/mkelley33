@@ -7,8 +7,7 @@ The runner deliberately does not build the production artifact — see
 "Why Vercel builds, not the runner" below. A preflight audits the production
 env against
 `src/lib/deploy/env-manifest.ts` and fails the deploy — naming names, never
-values — if anything required is missing, anything forbidden is set, or a
-value with a known shape does not match it.
+values — if anything required is missing or anything forbidden is set.
 
 Vercel's own Git integration would otherwise promote the same commit in
 parallel, racing two builds to the production alias and skipping both the
@@ -141,23 +140,24 @@ pnpm exec vercel env add PAYLOAD_SECRET production --sensitive
 pnpm exec vercel env add SMTP_USER production --sensitive
 pnpm exec vercel env add SMTP_PASS production --sensitive
 pnpm exec vercel env add TURNSTILE_SECRET_KEY production --sensitive
+pnpm exec vercel env add BLOB_READ_WRITE_TOKEN production --sensitive
 ```
 
-`BLOB_READ_WRITE_TOKEN` is deliberately **not** in that list. Connecting a
-Blob store injects it, so create the store with the environment attached
-rather than pasting the value:
+`BLOB_READ_WRITE_TOKEN` is the read-write token of the Blob store, which was
+created with the environment attached:
 
 ```bash
 pnpm exec vercel blob create-store mkelley33-media \
   --access public --environment production
 ```
 
-Adding it by hand with `--sensitive` would make it unreadable to
-`vercel pull`, and its entry in `DEPLOY_ENV_FORMATS` would then test a
-redaction marker and fail every deploy. There is no `connect-store`
-subcommand: reattaching an existing store is a dashboard action, and deleting
-the project's env var does not sever the connection — which leaves a store
-that looks connected while injecting nothing.
+That connection stores the token readable. The owner made it sensitive on
+2026-11-23, so it is in the list above and `vercel pull` returns a redaction
+marker for it like the rest; the preflight checks that it is set and nothing
+more. There is no `connect-store` subcommand: reattaching an existing store
+is a dashboard action, and deleting the project's env var does not sever the
+connection — which leaves a store that looks connected while injecting
+nothing.
 
 The rest are configuration, not credentials. Store them readable so a later
 "what is this set to?" is answerable without a rotation:
@@ -230,8 +230,8 @@ pnpm exec vercel env ls production
 ```
 
 To run the exact audit CI runs, pull production env to the same git-ignored
-path the deploy job uses and hand it to the preflight. It reports missing,
-forbidden, and malformed names, never values:
+path the deploy job uses and hand it to the preflight. It reports missing
+and forbidden names, never values:
 
 ```bash
 pnpm exec vercel pull --yes --environment=production
@@ -317,25 +317,25 @@ price of a build that can see its own secrets, and
 `src/deploy-workflow.spec.ts` pins it so the faster-looking flow cannot come
 back.
 
-**Consequence for the preflight:** for a sensitive variable it can only assert
-presence, because it sees a marker rather than a value. Never add a sensitive
-name to `DEPLOY_ENV_FORMATS` — the pattern would test the marker and fail
-every deploy while the stored value is perfectly good.
+**Consequence for the preflight:** it asserts presence and nothing else. For
+a sensitive variable it sees a marker rather than a value, and it cannot
+tell the two apart, so a check on what a value looks like fails every deploy
+while the stored value is perfectly good. `BLOB_READ_WRITE_TOKEN` had such a
+check while it was stored readable; it stopped the deploy on 2026-11-23, the
+day the token became sensitive, and was removed.
 
-Checked for shape as well as presence (`DEPLOY_ENV_FORMATS`) — non-sensitive
-variables only:
-
-| Variable                | Must look like                              |
-| ----------------------- | ------------------------------------------- |
-| `BLOB_READ_WRITE_TOKEN` | `vercel_blob_rw_<store id>_<random string>` |
-
-A present-but-unparseable Blob token is worse than a missing one:
-`src/payload.config.ts` registers the Blob adapter whenever the var is
-truthy, the adapter throws inside `buildConfig`, and Payload never
-initializes — so `/admin` fails while the site itself renders. Presence alone
-could not see that, which is why the shape is checked too. If you have no
-Blob store yet, unset the var rather than parking a placeholder in it; the
-config skips the plugin when it is absent.
+**Where the Blob token's shape is checked instead:** in the build on Vercel,
+which has the real value. `src/payload.config.ts` registers the Blob adapter
+whenever the var is truthy, and the adapter throws on a token that is not
+shaped like `vercel_blob_rw_<store id>_<random string>` while the config is
+being built. Payload then never initializes, every page that reads Owner
+content fails to render
+([ADR 0001](adr/0001-the-database-is-the-only-copy-of-owner-content.md)),
+the build fails, and Vercel keeps serving the current site. The `deploy` job
+goes red at its last step rather than at the preflight, and the reason is in
+Vercel's build log, not the runner's. `src/payload.config.spec.ts` pins the
+adapter's refusal. If you have no Blob store yet, unset the var rather than
+parking a placeholder in it; the config skips the plugin when it is absent.
 
 The app degrades rather than crashing when config is absent — the JSON email
 transport stands in for SMTP, the Cloudflare test site key for a real one —

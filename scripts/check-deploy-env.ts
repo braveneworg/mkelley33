@@ -4,8 +4,9 @@
 
 /**
  * Deploy preflight: audits the env file `vercel pull` wrote and fails the
- * deploy if any required name is absent/empty, any forbidden name is set,
- * or any value with a known shape does not match it. Parsing, the audit,
+ * deploy if any required name is absent/empty or any forbidden name is
+ * set. It never judges a value's shape — a variable stored as sensitive
+ * pulls as a redaction marker. Parsing, the audit,
  * and the report format all live (spec'd) in
  * src/lib/deploy/audit-env-file.ts — this file only does argv, file IO,
  * and the process exit.

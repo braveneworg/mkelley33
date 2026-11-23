@@ -7,24 +7,21 @@
 import { auditEnvFile, renderEnvFileAudit } from '@/lib/deploy/audit-env-file';
 import { REQUIRED_DEPLOY_ENV } from '@/lib/deploy/env-manifest';
 
-// Assembled from parts so no token-shaped literal ever lands in the repo for
-// gitleaks (or a human skimming the diff) to mistake for a live credential.
-const wellFormedBlobToken = ['vercel', 'blob', 'rw', 'ExampleStore123', 'notARealSecret'].join('_');
-
 const completeEnv = (overrides: Readonly<Record<string, string>> = {}): string =>
-  REQUIRED_DEPLOY_ENV.map((name) => {
-    const fallback = name === 'BLOB_READ_WRITE_TOKEN' ? wellFormedBlobToken : 'placeholder-value';
-    return `${name}=${new Map(Object.entries(overrides)).get(name) ?? fallback}`;
-  }).join('\n');
+  REQUIRED_DEPLOY_ENV.map(
+    (name) => `${name}=${new Map(Object.entries(overrides)).get(name) ?? 'placeholder-value'}`
+  ).join('\n');
 
 describe('auditEnvFile', () => {
   it('passes a complete pulled env', () => {
-    expect(auditEnvFile(completeEnv())).toEqual({
-      forbidden: [],
-      malformed: [],
-      missing: [],
-      passed: true,
-    });
+    expect(auditEnvFile(completeEnv())).toEqual({ forbidden: [], missing: [], passed: true });
+  });
+
+  it('passes a sensitive variable that pulled as a redaction marker', () => {
+    // `vercel pull` writes a marker in place of a value stored as sensitive,
+    // so nothing here may judge what a value looks like — only that it is set.
+    const audit = auditEnvFile(completeEnv({ BLOB_READ_WRITE_TOKEN: 'a-redaction-marker' }));
+    expect(audit).toEqual({ forbidden: [], missing: [], passed: true });
   });
 
   it('treats a bare empty value as missing', () => {
@@ -35,14 +32,9 @@ describe('auditEnvFile', () => {
     expect(auditEnvFile(completeEnv({ SMTP_HOST: '""' })).missing).toEqual(['SMTP_HOST']);
   });
 
-  it('unquotes a double-quoted value before format checking', () => {
-    const audit = auditEnvFile(completeEnv({ BLOB_READ_WRITE_TOKEN: `"${wellFormedBlobToken}"` }));
-    expect(audit.passed).toBe(true);
-  });
-
   it('parses a multi-line quoted value as one present entry', () => {
     const audit = auditEnvFile(completeEnv({ PAYLOAD_SECRET: '"line one\nline two"' }));
-    expect(audit).toEqual({ forbidden: [], malformed: [], missing: [], passed: true });
+    expect(audit).toEqual({ forbidden: [], missing: [], passed: true });
   });
 
   it('accepts export-prefixed lines', () => {
@@ -65,16 +57,6 @@ describe('auditEnvFile', () => {
   it('reports a forbidden name that is present', () => {
     const audit = auditEnvFile(`${completeEnv()}\nEMAIL_LOG_UNSENT=1`);
     expect(audit.forbidden).toEqual(['EMAIL_LOG_UNSENT']);
-  });
-
-  it('reports a malformed value by name', () => {
-    const audit = auditEnvFile(completeEnv({ BLOB_READ_WRITE_TOKEN: 'placeholder-value' }));
-    expect(audit).toEqual({
-      forbidden: [],
-      malformed: ['BLOB_READ_WRITE_TOKEN'],
-      missing: [],
-      passed: false,
-    });
   });
 });
 
@@ -101,28 +83,19 @@ describe('renderEnvFileAudit', () => {
     );
   });
 
-  it('describes the expected shape for a malformed variable', () => {
-    const report = renderEnvFileAudit(
-      auditEnvFile(completeEnv({ BLOB_READ_WRITE_TOKEN: 'not-a-blob-token' }))
-    );
-    expect(report.stderrLines[0]).toBe(
-      'malformed: BLOB_READ_WRITE_TOKEN — set it to a value shaped like vercel_blob_rw_<store id>_<random string>'
-    );
-  });
-
   it('summarizes failure counts on the last stderr line with exit code 1', () => {
     const report = renderEnvFileAudit(
-      auditEnvFile(completeEnv({ DATABASE_URL: '', BLOB_READ_WRITE_TOKEN: 'not-a-blob-token' }))
+      auditEnvFile(`${completeEnv({ DATABASE_URL: '' })}\nEMAIL_LOG_UNSENT=1`)
     );
     expect(report.exitCode).toBe(1);
     expect(report.stderrLines.at(-1)).toBe(
-      'deploy env audit failed (1 missing, 0 forbidden, 1 malformed) — see docs/deploy.md'
+      'deploy env audit failed (1 missing, 1 forbidden) — see docs/deploy.md'
     );
   });
 
-  it('never echoes a rejected value', () => {
+  it('never echoes a value from the file', () => {
     const report = renderEnvFileAudit(
-      auditEnvFile(completeEnv({ BLOB_READ_WRITE_TOKEN: 'sentinel-leaky-value' }))
+      auditEnvFile(`${completeEnv({ DATABASE_URL: '' })}\nEMAIL_LOG_UNSENT=sentinel-leaky-value`)
     );
     expect(JSON.stringify(report)).not.toContain('sentinel-leaky-value');
   });
