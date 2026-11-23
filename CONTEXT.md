@@ -27,7 +27,7 @@ _Avoid_: system page, core page
 
 **Site settings**:
 The single set of values every Page shares — the owner's identity, social
-links, and the Resume.
+links, the header and footer menus, and the Resume.
 _Avoid_: site config, globals
 
 ### Whose data it is

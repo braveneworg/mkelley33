@@ -1,6 +1,6 @@
 # Page builder — design
 
-Date: 2026-11-22. Status: approved by owner (grilled 2026-11-22; three points
+Date: 2026-11-22. Status: approved by owner (grilled 2026-11-22; five points
 settled 2026-11-23, marked where they appear). The points under
 [Open points](#open-points) are not approved yet — settle each before the PR
 that depends on it.
@@ -97,6 +97,9 @@ The owner picks from the kinds the design system offers. A new kind is a PR.
 - A menu item whose Page is unpublished or deleted is hidden from visitors.
   It stays in Site settings, so publishing the Page again brings it back.
   (Owner, 2026-11-23.)
+- The footer adds the privacy link by itself as well. It is not a menu item,
+  so no edit to the footer menu can remove the way to the privacy policy.
+  (Owner, 2026-11-23.)
 - The command palette and the sitemap list published Pages by themselves.
 
 ### Files
@@ -112,6 +115,12 @@ The owner picks from the kinds the design system offers. A new kind is a PR.
 - One fill-only Seed command replaces `seed:services`. It creates what is
   missing and never overwrites an existing record. This is a change of
   behaviour: today's `seedServices` updates records that already exist.
+- Fill-only reaches one level into Site settings. The live record was saved
+  before menus existed, so it has never had one; the Seed adds a field the
+  record has never had and touches nothing else. A menu the owner has
+  emptied is stored, and stays empty. The Seed does not publish for the
+  owner: with Site settings unpublished, or holding unpublished changes, the
+  menus wait and the run says why. (Owner, 2026-11-23.)
 - No reset command exists.
 - The admin account stays with the existing `seed:first-user`.
 - The first Seed is written from today's hard-coded content. Existing Posts
@@ -223,6 +232,29 @@ the site.
 **The reach of the Docker rule** was settled by the owner on 2026-11-22 and
 is recorded in ADR 0003. The first draft of that record had it wrong: it said
 only the Mongo server was a container.
+
+### What PR 3 found
+
+Details the PR settled within the decisions above, recorded so the next PR
+does not rediscover them.
+
+- **CV Blocks** are five kinds: a summary, skills, experience, a plain list
+  (education, open source), and the Resume download button. A Page holding
+  any of the first four is laid out as a document: one narrow column that
+  prints at full width.
+- **A Page's pictures belong to the Page** in the Seed, as the Resume belongs
+  to Site settings: a Block names a file in `seed/files/` with its alt text,
+  and the Seed uploads it when it creates that Page. Storage renames an
+  upload, so a file name cannot say whether a picture is already there.
+- **The Seed names a Page by address** wherever the database stores an id —
+  a Block's link, a menu item. It creates Pages in an order that puts a
+  link's target first, and refuses Pages that link in a circle. Capture has
+  to cope with a site whose Pages do.
+- **The preview has no shared secret.** `/preview` switches draft mode on
+  only for a request carrying the admin's own sign-in.
+- **The uses Page's "view source" line and the contact Page's newsletter
+  form** are a Link list and a Newsletter signup Block, so they look like
+  those Blocks rather than the one-off markup they replaced.
 
 ## Open points
 
