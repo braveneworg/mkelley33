@@ -5,6 +5,7 @@
 import { Comments } from '@/collections/comments';
 import { ContactSubmissions } from '@/collections/contact-submissions';
 import { Media } from '@/collections/media';
+import { Pages } from '@/collections/pages';
 import { Posts } from '@/collections/posts';
 import { Subscribers } from '@/collections/subscribers';
 
@@ -118,5 +119,25 @@ describe('Comments access', () => {
 
   it('shows authorEmail to authenticated users', () => {
     expect(fieldReadAccess(Comments, 'authorEmail')(ADMIN as never)).toBe(true);
+  });
+});
+
+describe('Pages access', () => {
+  it('restricts anonymous reads to published Pages', () => {
+    expect(accessOf(Pages, 'read')(ANON)).toEqual({ _status: { equals: 'published' } });
+  });
+
+  it('gives the signed-in owner unrestricted read, drafts included', () => {
+    expect(accessOf(Pages, 'read')(ADMIN)).toBe(true);
+  });
+
+  it('never lets an anonymous request delete', () => {
+    expect(accessOf(Pages, 'delete')(ANON)).toBe(false);
+  });
+
+  it('lets the owner delete any Page except a Fixed Page', () => {
+    expect(accessOf(Pages, 'delete')(ADMIN)).toEqual({
+      slug: { not_in: ['home', 'blog', 'contact', 'services'] },
+    });
   });
 });

@@ -1,0 +1,16 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
+import type { Block } from 'payload';
+
+/** A headed paragraph of the CV. */
+export const CvSummaryBlock: Block = {
+  slug: 'cvSummary',
+  fields: [
+    { name: 'heading', type: 'text', required: true },
+    { name: 'text', type: 'textarea', required: true },
+  ],
+  interfaceName: 'CvSummaryBlock',
+  labels: { plural: 'CV summaries', singular: 'CV summary' },
+};

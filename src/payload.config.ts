@@ -14,6 +14,7 @@ import sharp from 'sharp';
 import { Comments } from '@/collections/comments';
 import { ContactSubmissions } from '@/collections/contact-submissions';
 import { Media } from '@/collections/media';
+import { Pages } from '@/collections/pages';
 import { Posts } from '@/collections/posts';
 import { ResumeFiles } from '@/collections/resume-files';
 import { Services } from '@/collections/services';
@@ -28,6 +29,7 @@ export default buildConfig({
   admin: { user: 'users' },
   collections: [
     Users,
+    Pages,
     Media,
     ResumeFiles,
     Posts,

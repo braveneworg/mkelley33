@@ -68,6 +68,7 @@ export interface Config {
   blocks: {};
   collections: {
     users: User;
+    pages: Page;
     media: Media;
     'resume-files': ResumeFile;
     posts: Post;
@@ -83,6 +84,7 @@ export interface Config {
   collectionsJoins: {};
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
+    pages: PagesSelect<false> | PagesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     'resume-files': ResumeFilesSelect<false> | ResumeFilesSelect<true>;
     posts: PostsSelect<false> | PostsSelect<true>;
@@ -160,6 +162,135 @@ export interface User {
   collection: 'users';
 }
 /**
+ * Home, blog, contact and services are Fixed Pages: they cannot be moved or deleted, and unpublishing one does not take it off the site — visitors keep the last published version until you publish again.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pages".
+ */
+export interface Page {
+  id: string;
+  /**
+   * The heading at the top of the Page. A Page that starts with a Hero shows the Hero instead.
+   */
+  title: string;
+  /**
+   * One name, shown as /name. Changing it moves the Page: the old address stops working and nothing redirects to the new one.
+   */
+  slug: string;
+  /**
+   * Shown above the heading as "$ …". Leave empty for no command line.
+   */
+  command?: string | null;
+  /**
+   * A sentence or two under the heading.
+   */
+  intro?: string | null;
+  blocks?:
+    | (
+        | HeroBlock
+        | TerminalBlock
+        | ChipListBlock
+        | TimelineBlock
+        | LinkListBlock
+        | DefinitionListBlock
+        | ServicesGridBlock
+        | ServicesDetailBlock
+        | LatestPostsBlock
+        | PostListBlock
+        | NewsletterSignupBlock
+        | ContactFormBlock
+        | PictureBlock
+        | CvSummaryBlock
+        | CvSkillsBlock
+        | CvExperienceBlock
+        | CvEntriesBlock
+        | ResumeDownloadBlock
+      )[]
+    | null;
+  meta?: {
+    /**
+     * Shown in the browser tab and in search results.
+     */
+    title?: string | null;
+    /**
+     * The summary search engines and link previews show.
+     */
+    description?: string | null;
+  };
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "HeroBlock".
+ */
+export interface HeroBlock {
+  /**
+   * Shown above this Block as "$ …". Leave empty for no command line.
+   */
+  command?: string | null;
+  /**
+   * One or two lines under the tagline.
+   */
+  summary?: string | null;
+  primaryAction?: {
+    label?: string | null;
+    /**
+     * A Page on this site. The link follows it if its address changes.
+     */
+    page?: (string | null) | Page;
+    /**
+     * Or a full https:// address elsewhere. Leave empty when a Page is set.
+     */
+    url?: string | null;
+  };
+  secondaryAction?: {
+    label?: string | null;
+    /**
+     * A Page on this site. The link follows it if its address changes.
+     */
+    page?: (string | null) | Page;
+    /**
+     * Or a full https:// address elsewhere. Leave empty when a Page is set.
+     */
+    url?: string | null;
+  };
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'hero';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TerminalBlock".
+ */
+export interface TerminalBlock {
+  /**
+   * Shown above this Block as "$ …". Leave empty for no command line.
+   */
+  command?: string | null;
+  body: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  picture?: (string | null) | Media;
+  pictureStyle: 'plain' | 'roundPortrait';
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'terminal';
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media".
  */
@@ -177,6 +308,263 @@ export interface Media {
   height?: number | null;
   focalX?: number | null;
   focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ChipListBlock".
+ */
+export interface ChipListBlock {
+  /**
+   * Shown above this Block as "$ …". Leave empty for no command line.
+   */
+  command?: string | null;
+  intro?: string | null;
+  chips: string[];
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'chipList';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TimelineBlock".
+ */
+export interface TimelineBlock {
+  /**
+   * Shown above this Block as "$ …". Leave empty for no command line.
+   */
+  command?: string | null;
+  entries: {
+    /**
+     * The short code shown first, like a commit hash.
+     */
+    marker?: string | null;
+    title: string;
+    /**
+     * For example 2021–present.
+     */
+    period?: string | null;
+    id?: string | null;
+  }[];
+  link?: {
+    label?: string | null;
+    /**
+     * A Page on this site. The link follows it if its address changes.
+     */
+    page?: (string | null) | Page;
+    /**
+     * Or a full https:// address elsewhere. Leave empty when a Page is set.
+     */
+    url?: string | null;
+  };
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'timeline';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "LinkListBlock".
+ */
+export interface LinkListBlock {
+  /**
+   * Shown above this Block as "$ …". Leave empty for no command line.
+   */
+  command?: string | null;
+  items: {
+    label: string;
+    /**
+     * A full https:// address. Leave empty for an item with no link.
+     */
+    url?: string | null;
+    description?: string | null;
+    id?: string | null;
+  }[];
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'linkList';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "DefinitionListBlock".
+ */
+export interface DefinitionListBlock {
+  /**
+   * Shown above this Block as "$ …". Leave empty for no command line.
+   */
+  command?: string | null;
+  heading?: string | null;
+  items: {
+    term: string;
+    description?: string | null;
+    id?: string | null;
+  }[];
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'definitionList';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ServicesGridBlock".
+ */
+export interface ServicesGridBlock {
+  /**
+   * Shown above this Block as "$ …". Leave empty for no command line.
+   */
+  command?: string | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'servicesGrid';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ServicesDetailBlock".
+ */
+export interface ServicesDetailBlock {
+  /**
+   * Shown above this Block as "$ …". Leave empty for no command line.
+   */
+  command?: string | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'servicesDetail';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "LatestPostsBlock".
+ */
+export interface LatestPostsBlock {
+  /**
+   * Shown above this Block as "$ …". Leave empty for no command line.
+   */
+  command?: string | null;
+  count: number;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'latestPosts';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "PostListBlock".
+ */
+export interface PostListBlock {
+  /**
+   * Shown above this Block as "$ …". Leave empty for no command line.
+   */
+  command?: string | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'postList';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "NewsletterSignupBlock".
+ */
+export interface NewsletterSignupBlock {
+  /**
+   * Shown above this Block as "$ …". Leave empty for no command line.
+   */
+  command?: string | null;
+  intro?: string | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'newsletterSignup';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ContactFormBlock".
+ */
+export interface ContactFormBlock {
+  /**
+   * Shown above this Block as "$ …". Leave empty for no command line.
+   */
+  command?: string | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'contactForm';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "PictureBlock".
+ */
+export interface PictureBlock {
+  media: string | Media;
+  caption?: string | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'picture';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CvSummaryBlock".
+ */
+export interface CvSummaryBlock {
+  heading: string;
+  text: string;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'cvSummary';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CvSkillsBlock".
+ */
+export interface CvSkillsBlock {
+  heading: string;
+  groups: {
+    label: string;
+    items: string;
+    id?: string | null;
+  }[];
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'cvSkills';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CvExperienceBlock".
+ */
+export interface CvExperienceBlock {
+  heading: string;
+  entries: {
+    role: string;
+    org: string;
+    location?: string | null;
+    start: string;
+    end: string;
+    bullets?:
+      | {
+          text: string;
+          id?: string | null;
+        }[]
+      | null;
+    id?: string | null;
+  }[];
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'cvExperience';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CvEntriesBlock".
+ */
+export interface CvEntriesBlock {
+  heading: string;
+  items: {
+    title: string;
+    detail?: string | null;
+    id?: string | null;
+  }[];
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'cvEntries';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ResumeDownloadBlock".
+ */
+export interface ResumeDownloadBlock {
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'resumeDownload';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -321,6 +709,10 @@ export interface PayloadLockedDocument {
         value: string | User;
       } | null)
     | ({
+        relationTo: 'pages';
+        value: string | Page;
+      } | null)
+    | ({
         relationTo: 'media';
         value: string | Media;
       } | null)
@@ -412,6 +804,293 @@ export interface UsersSelect<T extends boolean = true> {
         createdAt?: T;
         expiresAt?: T;
       };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pages_select".
+ */
+export interface PagesSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  command?: T;
+  intro?: T;
+  blocks?:
+    | T
+    | {
+        hero?: T | HeroBlockSelect<T>;
+        terminal?: T | TerminalBlockSelect<T>;
+        chipList?: T | ChipListBlockSelect<T>;
+        timeline?: T | TimelineBlockSelect<T>;
+        linkList?: T | LinkListBlockSelect<T>;
+        definitionList?: T | DefinitionListBlockSelect<T>;
+        servicesGrid?: T | ServicesGridBlockSelect<T>;
+        servicesDetail?: T | ServicesDetailBlockSelect<T>;
+        latestPosts?: T | LatestPostsBlockSelect<T>;
+        postList?: T | PostListBlockSelect<T>;
+        newsletterSignup?: T | NewsletterSignupBlockSelect<T>;
+        contactForm?: T | ContactFormBlockSelect<T>;
+        picture?: T | PictureBlockSelect<T>;
+        cvSummary?: T | CvSummaryBlockSelect<T>;
+        cvSkills?: T | CvSkillsBlockSelect<T>;
+        cvExperience?: T | CvExperienceBlockSelect<T>;
+        cvEntries?: T | CvEntriesBlockSelect<T>;
+        resumeDownload?: T | ResumeDownloadBlockSelect<T>;
+      };
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "HeroBlock_select".
+ */
+export interface HeroBlockSelect<T extends boolean = true> {
+  command?: T;
+  summary?: T;
+  primaryAction?:
+    | T
+    | {
+        label?: T;
+        page?: T;
+        url?: T;
+      };
+  secondaryAction?:
+    | T
+    | {
+        label?: T;
+        page?: T;
+        url?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TerminalBlock_select".
+ */
+export interface TerminalBlockSelect<T extends boolean = true> {
+  command?: T;
+  body?: T;
+  picture?: T;
+  pictureStyle?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ChipListBlock_select".
+ */
+export interface ChipListBlockSelect<T extends boolean = true> {
+  command?: T;
+  intro?: T;
+  chips?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TimelineBlock_select".
+ */
+export interface TimelineBlockSelect<T extends boolean = true> {
+  command?: T;
+  entries?:
+    | T
+    | {
+        marker?: T;
+        title?: T;
+        period?: T;
+        id?: T;
+      };
+  link?:
+    | T
+    | {
+        label?: T;
+        page?: T;
+        url?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "LinkListBlock_select".
+ */
+export interface LinkListBlockSelect<T extends boolean = true> {
+  command?: T;
+  items?:
+    | T
+    | {
+        label?: T;
+        url?: T;
+        description?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "DefinitionListBlock_select".
+ */
+export interface DefinitionListBlockSelect<T extends boolean = true> {
+  command?: T;
+  heading?: T;
+  items?:
+    | T
+    | {
+        term?: T;
+        description?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ServicesGridBlock_select".
+ */
+export interface ServicesGridBlockSelect<T extends boolean = true> {
+  command?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ServicesDetailBlock_select".
+ */
+export interface ServicesDetailBlockSelect<T extends boolean = true> {
+  command?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "LatestPostsBlock_select".
+ */
+export interface LatestPostsBlockSelect<T extends boolean = true> {
+  command?: T;
+  count?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "PostListBlock_select".
+ */
+export interface PostListBlockSelect<T extends boolean = true> {
+  command?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "NewsletterSignupBlock_select".
+ */
+export interface NewsletterSignupBlockSelect<T extends boolean = true> {
+  command?: T;
+  intro?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ContactFormBlock_select".
+ */
+export interface ContactFormBlockSelect<T extends boolean = true> {
+  command?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "PictureBlock_select".
+ */
+export interface PictureBlockSelect<T extends boolean = true> {
+  media?: T;
+  caption?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CvSummaryBlock_select".
+ */
+export interface CvSummaryBlockSelect<T extends boolean = true> {
+  heading?: T;
+  text?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CvSkillsBlock_select".
+ */
+export interface CvSkillsBlockSelect<T extends boolean = true> {
+  heading?: T;
+  groups?:
+    | T
+    | {
+        label?: T;
+        items?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CvExperienceBlock_select".
+ */
+export interface CvExperienceBlockSelect<T extends boolean = true> {
+  heading?: T;
+  entries?:
+    | T
+    | {
+        role?: T;
+        org?: T;
+        location?: T;
+        start?: T;
+        end?: T;
+        bullets?:
+          | T
+          | {
+              text?: T;
+              id?: T;
+            };
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CvEntriesBlock_select".
+ */
+export interface CvEntriesBlockSelect<T extends boolean = true> {
+  heading?: T;
+  items?:
+    | T
+    | {
+        title?: T;
+        detail?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ResumeDownloadBlock_select".
+ */
+export interface ResumeDownloadBlockSelect<T extends boolean = true> {
+  id?: T;
+  blockName?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -560,6 +1239,8 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   createdAt?: T;
 }
 /**
+ * Shared by every page. Unpublishing does not take these off the site: visitors keep the last published version until you publish again.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "site-settings".
  */
