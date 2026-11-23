@@ -10,14 +10,11 @@
  */
 export interface SiteConfig {
   handle: string;
-  /** Path under /public to the headshot image; null until the owner supplies it. */
-  headshot: string | null;
   url: string;
 }
 
 export const siteConfig: SiteConfig = {
   handle: 'mkelley33',
-  headshot: '/headshot.webp',
   url: 'https://mkelley33.com',
 };
 
