@@ -21,12 +21,13 @@ _Avoid_: beat, section, component, widget
 **Fixed Page**:
 A Page the rest of the site depends on finding at a known address — home,
 blog, privacy, contact, and services. Its Blocks are the owner's to edit, but
-it cannot be moved, unpublished, or deleted.
+it cannot be moved or deleted, and unpublishing it does not take it off the
+site: visitors keep the last published version.
 _Avoid_: system page, core page
 
 **Site settings**:
 The single set of values every Page shares — the owner's identity, social
-links, and the Resume.
+links, the header and footer menus, and the Resume.
 _Avoid_: site config, globals
 
 ### Whose data it is

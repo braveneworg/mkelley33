@@ -6,6 +6,10 @@
 
 import { readFileSync } from 'node:fs';
 
+import {
+  findPublishedSiteSettings,
+  findSiteSettingsDraft,
+} from '@/globals/published-site-settings';
 import type * as siteSettingsRepo from '@/lib/repositories/site-settings';
 import { fillSeed } from '@/lib/seed/fill-seed';
 import { loadSeed } from '@/lib/seed/seed-files';
@@ -47,11 +51,58 @@ describe('the Site settings repository', () => {
     await fillSeed(payload, seed);
     const { getSiteSettings } = await importFresh();
 
-    const { resume, ...seeded } = seed.siteSettings;
+    const { footerMenu, headerMenu, resume, ...seeded } = seed.siteSettings;
     await expect(getSiteSettings()).resolves.toEqual({
       ...seeded,
+      footerMenu: [{ external: false, href: '/uses', label: 'uses' }],
+      headerMenu: [
+        { external: false, href: '/', label: './home' },
+        { external: false, href: '/blog', label: './blog' },
+        { external: false, href: '/services', label: './services' },
+        { external: false, href: '/cv', label: './cv' },
+        { external: false, href: '/contact', label: './contact' },
+      ],
       resumeUrl: `/api/resume-files/file/${String(resume).replace('files/', '')}`,
     });
+    // The Seed's menus are these same items, named by address.
+    expect([...headerMenu, ...footerMenu].map(({ page }) => page)).toEqual([
+      'home',
+      'blog',
+      'services',
+      'cv',
+      'contact',
+      'uses',
+    ]);
+  });
+
+  /** The owner's decision of 2026-11-23: hidden, and back when the Page is. */
+  it('leaves a menu item out while its Page is unpublished', async () => {
+    const seed = loadSeed('seed');
+    await fillSeed(payload, seed);
+    await payload.update({
+      collection: 'pages',
+      data: { _status: 'draft' },
+      where: { slug: { equals: 'cv' } },
+    });
+    const { getSiteSettings } = await importFresh();
+
+    const { headerMenu } = await getSiteSettings();
+
+    expect(headerMenu.map(({ label }) => label)).toEqual([
+      './home',
+      './blog',
+      './services',
+      './contact',
+    ]);
+  });
+
+  it('leaves a menu item out once its Page is deleted', async () => {
+    const seed = loadSeed('seed');
+    await fillSeed(payload, seed);
+    await payload.delete({ collection: 'pages', where: { slug: { equals: 'uses' } } });
+    const { getSiteSettings } = await importFresh();
+
+    await expect(getSiteSettings()).resolves.toMatchObject({ footerMenu: [] });
   });
 
   /** The owner's unpublished edit must not leak onto the site. */
@@ -204,5 +255,23 @@ describe('who can read a Resume file', () => {
     });
 
     expect(docs).toHaveLength(2);
+  });
+});
+
+describe('the Site settings the owner previews', () => {
+  it('are the newest draft, while visitors keep the published ones', async () => {
+    await fillSeed(payload, loadSeed('seed'));
+    await payload.updateGlobal({
+      data: { tagline: 'an unpublished tagline' },
+      draft: true,
+      slug: 'site-settings',
+    });
+
+    await expect(findSiteSettingsDraft(payload)).resolves.toMatchObject({
+      tagline: 'an unpublished tagline',
+    });
+    await expect(findPublishedSiteSettings(payload)).resolves.not.toMatchObject({
+      tagline: 'an unpublished tagline',
+    });
   });
 });

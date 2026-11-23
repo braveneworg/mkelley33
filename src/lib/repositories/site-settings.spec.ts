@@ -7,12 +7,16 @@
 import type * as siteSettingsRepo from '@/lib/repositories/site-settings';
 
 const findPublished = vi.fn();
+const findDraft = vi.fn();
+const isPreviewing = vi.fn();
 const payload = { marker: 'the payload instance' };
 
 vi.mock('payload', () => ({ getPayload: vi.fn(async () => payload) }));
 vi.mock('@/globals/published-site-settings', () => ({
   findPublishedSiteSettings: (...args: unknown[]) => findPublished(...args),
+  findSiteSettingsDraft: (...args: unknown[]) => findDraft(...args),
 }));
+vi.mock('@/lib/pages/preview', () => ({ isPreviewing: () => isPreviewing() }));
 vi.mock('@payload-config', () => ({ default: {} }));
 
 /** `getSiteSettings` is wrapped in React's `cache`; a fresh registry per test undoes it. */
@@ -37,6 +41,8 @@ const published = {
 
 beforeEach(() => {
   findPublished.mockReset();
+  findDraft.mockReset();
+  isPreviewing.mockReset().mockResolvedValue(false);
 });
 
 describe('getSiteSettings', () => {
@@ -46,6 +52,8 @@ describe('getSiteSettings', () => {
 
     await expect(getSiteSettings()).resolves.toEqual({
       description: 'a description',
+      footerMenu: [],
+      headerMenu: [],
       name: 'Owner Name',
       repoUrl: 'https://example.com/repo',
       resumeUrl: '/api/resume-files/file/resume.pdf',
@@ -121,5 +129,42 @@ describe('getSiteSettings', () => {
     const { getSiteSettings } = await importFresh();
 
     await expect(getSiteSettings()).rejects.toThrow('ECONNREFUSED');
+  });
+});
+
+describe('getSiteSettings while the owner previews', () => {
+  beforeEach(() => {
+    isPreviewing.mockResolvedValue(true);
+  });
+
+  it('returns the newest saved settings, published or not', async () => {
+    findDraft.mockResolvedValue({ ...published, tagline: 'a draft tagline' });
+    const { getSiteSettings } = await importFresh();
+
+    await expect(getSiteSettings()).resolves.toMatchObject({ tagline: 'a draft tagline' });
+  });
+
+  it('does not ask for the published settings', async () => {
+    findDraft.mockResolvedValue(published);
+    const { getSiteSettings } = await importFresh();
+
+    await getSiteSettings();
+
+    expect(findPublished).not.toHaveBeenCalled();
+  });
+
+  it('resolves the menus it is given, and leaves out an item that leads nowhere', async () => {
+    findDraft.mockResolvedValue({
+      ...published,
+      headerMenu: [
+        { label: './uses', page: { _status: 'published', id: 'p1', slug: 'uses', title: 'uses' } },
+        { label: './gone', page: 'id-of-a-deleted-page' },
+      ],
+    });
+    const { getSiteSettings } = await importFresh();
+
+    await expect(getSiteSettings()).resolves.toMatchObject({
+      headerMenu: [{ external: false, href: '/uses', label: './uses' }],
+    });
   });
 });

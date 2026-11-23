@@ -9,18 +9,29 @@
  * Site settings and their Resume in.
  */
 
+import { findPageId, pageLabel } from '@/lib/seed/fill-pages';
 import {
+  menusNeverStored,
   serviceExists,
   serviceLabel,
   SITE_SETTINGS_LABEL,
   siteSettingsExist,
+  whyMenusMustWait,
 } from '@/lib/seed/fill-seed';
 import type { Seed } from '@/lib/seed/seed-files';
 
 import type { Payload } from 'payload';
 
 export interface SeedInspection {
-  /** Seed records the database lacks. A fill would create these. */
+  /**
+   * Why a fill would not add the menus the Site settings have never had, or
+   * null when it would, or when there are none to add.
+   */
+  readonly menusMustWait: null | string;
+  /**
+   * What the database lacks: Seed records, and menus that Site settings
+   * saved before menus existed have never had. A fill would create these.
+   */
   readonly missing: string[];
   /** Seed records the database has. A fill would leave these alone. */
   readonly present: string[];
@@ -66,8 +77,13 @@ export const inspectSeed = async (payload: Payload, seed: Seed): Promise<SeedIns
     (exists ? present : missing).push(label);
   };
 
+  for (const page of seed.pages) {
+    sort(pageLabel(page), (await findPageId(payload, page.slug)) !== null);
+  }
   const settingsExist = await siteSettingsExist(payload);
   sort(SITE_SETTINGS_LABEL, settingsExist);
+  const newMenus = settingsExist ? await menusNeverStored(payload) : [];
+  missing.push(...newMenus.map(({ label }) => label));
   for (const service of seed.services) {
     sort(serviceLabel(service), await serviceExists(payload, service));
   }
@@ -82,6 +98,7 @@ export const inspectSeed = async (payload: Payload, seed: Seed): Promise<SeedIns
           .totalDocs;
 
   return {
+    menusMustWait: newMenus.length === 0 ? null : await whyMenusMustWait(payload),
     missing,
     present,
     resume: resumeId === null ? 'none' : attached > 0 ? 'attached' : 'dangling',

@@ -34,15 +34,14 @@ const CHECK_ONLY = process.argv.includes('--check');
 const check = async (): Promise<void> => {
   const seed = loadSeed(SEED_DIRECTORY);
   const payload = await getPayload({ config });
-  const { missing, present, resume, siteSettings, unattachedResumeFiles } = await inspectSeed(
-    payload,
-    seed
-  );
+  const { menusMustWait, missing, present, resume, siteSettings, unattachedResumeFiles } =
+    await inspectSeed(payload, seed);
   console.info(
     [
       'seed check — nothing was written',
       `  would create: [${missing.join(', ')}]`,
       `  would keep: [${present.join(', ')}]`,
+      ...(menusMustWait === null ? [] : [`  the menus would wait: ${menusMustWait}`]),
       `  site settings: ${siteSettings}`,
       `  resume: ${resume}`,
       `  resume uploads nothing points at: ${unattachedResumeFiles}`,
@@ -55,13 +54,12 @@ const fill = async (): Promise<void> => {
   const seed = loadSeed(SEED_DIRECTORY);
   const payload = await getPayload({ config });
   const report = await fillSeed(payload, seed);
-  const { created, kept } = report;
+  const { created, kept, skipped } = report;
   console.info(`seed done — created: [${created.join(', ')}], kept: [${kept.join(', ')}]`);
-  const warning = localDiskWarning(
-    report,
-    seed.siteSettings.resume,
-    process.env.BLOB_READ_WRITE_TOKEN
-  );
+  for (const item of skipped) {
+    console.warn(`seed: skipped ${item}`);
+  }
+  const warning = localDiskWarning(report, process.env.BLOB_READ_WRITE_TOKEN);
   if (warning !== null) {
     console.warn(`seed: ${warning}`);
   }

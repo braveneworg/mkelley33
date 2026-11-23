@@ -5,8 +5,10 @@
 import { Comments } from '@/collections/comments';
 import { ContactSubmissions } from '@/collections/contact-submissions';
 import { Media } from '@/collections/media';
+import { Pages } from '@/collections/pages';
 import { Posts } from '@/collections/posts';
 import { Subscribers } from '@/collections/subscribers';
+import { SiteSettings } from '@/globals/site-settings';
 
 import type { Access, CollectionConfig, FieldAccess } from 'payload';
 
@@ -118,5 +120,48 @@ describe('Comments access', () => {
 
   it('shows authorEmail to authenticated users', () => {
     expect(fieldReadAccess(Comments, 'authorEmail')(ADMIN as never)).toBe(true);
+  });
+});
+
+describe('Pages access', () => {
+  it('restricts anonymous reads to published Pages', () => {
+    expect(accessOf(Pages, 'read')(ANON)).toEqual({ _status: { equals: 'published' } });
+  });
+
+  it('gives the signed-in owner unrestricted read, drafts included', () => {
+    expect(accessOf(Pages, 'read')(ADMIN)).toBe(true);
+  });
+
+  it('never lets an anonymous request delete', () => {
+    expect(accessOf(Pages, 'delete')(ANON)).toBe(false);
+  });
+
+  it('lets the owner delete any Page except a Fixed Page', () => {
+    expect(accessOf(Pages, 'delete')(ADMIN)).toEqual({
+      slug: { not_in: ['home', 'blog', 'contact', 'services'] },
+    });
+  });
+});
+
+describe('the admin Preview buttons', () => {
+  const previewOf = (config: { admin?: { preview?: unknown } }, doc: object): unknown => {
+    const preview = config.admin?.preview;
+    return typeof preview === 'function' ? (preview as (doc: object) => unknown)(doc) : undefined;
+  };
+
+  it('opens a Page through the preview route, at its own address', () => {
+    expect(previewOf(Pages, { slug: 'uses' })).toBe('/preview?path=%2Fuses');
+  });
+
+  it('opens the home Page at the root', () => {
+    expect(previewOf(Pages, { slug: 'home' })).toBe('/preview?path=%2F');
+  });
+
+  it('offers no preview for a Page that has no address yet', () => {
+    expect(previewOf(Pages, {})).toBeNull();
+  });
+
+  it('opens Site settings on the home Page, where they show', () => {
+    expect(previewOf(SiteSettings, {})).toBe('/preview?path=%2F');
   });
 });

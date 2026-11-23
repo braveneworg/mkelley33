@@ -10,8 +10,20 @@
  *
  * A link that is `null` is one the owner cleared, and the site hides it.
  */
+import type { ResolvedLink } from '@/lib/pages/links';
+
 export interface SiteSettingsContent {
   description: string;
+  /**
+   * The extra links at the bottom of every page, already resolved. The
+   * footer adds the social, RSS and privacy links by itself.
+   */
+  footerMenu: ResolvedLink[];
+  /**
+   * The links at the top of every page, already resolved: an item whose
+   * Page is unpublished or deleted is not in this list.
+   */
+  headerMenu: ResolvedLink[];
   name: string;
   repoUrl: null | string;
   /**

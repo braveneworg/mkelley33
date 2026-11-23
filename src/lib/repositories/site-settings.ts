@@ -8,12 +8,30 @@ import { getPayload } from 'payload';
 
 import config from '@payload-config';
 
-import { findPublishedSiteSettings } from '@/globals/published-site-settings';
+import {
+  findPublishedSiteSettings,
+  findSiteSettingsDraft,
+} from '@/globals/published-site-settings';
+import { type LinkFields, resolveLink, type ResolvedLink } from '@/lib/pages/links';
+import { isPreviewing } from '@/lib/pages/preview';
 import type { SiteSettingsContent } from '@/lib/site-settings-content';
 
 /** The CMS stores an optional link the owner left empty as '' or not at all. */
 const linkOrNull = (value: null | string | undefined): null | string =>
   value === undefined || value === null || value === '' ? null : value;
+
+/**
+ * Deep enough to resolve the Resume upload into its file's address, and a
+ * menu item's Page into the address it is served at.
+ */
+const DEPTH = 1;
+
+/** A menu as visitors see it: without the items that currently lead nowhere. */
+const resolveMenu = (items: LinkFields[] | null | undefined): ResolvedLink[] =>
+  (items ?? []).flatMap((item) => {
+    const link = resolveLink(item);
+    return link === null ? [] : [link];
+  });
 
 /**
  * The Site settings visitors are served. Drafts never reach a rendered page,
@@ -27,17 +45,23 @@ const linkOrNull = (value: null | string | undefined): null | string =>
  */
 export const getSiteSettings = cache(async (): Promise<SiteSettingsContent> => {
   const payload = await getPayload({ config });
-  // Deep enough to resolve the Resume upload into its file's address.
-  const settings = await findPublishedSiteSettings(payload, 1);
+  // The owner, previewing, sees the newest saved state; everyone else the
+  // published one. Draft mode is only ever on for a signed-in owner.
+  const settings = (await isPreviewing())
+    ? await findSiteSettingsDraft(payload, DEPTH)
+    : await findPublishedSiteSettings(payload, DEPTH);
   if (settings === null) {
     throw new Error(
       'Site settings are not published. An empty database is filled with `pnpm seed`; ' +
         'otherwise publish them in the admin.'
     );
   }
-  const { description, name, repoUrl, resume, socials, tagline, title } = settings;
+  const { description, footerMenu, headerMenu, name, repoUrl, resume, socials, tagline, title } =
+    settings;
   return {
     description,
+    footerMenu: resolveMenu(footerMenu),
+    headerMenu: resolveMenu(headerMenu),
     name,
     repoUrl: linkOrNull(repoUrl),
     // An id rather than a document means the upload could not be resolved.

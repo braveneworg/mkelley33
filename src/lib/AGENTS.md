@@ -40,19 +40,27 @@ binding. Everything below it applies only once the thing it names exists.
   imported by `actions/run-form-submission.ts` alone. Never merge them: one
   file exporting both halves puts the secret-reading code in the client
   graph and leaves tree-shaking as the only thing removing it.
-- `seed/` — the Seed: `seed-files.ts` reads and validates the JSON in the
-  repo's `seed/` directory, `fill-seed.ts` writes it into a database,
-  fill-only, and `inspect-seed.ts` reports what a fill would do without
-  writing (`pnpm seed:check`). Read `docs/lessons/seed/` before changing
-  any of them.
+- `seed/` — the Seed: `seed-files.ts` and `page-seed.ts` read and validate
+  the JSON in the repo's `seed/` directory, `fill-seed.ts` and
+  `fill-pages.ts` write it into a database, fill-only, and
+  `inspect-seed.ts` reports what a fill would do without writing
+  (`pnpm seed:check`). `stored-fields.ts` is the one place that reads a
+  stored record directly, to tell a field a record has never had from one
+  the owner emptied. Read `docs/lessons/seed/` before changing any of them.
+- `pages/` — what a Page's address is and where it leads, with no React in
+  it: `page-address.ts` (the home address, the Fixed Pages, the reserved
+  names, the field validator), `links.ts` (a stored link into an `href`, or
+  nothing when its Page is unpublished or deleted), `load-page.ts` (the Page
+  a route renders — published for a visitor, the newest draft for the
+  owner's preview), and `preview.ts` (whether a request is previewing, and
+  which paths a preview may redirect to).
 - Loose modules for cross-cutting concerns: `site-config.ts` (what stays in
-  code — the domain, the Resume's permanent address, `handle`, and the
-  headshot's path until it moves into Media; the owner's identity and links
-  are Site settings, read through `repositories/site-settings.ts`, with
+  code — the domain, the Resume's permanent address and `handle`; the
+  owner's identity, links and menus are Site settings, read through `repositories/site-settings.ts`, with
   their type and the social-link list in `site-settings-content.ts`),
   `https-url.ts` (the one rule for a link the owner types),
   `json-ld.ts`, `rss.ts`, `highlight.ts`, `newsletter-tokens.ts`,
-  `cv-content.ts`, `services-content.ts` (the `ServiceContent` type), and
+  `services-content.ts` (the `ServiceContent` type), and
   `db-backup.ts` (pure decisions for `scripts/db-backup.ts` /
   `scripts/db-restore.ts` — the wrappers keep the side effects).
 
@@ -62,13 +70,17 @@ binding. Everything below it applies only once the thing it names exists.
   hooks (`src/collections/hooks/revalidate-post.ts`) so a CMS edit invalidates
   the same paths a form submission would.
 - Owner content has one copy, the database (`docs/adr/0001`). A repository
-  that reads it — `services.ts`, `site-settings.ts` — never falls back to
+  that reads it — `pages.ts`, `services.ts`, `site-settings.ts` — never falls back to
   source and does not catch a database failure: the error fails a build, and
   during revalidation Next keeps serving the last page it built. Do not add a
   fallback back to "harden" one.
 - The repositories that predate that decision (`posts.ts`, `comments.ts`,
   `subscribers.ts`) still handle a connection failure explicitly and render
   empty. Leave them as they are until their own change.
+- A draft reaches a rendered page only through `isPreviewing()` in
+  `pages/preview.ts`. Draft mode is switched on in one place, the
+  `/preview` route, after Payload has checked the admin's sign-in — do not
+  read a draft, or call `draftMode().enable()`, anywhere else.
 - Secrets come from env vars, never hardcoded, and never appear in logs or
   error messages returned to a caller.
 - A missing secret fails closed in production rather than substituting a

@@ -8,14 +8,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 import { ThemeToggle } from '@/components/site/theme-toggle';
-
-const NAV_LINKS = [
-  { href: '/', label: './home' },
-  { href: '/blog', label: './blog' },
-  { href: '/services', label: './services' },
-  { href: '/cv', label: './cv' },
-  { href: '/contact', label: './contact' },
-] as const;
+import type { ResolvedLink } from '@/lib/pages/links';
 
 const isActive = (pathname: string, href: string): boolean => {
   if (href === '/') {
@@ -24,7 +17,13 @@ const isActive = (pathname: string, href: string): boolean => {
   return pathname === href || pathname.startsWith(`${href}/`);
 };
 
-export const SiteNav = () => {
+const LINK_CLASSES = 'link-draw text-fg-muted hover:text-fg aria-[current=page]:text-fg';
+
+/**
+ * The header. Its links are the header menu from Site settings, already
+ * resolved: an item whose Page is unpublished is simply not in the list.
+ */
+export const SiteNav = ({ links }: { links: readonly ResolvedLink[] }) => {
   const pathname = usePathname();
 
   return (
@@ -37,15 +36,22 @@ export const SiteNav = () => {
           ~/mkelley33
         </Link>
         <ul className="ml-auto flex flex-wrap items-center gap-x-4 gap-y-2">
-          {NAV_LINKS.map((link) => (
-            <li key={link.href}>
-              <Link
-                aria-current={isActive(pathname, link.href) ? 'page' : undefined}
-                className="link-draw text-fg-muted hover:text-fg aria-[current=page]:text-fg"
-                href={link.href}
-              >
-                {link.label}
-              </Link>
+          {links.map(({ external, href, label }) => (
+            <li key={`${href}-${label}`}>
+              {external ? (
+                <a className={LINK_CLASSES} href={href} rel="noopener noreferrer" target="_blank">
+                  {label}
+                  <span className="sr-only"> (opens in new tab)</span>
+                </a>
+              ) : (
+                <Link
+                  aria-current={isActive(pathname, href) ? 'page' : undefined}
+                  className={LINK_CLASSES}
+                  href={href}
+                >
+                  {label}
+                </Link>
+              )}
             </li>
           ))}
           <li className="hidden sm:block">

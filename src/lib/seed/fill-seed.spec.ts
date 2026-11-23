@@ -18,9 +18,12 @@ import type { Payload } from 'payload';
 
 const seed: Seed = {
   directory: 'seed',
+  pages: [],
   services: [],
   siteSettings: {
     description: 'seed description',
+    footerMenu: [],
+    headerMenu: [],
     name: 'Seed Name',
     repoUrl: null,
     resume: 'files/michaux-kelley-resume.pdf',
@@ -106,5 +109,79 @@ describe('fillSeed when the Site settings save fails', () => {
     const { payload } = failingPayload({ resume: UPLOAD_ID });
 
     await expect(fillSeed(payload, seed)).rejects.toBe(saveFailure);
+  });
+});
+
+describe('fillSeed when creating a Page fails', () => {
+  const pageSeed: Seed = {
+    ...seed,
+    pages: [
+      {
+        blocks: [
+          {
+            blockType: 'picture',
+            caption: null,
+            media: { alt: 'alt text', file: 'files/headshot.webp' },
+          },
+        ],
+        command: null,
+        intro: null,
+        meta: { description: null, title: null },
+        slug: 'uses',
+        title: 'uses',
+      },
+    ],
+  };
+
+  /**
+   * A Payload with no Pages, whose picture upload succeeds and whose Page
+   * create fails. `pageAfterFailure` is what a search for the Page returns
+   * once that create has failed.
+   */
+  const failingPagePayload = (
+    pageAfterFailure: { id: string }[],
+    deleteUpload = vi.fn().mockResolvedValue({})
+  ): Fake => ({
+    deleteUpload,
+    payload: {
+      create: vi.fn().mockResolvedValueOnce({ id: UPLOAD_ID }).mockRejectedValue(saveFailure),
+      delete: deleteUpload,
+      find: vi
+        .fn()
+        .mockResolvedValueOnce({ docs: [] })
+        .mockResolvedValue({ docs: pageAfterFailure }),
+    } as unknown as Payload,
+  });
+
+  it('fails with the create failure', async () => {
+    const { payload } = failingPagePayload([]);
+
+    await expect(fillSeed(payload, pageSeed)).rejects.toBe(saveFailure);
+  });
+
+  it('removes the picture it had just uploaded', async () => {
+    const { deleteUpload, payload } = failingPagePayload([]);
+
+    await fillSeed(payload, pageSeed).catch(() => undefined);
+
+    expect(deleteUpload).toHaveBeenCalledWith({ collection: 'media', id: UPLOAD_ID });
+  });
+
+  /** A create can fail after it has written the Page: the versions are saved second. */
+  it('keeps the picture when the Page was saved before the failure', async () => {
+    const { deleteUpload, payload } = failingPagePayload([{ id: 'page-1' }]);
+
+    await fillSeed(payload, pageSeed).catch(() => undefined);
+
+    expect(deleteUpload).not.toHaveBeenCalled();
+  });
+
+  it('still fails with the create failure when the cleanup fails too', async () => {
+    const { payload } = failingPagePayload(
+      [],
+      vi.fn().mockRejectedValue(new Error('the cleanup failed as well'))
+    );
+
+    await expect(fillSeed(payload, pageSeed)).rejects.toBe(saveFailure);
   });
 });

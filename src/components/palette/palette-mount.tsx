@@ -13,4 +13,6 @@ const CommandPalette = dynamic(
   { ssr: false }
 );
 
-export const PaletteMount = ({ socials }: PaletteProps) => <CommandPalette socials={socials} />;
+export const PaletteMount = ({ pages, socials }: PaletteProps) => (
+  <CommandPalette pages={pages} socials={socials} />
+);

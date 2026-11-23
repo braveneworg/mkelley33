@@ -2,14 +2,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
+import { menuField } from '@/collections/page-blocks/fields';
 import { revalidateSiteSettings } from '@/globals/hooks/revalidate-site-settings';
 import { validateHttpsUrl, validateRequiredHttpsUrl } from '@/globals/validate-https-url';
+import { previewAddress } from '@/lib/pages/page-address';
 
 import type { GlobalConfig } from 'payload';
 
 /**
  * Site settings — the single set of values every Page shares (see
- * `CONTEXT.md`): the owner's identity, links, and Resume. The site's domain is not
+ * `CONTEXT.md`): the owner's identity, links, menus, and Resume. The site's domain is not
  * here; it stays in `src/lib/site-config.ts`, because changing it is a
  * deploy, not an edit.
  *
@@ -71,11 +73,23 @@ export const SiteSettings: GlobalConfig = {
       },
       relationTo: 'resume-files',
     },
+    menuField(
+      'headerMenu',
+      'Header menu',
+      'The links at the top of every page. An item whose Page is unpublished is hidden until the Page is published again.'
+    ),
+    menuField(
+      'footerMenu',
+      'Footer menu',
+      'Extra links at the bottom of every page. The footer adds your social links, the RSS feed and the privacy link by itself.'
+    ),
   ],
   hooks: { afterChange: [revalidateSiteSettings] },
   admin: {
     description:
       'Shared by every page. Unpublishing does not take these off the site: visitors keep the last published version until you publish again.',
+    // Shows the home Page with these settings, drafts included, in a new tab.
+    preview: () => previewAddress('/'),
   },
   label: 'Site settings',
   versions: { drafts: true },

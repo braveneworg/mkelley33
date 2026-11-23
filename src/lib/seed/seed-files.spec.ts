@@ -4,7 +4,8 @@
 
 // @vitest-environment node
 
-import { existsSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { loadSeed, servicesSeedSchema, siteSettingsSeedSchema } from '@/lib/seed/seed-files';
@@ -38,6 +39,43 @@ describe('the committed Seed', () => {
     expect(existsSync(join(directory, siteSettings.resume ?? 'missing'))).toBe(true);
   });
 
+  /** A build against a database filled from the Seed needs every Fixed Page. */
+  it('carries a Page for every address the site is built around, and the rest', () => {
+    expect(loadSeed('seed').pages.map(({ slug }) => slug)).toEqual([
+      'blog',
+      'contact',
+      'services',
+      'uses',
+      'cv',
+      'home',
+    ]);
+  });
+
+  /** A Seed that names a picture it does not carry would fail every build at the upload. */
+  it('carries every picture its Pages name', () => {
+    const { directory, pages } = loadSeed('seed');
+    const pictures = pages
+      .flatMap(({ blocks }) => blocks)
+      .flatMap((block) => {
+        if (block.blockType === 'terminal') {
+          return block.picture === null ? [] : [block.picture.file];
+        }
+        return block.blockType === 'picture' ? [block.media.file] : [];
+      });
+
+    expect(pictures.filter((file) => !existsSync(join(directory, file)))).toEqual([]);
+  });
+
+  it('carries the header menu the site has today', () => {
+    expect(loadSeed('seed').siteSettings.headerMenu.map(({ label }) => label)).toEqual([
+      './home',
+      './blog',
+      './services',
+      './cv',
+      './contact',
+    ]);
+  });
+
   it('carries the services, in the order the site shows them', () => {
     expect(loadSeed('seed').services.map(({ slug }) => slug)).toEqual([
       'ai-enablement',
@@ -51,6 +89,8 @@ describe('the committed Seed', () => {
 
 const siteSettings = {
   description: 'a description',
+  footerMenu: [{ label: 'elsewhere', page: null, url: 'https://example.com/elsewhere' }],
+  headerMenu: [{ label: './home', page: 'home', url: null }],
   name: 'Owner Name',
   repoUrl: 'https://example.com/repo',
   resume: 'files/resume.pdf',
@@ -92,6 +132,18 @@ describe('siteSettingsSeedSchema', () => {
     }
   );
 
+  it('rejects a menu item that points at a Page and an address', () => {
+    const headerMenu = [{ label: 'both', page: 'home', url: 'https://example.com' }];
+
+    expect(siteSettingsSeedSchema.safeParse({ ...siteSettings, headerMenu }).success).toBe(false);
+  });
+
+  it('rejects a menu item that points nowhere', () => {
+    const headerMenu = [{ label: 'nowhere', page: null, url: null }];
+
+    expect(siteSettingsSeedSchema.safeParse({ ...siteSettings, headerMenu }).success).toBe(false);
+  });
+
   it('rejects an empty name', () => {
     expect(siteSettingsSeedSchema.safeParse({ ...siteSettings, name: '' }).success).toBe(false);
   });
@@ -126,5 +178,38 @@ describe('servicesSeedSchema', () => {
    */
   it('rejects a key it does not know', () => {
     expect(servicesSeedSchema.safeParse([{ ...service, order: 3 }]).success).toBe(false);
+  });
+});
+
+describe('loadSeed', () => {
+  const write = (directory: string, siteSettingsFile: object): void => {
+    mkdirSync(directory, { recursive: true });
+    writeFileSync(join(directory, 'pages.json'), JSON.stringify(loadSeed('seed').pages));
+    writeFileSync(join(directory, 'services.json'), JSON.stringify([service]));
+    writeFileSync(join(directory, 'site-settings.json'), JSON.stringify(siteSettingsFile));
+  };
+
+  let directory: string;
+
+  beforeEach(() => {
+    directory = mkdtempSync(join(tmpdir(), 'seed-'));
+  });
+
+  afterEach(() => {
+    rmSync(directory, { force: true, recursive: true });
+  });
+
+  it('reads a Seed whose menus link to Pages it carries', () => {
+    write(directory, siteSettings);
+
+    expect(loadSeed(directory).siteSettings.headerMenu).toHaveLength(1);
+  });
+
+  /** The fill would have no Page to point the item at. */
+  it('refuses a menu that links to a Page the Seed does not carry', () => {
+    const headerMenu = [{ label: './now', page: 'now', url: null }];
+    write(directory, { ...siteSettings, headerMenu });
+
+    expect(() => loadSeed(directory)).toThrow('a menu links to the now Page');
   });
 });

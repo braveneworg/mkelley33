@@ -16,6 +16,7 @@ import { join } from 'node:path';
 import { z } from 'zod';
 
 import { isHttpsUrl } from '@/lib/https-url';
+import { linkSeedSchema, type PageSeed, pagesSeedSchema } from '@/lib/seed/page-seed';
 
 /** Lower-case words joined by hyphens — what a URL fragment can carry unescaped. */
 const SLUG = /^[a-z0-9-]+$/;
@@ -63,10 +64,13 @@ const seedPdf = z
 
 /**
  * The Site settings. A link that is `null` is one the site hides, and a
- * `null` Resume leaves the download button off.
+ * `null` Resume leaves the download button off. A menu item names its Page
+ * by address, as a Block's link does.
  */
 export const siteSettingsSeedSchema = z.strictObject({
   description: z.string().min(1),
+  footerMenu: z.array(linkSeedSchema),
+  headerMenu: z.array(linkSeedSchema),
   name: z.string().min(1),
   repoUrl: httpsUrl.nullable(),
   resume: seedPdf.nullable(),
@@ -84,19 +88,39 @@ export type SiteSettingsSeed = z.infer<typeof siteSettingsSeedSchema>;
 export interface Seed {
   /** Where the Seed was read from; the files it names are relative to this. */
   readonly directory: string;
+  readonly pages: readonly PageSeed[];
   readonly services: readonly ServiceSeed[];
   readonly siteSettings: SiteSettingsSeed;
 }
 
+const PAGES_FILE = 'pages.json';
 const SERVICES_FILE = 'services.json';
 const SITE_SETTINGS_FILE = 'site-settings.json';
 
 const readJson = (directory: string, file: string): unknown =>
   JSON.parse(readFileSync(join(directory, file), 'utf8'));
 
-/** Reads and validates the Seed in `directory`. Throws on the first file that does not fit. */
-export const loadSeed = (directory: string): Seed => ({
-  directory,
-  services: servicesSeedSchema.parse(readJson(directory, SERVICES_FILE)),
-  siteSettings: siteSettingsSeedSchema.parse(readJson(directory, SITE_SETTINGS_FILE)),
-});
+/** The addresses a menu links to. */
+const menuTargets = ({ footerMenu, headerMenu }: SiteSettingsSeed): string[] =>
+  [...headerMenu, ...footerMenu].flatMap(({ page }) => (page === null ? [] : [page]));
+
+/**
+ * Reads and validates the Seed in `directory`. Throws on the first file
+ * that does not fit, and when a menu links to a Page the Seed does not
+ * carry — the one rule that spans two files.
+ */
+export const loadSeed = (directory: string): Seed => {
+  const pages = pagesSeedSchema.parse(readJson(directory, PAGES_FILE));
+  const siteSettings = siteSettingsSeedSchema.parse(readJson(directory, SITE_SETTINGS_FILE));
+  const carried = new Set(pages.map(({ slug }) => slug));
+  const stray = menuTargets(siteSettings).find((slug) => !carried.has(slug));
+  if (stray !== undefined) {
+    throw new Error(`a menu links to the ${stray} Page, which the Seed does not carry`);
+  }
+  return {
+    directory,
+    pages,
+    services: servicesSeedSchema.parse(readJson(directory, SERVICES_FILE)),
+    siteSettings,
+  };
+};

@@ -259,18 +259,28 @@ build, and Vercel then keeps serving the current site. So the order is:
 **seed first, then merge.**
 
 `pnpm seed` fills the database `DATABASE_URL` names from the Seed in `seed/`.
-It is fill-only — it creates what is missing and never changes a record that
-exists — so running it against the live site is safe, and running it twice
-does nothing the second time. Run it from the branch that is about to merge,
-with the production values in the environment, and read its last line: it
-lists what it created and what it kept.
+It is fill-only — it creates what is missing and never changes what the
+owner has written — so running it against the live site is safe, and running
+it twice does nothing the second time. Run it from the branch that is about
+to merge, with the production values in the environment, and read its last
+line: it lists what it created and what it kept.
 
-The Seed uploads the Resume, so `BLOB_READ_WRITE_TOKEN` has to be in the
-environment as well as `DATABASE_URL`. Without it the upload lands on the
-disk of the machine running the Seed while its record lands in the live
-database, and the site answers 502 at the Resume's address. The command
-warns when it uploaded to disk; the repair is to upload the Resume again in
-the admin under Site settings.
+"Missing" reaches one level into Site settings. A menu is a field added
+after the live record was first saved, so the record can exist and never
+have had one; the Seed adds that field and nothing else. It will not publish
+on your behalf: if Site settings are unpublished, or hold changes you have
+saved and not published, it leaves the menus out and prints
+`seed: skipped site settings header menu (…)` with the reason. Publish or
+discard the changes and run it again.
+
+The Seed uploads the Resume and the pictures its Pages show, so
+`BLOB_READ_WRITE_TOKEN` has to be in the environment as well as
+`DATABASE_URL`. Without it an upload lands on the disk of the machine
+running the Seed while its record lands in the live database, and the site
+answers 502 at the Resume's address or shows a broken picture. The command
+warns when it uploaded to disk and says how many files; the repair is to
+upload each again in the admin — the Resume under Site settings, a picture
+in the Block that shows it.
 
 Look before you fill. `pnpm seed:check` takes the same environment, reads
 the database, and writes nothing. It lists what a fill would create and what
@@ -279,19 +289,23 @@ in:
 
 ```text
 seed check — nothing was written
-  would create: [site settings]
-  would keep: [service ai-enablement, …]
-  site settings: missing
-  resume: none
+  would create: [page blog, page contact, …, site settings header menu, site settings footer menu]
+  would keep: [site settings, service ai-enablement, …]
+  site settings: published
+  resume: attached
   resume uploads nothing points at: 0
 ```
 
+A line reading `the menus would wait: …` means a fill would skip the menus,
+for the reason it gives.
+
 **If a fill fails part-way**, run `pnpm seed:check` again before anything
-else. A fill uploads the Resume and then saves the Site settings, so a
-failure between the two can leave an upload nothing points at. It is private
-and harmless, and can be deleted in the admin under Resume files once the
-site is deployed. Running the fill again is always safe: it will create the
-settings if they are still missing and leave them alone if they are not.
+else. A fill uploads a file and then saves the record that points at it, so
+a failure between the two can leave an upload nothing points at. It is
+private or unused, and harmless, and can be deleted in the admin under
+Resume files or Media once the site is deployed. Running the fill again is
+always safe: it will create whatever is still missing and leave the rest
+alone.
 
 Only the owner can do any of this. It needs the production database and blob
 storage credentials, which no agent may read.

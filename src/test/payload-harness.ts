@@ -44,7 +44,12 @@ export const createTestPayload = async (): Promise<TestPayload> => {
     payload,
     reset: async () => {
       // The adapter is the Mongo one by construction: this harness booted it.
-      await (payload.db as MongooseAdapter).connection.dropDatabase();
+      const adapter = payload.db as MongooseAdapter;
+      await adapter.connection.dropDatabase();
+      // Dropping the database drops its indexes too, and with them every
+      // `unique: true` — put them back, or a test of a duplicate passes
+      // against a database that would have refused it.
+      await Promise.all(Object.values(adapter.collections).map((model) => model.createIndexes()));
       // Payload names an upload around files already on disk, so a leftover
       // file would rename the next test's upload.
       rmSync(uploadsDir, { force: true, recursive: true });

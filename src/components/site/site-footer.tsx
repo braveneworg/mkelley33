@@ -19,7 +19,11 @@ interface FooterLink {
   label: string;
 }
 
-/** The owner's profiles, then the repository when the owner has set one. */
+/**
+ * The owner's profiles, then the repository when the owner has set one. The
+ * footer adds these, the RSS feed and the privacy link by itself; the footer
+ * menu in Site settings supplies whatever else the owner wants here.
+ */
 const externalLinks = ({ repoUrl, socials }: SiteSettingsContent): FooterLink[] => [
   ...listSocialLinks(socials).map(({ label, url }) => ({ href: url, identity: true, label })),
   ...(repoUrl === null ? [] : [{ href: repoUrl, identity: false, label: 'source' }]),
@@ -50,16 +54,32 @@ export const SiteFooter = ({ settings }: { settings: SiteSettingsContent }) => (
             </a>
           </li>
         ))}
-        <li>
-          <Link className="link-draw hover:text-fg" href="/uses">
-            uses
-          </Link>
-        </li>
+        {settings.footerMenu.map(({ external, href, label }) => (
+          <li key={`${href}-${label}`}>
+            {external ? (
+              <a
+                className="link-draw hover:text-fg"
+                href={href}
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                {label}
+                <span className="sr-only"> (opens in new tab)</span>
+              </a>
+            ) : (
+              <Link className="link-draw hover:text-fg" href={href}>
+                {label}
+              </Link>
+            )}
+          </li>
+        ))}
         <li>
           <a className="link-draw hover:text-fg" href="/feed.xml">
             rss
           </a>
         </li>
+        {/* Not a menu item, so editing the menu can never remove the way to
+            the privacy policy (owner's decision, 2026-11-23). */}
         <li>
           <Link className="link-draw hover:text-fg" href="/privacy">
             privacy

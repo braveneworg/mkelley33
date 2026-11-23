@@ -1,8 +1,9 @@
 # Page builder — design
 
-Date: 2026-11-22. Status: approved by owner (grilled 2026-11-22). The points
-under [Open points](#open-points) are not approved yet — settle each before
-the PR that depends on it.
+Date: 2026-11-22. Status: approved by owner (grilled 2026-11-22; five points
+settled 2026-11-23, marked where they appear). The points under
+[Open points](#open-points) are not approved yet — settle each before the PR
+that depends on it.
 
 ## Problem
 
@@ -77,6 +78,15 @@ The owner picks from the kinds the design system offers. A new kind is a PR.
   status field.
 - Each Page has its own search title and description. Share images stay
   generated, using the Page title.
+- **The Page heading** is fields on the Page, not a Block kind: a title, an
+  optional `$ command` line, and an optional intro. The Page shows them as
+  its heading unless its first Block is a Hero, which supplies the heading
+  itself. (Owner, 2026-11-23.)
+- **Unpublishing a Fixed Page** does not take it off the site. Visitors keep
+  the last published version until the owner publishes again, and the admin
+  says so. Site settings behave the same way. Payload's admin shows an
+  Unpublish button that a hook cannot reliably veto, so "cannot be
+  unpublished" means this. (Owner, 2026-11-23.)
 
 ### Site settings
 
@@ -84,6 +94,12 @@ The owner picks from the kinds the design system offers. A new kind is a PR.
   menu, footer menu, and the Resume.
 - A menu item references a Page, so a rename follows, or holds an outside
   link. The footer adds the social and RSS links by itself.
+- A menu item whose Page is unpublished or deleted is hidden from visitors.
+  It stays in Site settings, so publishing the Page again brings it back.
+  (Owner, 2026-11-23.)
+- The footer adds the privacy link by itself as well. It is not a menu item,
+  so no edit to the footer menu can remove the way to the privacy policy.
+  (Owner, 2026-11-23.)
 - The command palette and the sitemap list published Pages by themselves.
 
 ### Files
@@ -99,6 +115,12 @@ The owner picks from the kinds the design system offers. A new kind is a PR.
 - One fill-only Seed command replaces `seed:services`. It creates what is
   missing and never overwrites an existing record. This is a change of
   behaviour: today's `seedServices` updates records that already exist.
+- Fill-only reaches one level into Site settings. The live record was saved
+  before menus existed, so it has never had one; the Seed adds a field the
+  record has never had and touches nothing else. A menu the owner has
+  emptied is stored, and stays empty. The Seed does not publish for the
+  owner: with Site settings unpublished, or holding unpublished changes, the
+  menus wait and the run says why. (Owner, 2026-11-23.)
 - No reset command exists.
 - The admin account stays with the existing `seed:first-user`.
 - The first Seed is written from today's hard-coded content. Existing Posts
@@ -211,15 +233,33 @@ the site.
 is recorded in ADR 0003. The first draft of that record had it wrong: it said
 only the Mongo server was a container.
 
-## Open points
+### What PR 3 found
 
-None of these blocks PR 1.
+Details the PR settled within the decisions above, recorded so the next PR
+does not rediscover them.
+
+- **CV Blocks** are five kinds: a summary, skills, experience, a plain list
+  (education, open source), and the Resume download button. A Page holding
+  any of the first four is laid out as a document: one narrow column that
+  prints at full width.
+- **A Page's pictures belong to the Page** in the Seed, as the Resume belongs
+  to Site settings: a Block names a file in `seed/files/` with its alt text,
+  and the Seed uploads it when it creates that Page. Storage renames an
+  upload, so a file name cannot say whether a picture is already there.
+- **The Seed names a Page by address** wherever the database stores an id —
+  a Block's link, a menu item. It creates Pages in an order that puts a
+  link's target first, and refuses Pages that link in a circle. Capture has
+  to cope with a site whose Pages do.
+- **The preview has no shared secret.** `/preview` switches draft mode on
+  only for a request carrying the admin's own sign-in.
+- **The uses Page's "view source" line and the contact Page's newsletter
+  form** are a Link list and a Newsletter signup Block, so they look like
+  those Blocks rather than the one-off markup they replaced.
+
+## Open points
 
 **Not discussed.**
 
-- What a menu shows when the Page it references is unpublished or deleted.
-  Only CV and uses can be, since the rest of today's menu targets are Fixed
-  Pages.
 - `handle` in `site-config.ts` is not in the Site settings list. It stays in
   code beside the domain unless the owner says otherwise.
 

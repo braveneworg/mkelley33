@@ -21,14 +21,11 @@ interface SearchResult {
   title: string;
 }
 
-const PAGES = [
-  { href: '/', label: './home' },
-  { href: '/blog', label: './blog' },
-  { href: '/services', label: './services' },
-  { href: '/cv', label: './cv' },
-  { href: '/uses', label: './uses' },
-  { href: '/contact', label: './contact' },
-] as const;
+/** A published Page as the palette lists it. */
+export interface PalettePage {
+  href: string;
+  label: string;
+}
 
 const ITEM_CLASSES =
   'flex cursor-pointer items-center gap-2 rounded px-3 py-2 text-fg data-[selected=true]:bg-canvas data-[selected=true]:text-phosphor';
@@ -72,11 +69,13 @@ const PostResults = ({
 };
 
 export interface PaletteProps {
+  /** Every published Page, so a new one is listed without a code change. */
+  readonly pages: readonly PalettePage[];
   /** The owner's profiles, from Site settings; a `null` one is left out. */
   readonly socials: SiteSettingsContent['socials'];
 }
 
-const PaletteDialog = ({ socials }: PaletteProps) => {
+const PaletteDialog = ({ pages, socials }: PaletteProps) => {
   const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme();
   const reduced = useReducedMotion();
@@ -147,7 +146,7 @@ const PaletteDialog = ({ socials }: PaletteProps) => {
                 <span aria-hidden="true"># </span>nothing found
               </Command.Empty>
               <Command.Group heading="pages">
-                {PAGES.map((page) => (
+                {pages.map((page) => (
                   <Command.Item
                     className={ITEM_CLASSES}
                     key={page.href}
@@ -198,11 +197,11 @@ const PaletteDialog = ({ socials }: PaletteProps) => {
   );
 };
 
-export const CommandPalette = ({ socials }: PaletteProps) => {
+export const CommandPalette = ({ pages, socials }: PaletteProps) => {
   const [client] = useState(() => new QueryClient());
   return (
     <QueryClientProvider client={client}>
-      <PaletteDialog socials={socials} />
+      <PaletteDialog pages={pages} socials={socials} />
     </QueryClientProvider>
   );
 };
