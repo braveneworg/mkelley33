@@ -66,4 +66,23 @@ describe('Hero', () => {
 
     expect(screen.queryByRole('link')).not.toBeInTheDocument();
   });
+
+  it('shows the heading alone when the Block is left empty', async () => {
+    render(await Hero({ block: { blockType: 'hero' }, isPageHeading: true }));
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Owner Name' })).toBeInTheDocument();
+    expect(screen.queryByText(/^\$/)).not.toBeInTheDocument();
+  });
+
+  it('shows one button when only one is set', async () => {
+    render(await Hero({ block: block({ secondaryAction: {} }), isPageHeading: true }));
+
+    expect(screen.getAllByRole('link')).toHaveLength(1);
+  });
+
+  it('shows the second button alone when the main one is not set', async () => {
+    render(await Hero({ block: block({ primaryAction: {} }), isPageHeading: true }));
+
+    expect(screen.getByRole('link', { name: 'Work with me' })).toBeInTheDocument();
+  });
 });

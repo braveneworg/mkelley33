@@ -6,6 +6,10 @@
 
 import { readFileSync } from 'node:fs';
 
+import {
+  findPublishedSiteSettings,
+  findSiteSettingsDraft,
+} from '@/globals/published-site-settings';
 import type * as siteSettingsRepo from '@/lib/repositories/site-settings';
 import { fillSeed } from '@/lib/seed/fill-seed';
 import { loadSeed } from '@/lib/seed/seed-files';
@@ -251,5 +255,23 @@ describe('who can read a Resume file', () => {
     });
 
     expect(docs).toHaveLength(2);
+  });
+});
+
+describe('the Site settings the owner previews', () => {
+  it('are the newest draft, while visitors keep the published ones', async () => {
+    await fillSeed(payload, loadSeed('seed'));
+    await payload.updateGlobal({
+      data: { tagline: 'an unpublished tagline' },
+      draft: true,
+      slug: 'site-settings',
+    });
+
+    await expect(findSiteSettingsDraft(payload)).resolves.toMatchObject({
+      tagline: 'an unpublished tagline',
+    });
+    await expect(findPublishedSiteSettings(payload)).resolves.not.toMatchObject({
+      tagline: 'an unpublished tagline',
+    });
   });
 });

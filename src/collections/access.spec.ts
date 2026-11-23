@@ -8,6 +8,7 @@ import { Media } from '@/collections/media';
 import { Pages } from '@/collections/pages';
 import { Posts } from '@/collections/posts';
 import { Subscribers } from '@/collections/subscribers';
+import { SiteSettings } from '@/globals/site-settings';
 
 import type { Access, CollectionConfig, FieldAccess } from 'payload';
 
@@ -139,5 +140,28 @@ describe('Pages access', () => {
     expect(accessOf(Pages, 'delete')(ADMIN)).toEqual({
       slug: { not_in: ['home', 'blog', 'contact', 'services'] },
     });
+  });
+});
+
+describe('the admin Preview buttons', () => {
+  const previewOf = (config: { admin?: { preview?: unknown } }, doc: object): unknown => {
+    const preview = config.admin?.preview;
+    return typeof preview === 'function' ? (preview as (doc: object) => unknown)(doc) : undefined;
+  };
+
+  it('opens a Page through the preview route, at its own address', () => {
+    expect(previewOf(Pages, { slug: 'uses' })).toBe('/preview?path=%2Fuses');
+  });
+
+  it('opens the home Page at the root', () => {
+    expect(previewOf(Pages, { slug: 'home' })).toBe('/preview?path=%2F');
+  });
+
+  it('offers no preview for a Page that has no address yet', () => {
+    expect(previewOf(Pages, {})).toBeNull();
+  });
+
+  it('opens Site settings on the home Page, where they show', () => {
+    expect(previewOf(SiteSettings, {})).toBe('/preview?path=%2F');
   });
 });

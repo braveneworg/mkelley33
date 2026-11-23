@@ -162,6 +162,13 @@ describe('the Page visitors are served', () => {
     });
   });
 
+  /** A Fixed Page saved only as a draft has no published version to fall back on. */
+  it('is nothing for a Fixed Page that has only ever been a draft', async () => {
+    await saveDraft('blog');
+
+    await expect(findPublishedPage(payload, 'blog')).resolves.toBeNull();
+  });
+
   it('is nothing once any other Page is unpublished', async () => {
     const { id } = await publish('uses', 'published title');
     await unpublish(id, 'edited while unpublished');

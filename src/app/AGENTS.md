@@ -28,6 +28,25 @@ binding. Everything below it applies only once the thing it names exists.
   inside effects and event handlers, which is safe because those never run on
   the server — the rule matters for module-scope access.
 
+## Pages and Blocks
+
+- Almost every page is a Page from the database (see `CONTEXT.md`):
+  `(site)/page.tsx` renders the home Page and `(site)/[slug]/page.tsx` any
+  other, both through `PageView` in `src/components/blocks/`. The routes
+  that stay in code — a post, the privacy policy, the newsletter pages, the
+  feed, the Resume, the preview — have files of their own and win over
+  `[slug]`. Adding one means adding its name to `RESERVED_PAGE_SLUGS`;
+  `src/lib/pages/reserved-names.spec.ts` fails until you do.
+- A kind of Block is two halves that must agree: its definition in
+  `src/collections/page-blocks/` (listed in `PAGE_BLOCKS`) and its component
+  in `src/components/blocks/` (a case in `render-blocks.tsx`). The type-check
+  fails when one exists without the other. After changing a definition, run
+  `pnpm generate:types` and `pnpm generate:importmap`, and add the kind to
+  the Seed's schema in `src/lib/seed/page-seed.ts`.
+- Every Block renders inside `BlockSection`, and every link the owner can
+  point at a Page goes through `resolveLink`, so a link to an unpublished
+  Page is hidden the same way everywhere.
+
 ## Forms
 
 - React Hook Form + Zod via `zodResolver` (both installed; used by the contact

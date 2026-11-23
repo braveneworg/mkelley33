@@ -137,4 +137,19 @@ describe('DefinitionList', () => {
     expect(screen.getAllByRole('definition')).toHaveLength(1);
     expect(screen.getByText('A desk')).toBeInTheDocument();
   });
+
+  it('shows the list alone when it has no heading', () => {
+    render(<DefinitionList block={{ blockType: 'definitionList', items: block.items }} />);
+
+    expect(screen.queryByRole('heading')).not.toBeInTheDocument();
+    expect(screen.getByText('MacBook Pro')).toBeInTheDocument();
+  });
+});
+
+describe('LinkList without descriptions', () => {
+  it('shows an item that is only a label', () => {
+    render(<LinkList block={{ blockType: 'linkList', items: [{ label: 'a bare item' }] }} />);
+
+    expect(screen.getByRole('listitem')).toHaveTextContent(/^a bare item$/);
+  });
 });

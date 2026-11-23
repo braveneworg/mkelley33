@@ -86,4 +86,19 @@ describe('Terminal', () => {
 
     expect(screen.queryByRole('img')).not.toBeInTheDocument();
   });
+
+  /** An upload whose file is gone has a record and no address. */
+  it('shows no picture when the upload has no address', () => {
+    render(<Terminal block={block({ picture: { ...headshot, url: null } })} />);
+
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
+  });
+
+  it('lays out a picture whose size was never recorded', () => {
+    const unsized = { ...headshot, height: null, width: null };
+
+    render(<Terminal block={block({ picture: unsized })} />);
+
+    expect(screen.getByRole('img')).toHaveAttribute('width', '640');
+  });
 });

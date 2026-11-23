@@ -491,6 +491,18 @@ describe('fillSeed on Site settings that have never had a menu', () => {
     expect(settings?.tagline).toBe('edited by the owner');
   });
 
+  it('adds only the menu that was never stored', async () => {
+    await fillSeed(payload, seed);
+    const { connection } = payload.db as MongooseAdapter;
+    await connection
+      .collection('globals')
+      .updateOne({ globalType: 'site-settings' }, { $unset: { footerMenu: '' } });
+
+    const report = await fillSeed(payload, seed);
+
+    expect(report.created).toEqual(['site settings footer menu']);
+  });
+
   it('adds them only once', async () => {
     await fillSeed(payload, seed);
 
@@ -553,6 +565,76 @@ describe('fillSeed on Site settings that have never had a menu', () => {
       expect.stringContaining('site settings header menu (Site settings are unpublished'),
       expect.stringContaining('site settings footer menu (Site settings are unpublished'),
     ]);
+  });
+});
+
+describe('fillSeed on Blocks that point elsewhere', () => {
+  const linking: Seed = {
+    ...seed,
+    pages: [
+      ...pages,
+      {
+        blocks: [
+          {
+            blockType: 'timeline',
+            command: null,
+            entries: [{ marker: null, period: null, title: 'an entry' }],
+            link: { label: 'the blog', page: 'blog', url: null },
+          },
+          {
+            blockType: 'timeline',
+            command: null,
+            entries: [{ marker: null, period: null, title: 'an entry' }],
+            link: null,
+          },
+          {
+            blockType: 'picture',
+            caption: 'a caption',
+            media: { alt: 'a second picture', file: 'files/headshot.webp' },
+          },
+          {
+            blockType: 'terminal',
+            body: paragraph('text with no picture'),
+            command: null,
+            picture: null,
+            pictureStyle: 'plain',
+          },
+        ],
+        command: null,
+        intro: null,
+        meta: noMeta,
+        slug: 'now',
+        title: 'now',
+      },
+    ],
+  };
+
+  it("points a Timeline's link at its Page", async () => {
+    await fillSeed(payload, linking);
+
+    const now = await findPublishedPage(payload, 'now');
+    expect(now?.blocks?.[0]).toMatchObject({ link: { page: { slug: 'blog' } } });
+  });
+
+  it('stores a Timeline that has no link', async () => {
+    await fillSeed(payload, linking);
+
+    const now = await findPublishedPage(payload, 'now');
+    expect(now?.blocks?.[1]).toMatchObject({ blockType: 'timeline' });
+  });
+
+  it("uploads a Picture Block's picture", async () => {
+    await fillSeed(payload, linking);
+
+    const now = await findPublishedPage(payload, 'now');
+    expect(now?.blocks?.[2]).toMatchObject({ media: { alt: 'a second picture' } });
+  });
+
+  it('stores a Terminal that has no picture', async () => {
+    await fillSeed(payload, linking);
+
+    const now = await findPublishedPage(payload, 'now');
+    expect(now?.blocks?.[3]).toMatchObject({ blockType: 'terminal', picture: null });
   });
 });
 
