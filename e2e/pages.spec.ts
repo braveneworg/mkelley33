@@ -50,6 +50,35 @@ test('a Page that is not a Fixed Page is served at its address', async ({ page }
   await expect(page.getByRole('heading', { name: 'hardware/' })).toBeVisible();
 });
 
+/**
+ * The privacy policy is a Page too, with two Blocks the owner cannot type
+ * into (docs/adr/0002). A real server shows the whole chain: the Seed's
+ * text, the consent code's own table, and a button that works once the
+ * page has hydrated.
+ */
+test('the privacy Page shows the policy with what the site stores', async ({ page }) => {
+  await page.goto('/privacy');
+
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('# privacy');
+  await expect(page.getByRole('heading', { level: 2, name: 'retention' })).toBeVisible();
+  await expect(page.getByRole('cell', { exact: true, name: '_ga' })).toBeVisible();
+});
+
+test('the privacy Page says when it was last published', async ({ page }) => {
+  await page.goto('/privacy');
+
+  // The harness seeded and published it moments ago; the date is not typed.
+  await expect(page.getByRole('main').getByText(/Last updated \d{4}-\d{2}-\d{2}\./)).toBeVisible();
+});
+
+test('the privacy Page reopens the cookie form', async ({ page }) => {
+  await page.goto('/privacy');
+
+  await page.getByRole('button', { name: 'manage cookie preferences' }).click();
+
+  await expect(page.getByRole('dialog', { name: 'cookie preferences' })).toBeVisible();
+});
+
 test('the home Page has no second address', async ({ request }) => {
   const response = await request.get('/home');
 
