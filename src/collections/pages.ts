@@ -23,7 +23,7 @@ import type { CollectionConfig } from 'payload';
  * at its own address as an ordered list of Blocks (see `CONTEXT.md`).
  *
  * Drafts are on: the owner saves a draft, previews it, publishes it, and
- * every published version is kept. Visitors only ever get a published Page;
+ * every version is kept. Visitors only ever get a published Page;
  * `published-page.ts` is how the site asks for one.
  */
 export const Pages: CollectionConfig = {
@@ -37,7 +37,7 @@ export const Pages: CollectionConfig = {
   admin: {
     defaultColumns: ['title', 'slug', '_status', 'updatedAt'],
     description:
-      'Home, blog, contact and services are Fixed Pages: they cannot be moved or deleted, and unpublishing one does not take it off the site — visitors keep the last published version until you publish again.',
+      'Home, blog, contact, services and privacy are Fixed Pages: they cannot be moved or deleted, and unpublishing one does not take it off the site — visitors keep the last published version until you publish again. The privacy Page cannot be published without its Cookie inventory and Manage preferences Blocks, and it shows the date of its last publish as "last updated".',
     // Opens the Page, drafts included, in a new tab — for the signed-in owner only.
     preview: ({ slug }) => (typeof slug === 'string' ? previewAddress(pageHref(slug)) : null),
     useAsTitle: 'title',
@@ -109,5 +109,8 @@ export const Pages: CollectionConfig = {
     beforeChange: [keepFixedPageAddress, keepPrivacyPageWhole],
   },
   labels: { plural: 'Pages', singular: 'Page' },
-  versions: { drafts: true },
+  // Every version is kept. The admin's history is the record of what the
+  // privacy policy said on a given date (docs/adr/0002), and Payload's
+  // default would start deleting the oldest after a hundred saves.
+  versions: { drafts: true, maxPerDoc: 0 },
 };

@@ -4,20 +4,52 @@
 
 import { render, screen } from '@testing-library/react';
 
+import { PageView } from '@/components/blocks/page-view';
 import { ConsentProvider } from '@/components/consent/consent-provider';
+import { pageMetadata } from '@/lib/pages/load-page';
+import { loadSeed } from '@/lib/seed/seed-files';
+import { pageFromSeed } from '@/test/page-from-seed';
 
-import PrivacyPage, { metadata } from './page';
+/**
+ * The privacy policy's legal claims — the controller, who receives what,
+ * how long it is kept, the visitor's rights — describe what the code does.
+ * They used to be pinned against a page in code. The policy is a Page now
+ * (docs/adr/0002), so these pin the Seed's copy of it, rendered the way the
+ * site renders it: the text every new database starts from, and the text
+ * every Capture brings back for review.
+ *
+ * They cannot see an edit the owner makes in the admin between Captures.
+ * When the code's behaviour changes, updating the policy there is a manual
+ * step.
+ */
+
+const privacySeed = () => {
+  const found = loadSeed('seed').pages.find(({ slug }) => slug === 'privacy');
+  if (found === undefined) {
+    throw new Error('the Seed carries no privacy Page');
+  }
+  return found;
+};
 
 const renderPage = () =>
   render(
     <ConsentProvider>
-      <PrivacyPage />
+      <PageView page={pageFromSeed(privacySeed())} />
     </ConsentProvider>
   );
 
-describe('PrivacyPage', () => {
+describe("the Seed's privacy Page", () => {
+  afterEach(() => {
+    localStorage.clear();
+  });
+
   it('titles itself privacy', () => {
-    expect(metadata.title).toBe('privacy');
+    expect(pageMetadata(pageFromSeed(privacySeed())).title).toBe('privacy');
+  });
+
+  it('heads itself privacy', () => {
+    renderPage();
+    expect(screen.getByRole('heading', { level: 1, name: 'privacy' })).toBeInTheDocument();
   });
 
   it('names the controller', () => {
@@ -125,5 +157,11 @@ describe('PrivacyPage', () => {
   it('states the comment retention policy', () => {
     renderPage();
     expect(screen.getByText(/Comments stay published until/)).toBeInTheDocument();
+  });
+
+  /** The date is the publish date, so the Seed's text carries none of its own. */
+  it('types no date of its own into the text', () => {
+    renderPage();
+    expect(screen.getAllByText(/Last updated/)).toHaveLength(1);
   });
 });

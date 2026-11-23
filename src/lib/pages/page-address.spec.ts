@@ -25,9 +25,12 @@ describe('pageHref', () => {
 });
 
 describe('isFixedPage', () => {
-  it.each(['home', 'blog', 'contact', 'services'])('counts %s as a Fixed Page', (slug) => {
-    expect(isFixedPage(slug)).toBe(true);
-  });
+  it.each(['home', 'blog', 'contact', 'services', 'privacy'])(
+    'counts %s as a Fixed Page',
+    (slug) => {
+      expect(isFixedPage(slug)).toBe(true);
+    }
+  );
 
   it('does not count a Page the owner may move or delete', () => {
     expect(isFixedPage('uses')).toBe(false);
@@ -35,7 +38,7 @@ describe('isFixedPage', () => {
 });
 
 describe('validatePageSlug', () => {
-  it.each(['uses', 'cv', 'now-2026', 'home'])('accepts %s', (slug) => {
+  it.each(['uses', 'cv', 'now-2026', 'home', 'privacy'])('accepts %s', (slug) => {
     expect(validatePageSlug(slug)).toBe(true);
   });
 

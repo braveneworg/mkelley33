@@ -20,7 +20,8 @@
 import { z } from 'zod';
 
 import { isHttpsUrl } from '@/lib/https-url';
-import { FIXED_PAGE_SLUGS, validatePageSlug } from '@/lib/pages/page-address';
+import { FIXED_PAGE_SLUGS, PRIVACY_SLUG, validatePageSlug } from '@/lib/pages/page-address';
+import { missingPrivacyBlocks } from '@/lib/pages/privacy-page';
 
 const text = z.string().min(1);
 const optionalText = text.nullable();
@@ -168,14 +169,27 @@ const blockSeedSchema = z.discriminatedUnion('blockType', [
 
 export type BlockSeed = z.infer<typeof blockSeedSchema>;
 
-const pageSeedSchema = z.strictObject({
-  blocks: z.array(blockSeedSchema),
-  command: optionalText,
-  intro: optionalText,
-  meta: z.strictObject({ description: optionalText, title: optionalText }),
-  slug: pageSlug,
-  title: text,
-});
+/**
+ * The Seed publishes every Page it creates, and the privacy Page cannot be
+ * published without its two guarded Blocks (docs/adr/0002). Refusing it
+ * here means the Seed says so before it has written anything.
+ */
+const holdsWhatItMust = ({ blocks, slug }: { blocks: readonly BlockSeed[]; slug: string }) =>
+  slug !== PRIVACY_SLUG ||
+  missingPrivacyBlocks(blocks.map(({ blockType }) => blockType)).length === 0;
+
+const pageSeedSchema = z
+  .strictObject({
+    blocks: z.array(blockSeedSchema),
+    command: optionalText,
+    intro: optionalText,
+    meta: z.strictObject({ description: optionalText, title: optionalText }),
+    slug: pageSlug,
+    title: text,
+  })
+  .refine(holdsWhatItMust, {
+    message: 'the privacy Page lacks its cookie inventory or its manage-preferences button',
+  });
 
 export type PageSeed = z.infer<typeof pageSeedSchema>;
 

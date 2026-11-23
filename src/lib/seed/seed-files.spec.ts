@@ -48,6 +48,7 @@ describe('the committed Seed', () => {
       'uses',
       'cv',
       'home',
+      'privacy',
     ]);
   });
 

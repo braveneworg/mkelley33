@@ -9,9 +9,8 @@ import { siteConfig } from '@/lib/site-config';
 import type { MetadataRoute } from 'next';
 
 /**
- * Every published Page, the privacy policy — still a route in code — and
- * every published Post. A Page the owner publishes is listed without a code
- * change, and one that is unpublished drops out.
+ * Every published Page and every published Post. A Page the owner publishes
+ * is listed without a code change, and one that is unpublished drops out.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [pages, posts] = await Promise.all([listPublishedPages(), listPublishedPosts()]);
@@ -21,7 +20,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       // The home Page's address is '/', which the site's own address already ends in.
       url: href === '/' ? siteConfig.url : `${siteConfig.url}${href}`,
     })),
-    { url: `${siteConfig.url}/privacy` },
     ...posts.map((post) => ({
       lastModified: post.updatedAt,
       url: `${siteConfig.url}/blog/${post.slug}`,

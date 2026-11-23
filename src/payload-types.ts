@@ -162,7 +162,7 @@ export interface User {
   collection: 'users';
 }
 /**
- * Home, blog, contact and services are Fixed Pages: they cannot be moved or deleted, and unpublishing one does not take it off the site — visitors keep the last published version until you publish again.
+ * Home, blog, contact, services and privacy are Fixed Pages: they cannot be moved or deleted, and unpublishing one does not take it off the site — visitors keep the last published version until you publish again. The privacy Page cannot be published without its Cookie inventory and Manage preferences Blocks, and it shows the date of its last publish as "last updated".
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "pages".
