@@ -1,8 +1,9 @@
 # Page builder — design
 
-Date: 2026-11-22. Status: approved by owner (grilled 2026-11-22). The points
-under [Open points](#open-points) are not approved yet — settle each before
-the PR that depends on it.
+Date: 2026-11-22. Status: approved by owner (grilled 2026-11-22; three points
+settled 2026-11-23, marked where they appear). The points under
+[Open points](#open-points) are not approved yet — settle each before the PR
+that depends on it.
 
 ## Problem
 
@@ -77,6 +78,15 @@ The owner picks from the kinds the design system offers. A new kind is a PR.
   status field.
 - Each Page has its own search title and description. Share images stay
   generated, using the Page title.
+- **The Page heading** is fields on the Page, not a Block kind: a title, an
+  optional `$ command` line, and an optional intro. The Page shows them as
+  its heading unless its first Block is a Hero, which supplies the heading
+  itself. (Owner, 2026-11-23.)
+- **Unpublishing a Fixed Page** does not take it off the site. Visitors keep
+  the last published version until the owner publishes again, and the admin
+  says so. Site settings behave the same way. Payload's admin shows an
+  Unpublish button that a hook cannot reliably veto, so "cannot be
+  unpublished" means this. (Owner, 2026-11-23.)
 
 ### Site settings
 
@@ -84,6 +94,9 @@ The owner picks from the kinds the design system offers. A new kind is a PR.
   menu, footer menu, and the Resume.
 - A menu item references a Page, so a rename follows, or holds an outside
   link. The footer adds the social and RSS links by itself.
+- A menu item whose Page is unpublished or deleted is hidden from visitors.
+  It stays in Site settings, so publishing the Page again brings it back.
+  (Owner, 2026-11-23.)
 - The command palette and the sitemap list published Pages by themselves.
 
 ### Files
@@ -213,13 +226,8 @@ only the Mongo server was a container.
 
 ## Open points
 
-None of these blocks PR 1.
-
 **Not discussed.**
 
-- What a menu shows when the Page it references is unpublished or deleted.
-  Only CV and uses can be, since the rest of today's menu targets are Fixed
-  Pages.
 - `handle` in `site-config.ts` is not in the Site settings list. It stays in
   code beside the domain unless the owner says otherwise.
 
