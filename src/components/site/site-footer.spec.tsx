@@ -107,4 +107,19 @@ describe('SiteFooter', () => {
     render(<SiteFooter settings={settings} />);
     expect(screen.getByRole('link', { name: 'privacy' })).toHaveAttribute('href', '/privacy');
   });
+
+  /** The owner's decision of 2026-11-23: no edit to the menu can remove this link. */
+  it('still links to the privacy page when the footer menu is empty', () => {
+    render(<SiteFooter settings={{ ...settings, footerMenu: [] }} />);
+
+    expect(screen.getByRole('link', { name: 'privacy' })).toHaveAttribute('href', '/privacy');
+    expect(screen.queryByRole('link', { name: 'uses' })).not.toBeInTheDocument();
+  });
+
+  it('opens a footer menu item that leads elsewhere in a new tab', () => {
+    const footerMenu = [{ external: true, href: 'https://example.com/now', label: 'now' }];
+    render(<SiteFooter settings={{ ...settings, footerMenu }} />);
+
+    expect(screen.getByRole('link', { name: /^now/ })).toHaveAttribute('target', '_blank');
+  });
 });
