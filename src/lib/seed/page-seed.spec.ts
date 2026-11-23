@@ -43,6 +43,20 @@ describe('pagesSeedSchema', () => {
     expect(accepts([...FIXED, page('uses', [{ blockType: 'carousel' }])])).toBe(false);
   });
 
+  /** Nothing to type into either (docs/adr/0002), so the Seed carries only the kind. */
+  it.each(['cookieInventory', 'managePreferences'])('accepts a %s Block', (blockType) => {
+    expect(accepts([...FIXED, page('uses', [{ blockType }])])).toBe(true);
+  });
+
+  it.each(['cookieInventory', 'managePreferences'])(
+    'rejects a %s Block that carries text of its own',
+    (blockType) => {
+      expect(accepts([...FIXED, page('uses', [{ blockType, command: 'ls ./cookies' }])])).toBe(
+        false
+      );
+    }
+  );
+
   it('rejects a key it does not know on a Block', () => {
     const block = { blockType: 'postList', command: null, colour: 'green' };
 

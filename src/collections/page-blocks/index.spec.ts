@@ -17,10 +17,6 @@ describe('PAGE_BLOCKS', () => {
     expect(PAGE_BLOCKS.filter(({ interfaceName }) => !interfaceName)).toEqual([]);
   });
 
-  /**
-   * The cookie inventory and the manage-preferences control arrive with the
-   * privacy Page; until then the admin must not offer them.
-   */
   it('offers the kinds the owner approved, and no others', () => {
     expect(PAGE_BLOCKS.map(({ slug }) => slug)).toEqual([
       'hero',
@@ -41,6 +37,16 @@ describe('PAGE_BLOCKS', () => {
       'cvExperience',
       'cvEntries',
       'resumeDownload',
+      'cookieInventory',
+      'managePreferences',
     ]);
+  });
+
+  /**
+   * What these two show comes from the consent code, so that no edit in the
+   * admin can change what the site says it stores (docs/adr/0002).
+   */
+  it.each(['cookieInventory', 'managePreferences'])('gives a %s Block nothing to type', (slug) => {
+    expect(PAGE_BLOCKS.find((block) => block.slug === slug)?.fields).toEqual([]);
   });
 });

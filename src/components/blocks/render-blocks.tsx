@@ -5,6 +5,7 @@
 import { AllPosts } from '@/components/blocks/all-posts';
 import { ChipList } from '@/components/blocks/chip-list';
 import { Contact } from '@/components/blocks/contact';
+import { CookieInventory } from '@/components/blocks/cookie-inventory';
 import { CvEntries } from '@/components/blocks/cv-entries';
 import { CvExperience } from '@/components/blocks/cv-experience';
 import { CvSkills } from '@/components/blocks/cv-skills';
@@ -13,6 +14,7 @@ import { DefinitionList } from '@/components/blocks/definition-list';
 import { Hero } from '@/components/blocks/hero';
 import { LatestPosts } from '@/components/blocks/latest-posts';
 import { LinkList } from '@/components/blocks/link-list';
+import { ManagePreferences } from '@/components/blocks/manage-preferences';
 import { NewsletterSignup } from '@/components/blocks/newsletter-signup';
 import { Picture } from '@/components/blocks/picture';
 import { ResumeDownload } from '@/components/blocks/resume-download';
@@ -23,6 +25,27 @@ import { Timeline } from '@/components/blocks/timeline';
 import type { Page } from '@/payload-types';
 
 export type PageBlock = NonNullable<Page['blocks']>[number];
+
+type NothingToTypeBlock = Extract<
+  PageBlock,
+  { blockType: 'cookieInventory' | 'managePreferences' | 'resumeDownload' }
+>;
+
+/** The kinds with nothing to type: what each shows is decided elsewhere. */
+const NothingToTypeBlockView = ({ block }: { block: NothingToTypeBlock }) => {
+  switch (block.blockType) {
+    case 'cookieInventory':
+      return <CookieInventory />;
+    case 'managePreferences':
+      return <ManagePreferences />;
+    case 'resumeDownload':
+      return <ResumeDownload />;
+    default: {
+      const unhandled: never = block;
+      return unhandled;
+    }
+  }
+};
 
 type TypedInBlock = Extract<
   PageBlock,
@@ -41,7 +64,7 @@ type TypedInBlock = Extract<
 >;
 
 /** The kinds that show only what the owner typed into them. */
-const TypedInBlockView = ({ block }: { block: TypedInBlock }) => {
+const TypedInBlockView = ({ block }: { block: NothingToTypeBlock | TypedInBlock }) => {
   switch (block.blockType) {
     case 'chipList':
       return <ChipList block={block} />;
@@ -61,23 +84,24 @@ const TypedInBlockView = ({ block }: { block: TypedInBlock }) => {
       return <Terminal block={block} />;
     case 'timeline':
       return <Timeline block={block} />;
-    default: {
-      const unhandled: never = block;
-      return unhandled;
-    }
+    default:
+      return <NothingToTypeBlockView block={block} />;
   }
 };
 
 /**
  * The renderer half of the Block registry: one component for each kind in
- * `PAGE_BLOCKS`. The two `switch`es are the guarantee. `PageBlock` is
+ * `PAGE_BLOCKS`. The three `switch`es are the guarantee. `PageBlock` is
  * generated from the config, so a kind added there without a case here
- * leaves `block` un-narrowed at `unhandled` and fails the type-check, and a
- * case for a kind that is not in the config does not compile either.
+ * reaches the last `default` un-narrowed and fails the type-check at
+ * `unhandled`, and a case for a kind that is not in the config does not
+ * compile either.
  *
- * There are two only because one would be too long to read: this one takes
- * the kinds that draw on something outside themselves — Site settings, the
- * Services, the Posts, the Media library, a form — and hands the rest on.
+ * There are three only because one would be too long to read. This one
+ * takes the kinds that draw on something outside themselves — Site
+ * settings, the Services, the Posts, the Media library, a form — and hands
+ * the rest on: first the kinds the owner types into, then the ones with
+ * nothing to type.
  */
 const BlockView = ({ block, isFirst }: { block: PageBlock; isFirst: boolean }) => {
   switch (block.blockType) {
@@ -93,8 +117,6 @@ const BlockView = ({ block, isFirst }: { block: PageBlock; isFirst: boolean }) =
       return <Picture block={block} />;
     case 'postList':
       return <AllPosts block={block} />;
-    case 'resumeDownload':
-      return <ResumeDownload />;
     case 'servicesDetail':
       return <ServicesDetail block={block} />;
     case 'servicesGrid':

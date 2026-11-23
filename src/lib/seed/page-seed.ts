@@ -162,6 +162,8 @@ const blockSeedSchema = z.discriminatedUnion('blockType', [
     items: z.array(z.strictObject({ detail: optionalText, title: text })).min(1),
   }),
   z.strictObject({ blockType: z.literal('resumeDownload') }),
+  z.strictObject({ blockType: z.literal('cookieInventory') }),
+  z.strictObject({ blockType: z.literal('managePreferences') }),
 ]);
 
 export type BlockSeed = z.infer<typeof blockSeedSchema>;
