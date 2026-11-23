@@ -185,8 +185,7 @@ back to source
 a preview build fails when it has no database, or when the database it has
 holds no published Site settings. Whichever database preview builds against
 has to be seeded like the live one — see "Seed before a deploy that needs
-new records" below. When the Vercel check on a pull request is red, rule
-this out first.
+new records" below.
 
 `TURNSTILE_SECRET_KEY` is the other. A preview build still runs with
 `NODE_ENV=production` (Vercel sets `VERCEL_ENV=preview`, not `NODE_ENV`), so
