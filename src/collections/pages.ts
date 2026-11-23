@@ -3,6 +3,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 import { keepFixedPageAddress } from '@/collections/hooks/keep-fixed-page-address';
+import { keepPrivacyPageWhole } from '@/collections/hooks/keep-privacy-page-whole';
 import {
   revalidatePageAfterChange,
   revalidatePageAfterDelete,
@@ -105,7 +106,7 @@ export const Pages: CollectionConfig = {
   hooks: {
     afterChange: [revalidatePageAfterChange],
     afterDelete: [revalidatePageAfterDelete],
-    beforeChange: [keepFixedPageAddress],
+    beforeChange: [keepFixedPageAddress, keepPrivacyPageWhole],
   },
   labels: { plural: 'Pages', singular: 'Page' },
   versions: { drafts: true },

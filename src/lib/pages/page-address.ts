@@ -12,6 +12,9 @@
 /** The name the home Page is stored under. It is served at `/`, never `/home`. */
 export const HOME_SLUG = 'home';
 
+/** The address of the privacy policy, which the footer links to by itself. */
+export const PRIVACY_SLUG = 'privacy';
+
 /**
  * The Fixed Pages (see `CONTEXT.md`): the rest of the site depends on
  * finding each at its address, so the owner edits them but cannot move or
