@@ -19,9 +19,12 @@ import { readFileSync } from 'node:fs';
  * instead of failing the deploy. Leaving both enabled also races two builds
  * of the same commit to the production alias.
  *
- * Preview deployments on other branches stay on — they are useful and cost
- * nothing here, which is why this pins `main` specifically rather than
- * setting `deploymentEnabled` to a bare `false`.
+ * Preview deployments are off as well, so the value is a bare `false` rather
+ * than `main` alone. The owner decided on 2026-11-23 that a pull request is
+ * judged by the `ci` and `e2e` jobs and nothing else, and took the preview
+ * out: with the Git integration on, every push to a branch adds a `Vercel`
+ * status to the pull request beside those two. A preview can still be made
+ * by hand with `vercel deploy`; this only stops the automatic ones.
  */
 
 interface VercelConfig {
@@ -36,16 +39,8 @@ const vercelConfig = (): VercelConfig => {
 };
 
 describe('vercel.json git triggers', () => {
-  it('turns off automatic deployment for main', () => {
+  it('turns off automatic deployment for every branch, main included', () => {
     const { git } = vercelConfig();
-    const enabled = git?.deploymentEnabled;
-    /** A Map, since reading a record by a computed key trips detect-object-injection. */
-    const perBranch = new Map(Object.entries(typeof enabled === 'object' ? enabled : {}));
-    expect(perBranch.get('main')).toBe(false);
-  });
-
-  it('leaves other branches deploying, rather than disabling every branch', () => {
-    const { git } = vercelConfig();
-    expect(git?.deploymentEnabled).not.toBe(false);
+    expect(git?.deploymentEnabled).toBe(false);
   });
 });

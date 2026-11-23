@@ -12,10 +12,16 @@ value with a known shape does not match it.
 
 Vercel's own Git integration would otherwise promote the same commit in
 parallel, racing two builds to the production alias and skipping both the
-preflight and the `e2e` gate. `vercel.json` turns it off for `main` alone —
-`git.deploymentEnabled` — so preview deployments on other branches keep
-working. `src/vercel-config.spec.ts` pins that, since deleting the block
-would silently restore the double-build.
+preflight and the `e2e` gate. `vercel.json` turns it off for every branch —
+`git.deploymentEnabled` is `false` — so nothing deploys on a push but this
+job. `src/vercel-config.spec.ts` pins that, since deleting the block would
+silently restore the double-build.
+
+That also means a pull request gets no preview deployment and no `Vercel`
+status: the owner decided on 2026-11-23 that the `ci` and `e2e` jobs are the
+only gates a pull request is judged by. A preview can still be made by hand
+with `pnpm exec vercel deploy`, and the notes on preview below apply to one
+made that way.
 
 ## Node version
 
