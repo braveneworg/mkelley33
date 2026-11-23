@@ -5,10 +5,14 @@
 import { isFixedPage, pageHref } from '@/lib/pages/page-address';
 import type { Page } from '@/payload-types';
 
+/** What a link needs to know about the Page it points at. */
+export type LinkedPage = Pick<Page, '_status' | 'slug'>;
+
 /** A link as the admin stores it — see `linkGroup` in the Block field helpers. */
 export interface LinkFields {
   label?: null | string;
-  page?: null | Page | string;
+  /** The Page as a read resolved it, or its bare id when it could not be. */
+  page?: LinkedPage | null | string;
   url?: null | string;
 }
 
@@ -20,7 +24,8 @@ export interface ResolvedLink {
 }
 
 /** A Fixed Page is served even when unpublished, so a link to it holds. */
-const isServed = ({ _status, slug }: Page): boolean => _status === 'published' || isFixedPage(slug);
+const isServed = ({ _status, slug }: LinkedPage): boolean =>
+  _status === 'published' || isFixedPage(slug);
 
 /**
  * Turns a stored link into something to render, or null when there is

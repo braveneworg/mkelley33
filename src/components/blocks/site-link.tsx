@@ -7,24 +7,41 @@ import Link from 'next/link';
 import type { ResolvedLink } from '@/lib/pages/links';
 
 /**
- * A resolved link, rendered the one way the site renders links: a Page on
- * this site through the router, an address elsewhere in a new tab with the
- * `rel` that keeps the opener safe and a spoken hint that it leaves.
+ * The one way the site renders a link: an address on this site through the
+ * router, an address elsewhere in a new tab with the `rel` that keeps the
+ * opener safe and a spoken hint that it leaves.
  */
+export const SiteAnchor = ({
+  children,
+  className,
+  external,
+  href,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  external: boolean;
+  href: string;
+}) =>
+  external ? (
+    <a className={className} href={href} rel="noopener noreferrer" target="_blank">
+      {children}
+      <span className="sr-only"> (opens in new tab)</span>
+    </a>
+  ) : (
+    <Link className={className} href={href}>
+      {children}
+    </Link>
+  );
+
+/** A resolved link — a menu item, a Block's button — under its label. */
 export const SiteLink = ({
   className,
   link: { external, href, label },
 }: {
   className?: string;
   link: ResolvedLink;
-}) =>
-  external ? (
-    <a className={className} href={href} rel="noopener noreferrer" target="_blank">
-      {label}
-      <span className="sr-only"> (opens in new tab)</span>
-    </a>
-  ) : (
-    <Link className={className} href={href}>
-      {label}
-    </Link>
-  );
+}) => (
+  <SiteAnchor className={className} external={external} href={href}>
+    {label}
+  </SiteAnchor>
+);

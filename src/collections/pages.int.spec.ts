@@ -5,6 +5,7 @@
 // @vitest-environment node
 
 import { findPageDraft, findPublishedPage } from '@/collections/published-page';
+import { pageLink, paragraph, richText } from '@/test/lexical';
 import { createTestPayload } from '@/test/payload-harness';
 
 import type { Payload } from 'payload';
@@ -192,5 +193,28 @@ describe('the Page the owner previews', () => {
 
   it('is nothing at an address no Page has', async () => {
     await expect(findPageDraft(payload, 'uses')).resolves.toBeNull();
+  });
+});
+
+describe("a link in a Terminal's text", () => {
+  const publishWithText = (slug: string, body: ReturnType<typeof richText>) =>
+    payload.create({
+      collection: 'pages',
+      data: {
+        _status: 'published',
+        blocks: [{ blockType: 'terminal', body, pictureStyle: 'plain' }],
+        slug,
+        title: slug,
+      },
+    });
+
+  /** The renderer needs the Page itself to know its address and whether it is published. */
+  it('reads back with the Page it points at', async () => {
+    const { id } = await publish('uses');
+    await publishWithText('cv', richText(paragraph(pageLink(id, 'what I use'))));
+
+    const page = await findPublishedPage(payload, 'cv');
+
+    expect(JSON.stringify(page?.blocks)).toContain('"slug":"uses"');
   });
 });
