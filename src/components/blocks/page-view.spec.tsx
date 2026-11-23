@@ -126,6 +126,13 @@ describe('PageView', () => {
     expect(screen.getByText('2026-08-02')).toHaveAttribute('datetime', '2026-08-02');
   });
 
+  /** A date broken across two lines at its hyphen reads as two things. */
+  it('keeps that date on one line', () => {
+    render(<PageView page={page({ slug: 'privacy', updatedAt: '2026-08-02T15:04:05.000Z' })} />);
+
+    expect(screen.getByText('2026-08-02')).toHaveClass('whitespace-nowrap');
+  });
+
   it('says so even when the privacy Page has no intro', () => {
     render(
       <PageView

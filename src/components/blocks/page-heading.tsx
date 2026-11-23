@@ -55,7 +55,11 @@ export const PageHeading = ({
         {intro}
         {lastPublished ? (
           <>
-            {intro ? ' ' : null}Last updated <time dateTime={lastPublished}>{lastPublished}</time>.
+            {intro ? ' ' : null}Last updated{' '}
+            <time className="whitespace-nowrap" dateTime={lastPublished}>
+              {lastPublished}
+            </time>
+            .
           </>
         ) : null}
       </p>
