@@ -23,10 +23,9 @@ import { deployJobSteps } from '@/lib/deploy/ci-workflow';
  * on Vercel, where the real values are injected. It costs build minutes and
  * a slower pipeline; that is the price of a build that can see its secrets.
  *
- * The preflight stays in front of the deploy. It can only assert PRESENCE
- * for sensitive names, since it sees markers rather than values — which is
- * exactly why format checks in DEPLOY_ENV_FORMATS are limited to variables
- * that are not stored as sensitive.
+ * The preflight stays in front of the deploy. It asserts PRESENCE and
+ * nothing more, since for a sensitive name it sees a marker rather than a
+ * value — a value's shape is left to the build on Vercel, which has it.
  *
  * Assertions run over the deploy job's parsed step list — comments are not
  * steps, so a comment naming `vercel build` cannot trip anything — and

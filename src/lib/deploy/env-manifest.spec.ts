@@ -8,8 +8,6 @@ import { readFileSync } from 'node:fs';
 
 import {
   auditDeployEnv,
-  auditDeployEnvFormats,
-  DEPLOY_ENV_FORMATS,
   FORBIDDEN_DEPLOY_ENV,
   REQUIRED_DEPLOY_ENV,
   REQUIRED_DEPLOY_ENV_VARS,
@@ -69,58 +67,16 @@ describe('auditDeployEnv', () => {
   });
 });
 
-// Assembled from parts so no token-shaped literal ever lands in the repo for
-// gitleaks (or a human skimming the diff) to mistake for a live credential.
-const wellFormedBlobToken = ['vercel', 'blob', 'rw', 'ExampleStore123', 'notARealSecret'].join('_');
-
-describe('DEPLOY_ENV_FORMATS', () => {
-  it('only constrains names the deploy already requires', () => {
-    const required = new Set<string>(REQUIRED_DEPLOY_ENV);
-    expect([...DEPLOY_ENV_FORMATS.keys()].filter((name) => !required.has(name))).toEqual([]);
-  });
-});
-
-describe('auditDeployEnvFormats', () => {
-  it('accepts a well-formed Vercel Blob token', () => {
-    expect(auditDeployEnvFormats([['BLOB_READ_WRITE_TOKEN', wellFormedBlobToken]])).toEqual([]);
-  });
-
-  it('rejects a BLOB_READ_WRITE_TOKEN that is not in Vercel Blob format', () => {
-    expect(auditDeployEnvFormats([['BLOB_READ_WRITE_TOKEN', 'placeholder-value']])).toEqual([
-      'BLOB_READ_WRITE_TOKEN',
-    ]);
-  });
-
-  it('rejects a Blob token missing its random suffix', () => {
-    expect(auditDeployEnvFormats([['BLOB_READ_WRITE_TOKEN', 'vercel_blob_rw_Store123']])).toEqual([
-      'BLOB_READ_WRITE_TOKEN',
-    ]);
-  });
-
-  it('ignores names with no declared format', () => {
-    expect(auditDeployEnvFormats([['PAYLOAD_SECRET', 'anything at all']])).toEqual([]);
-  });
-
-  it('never echoes the offending value', () => {
-    const report = auditDeployEnvFormats([['BLOB_READ_WRITE_TOKEN', 'leaky-value']]).join(' ');
-    expect(report).not.toContain('leaky-value');
-  });
-});
-
 describe('SENSITIVE_DEPLOY_ENV', () => {
   it('pins the names stored with vercel env add --sensitive', () => {
     expect([...SENSITIVE_DEPLOY_ENV].sort()).toEqual([
+      'BLOB_READ_WRITE_TOKEN',
       'DATABASE_URL',
       'PAYLOAD_SECRET',
       'SMTP_PASS',
       'SMTP_USER',
       'TURNSTILE_SECRET_KEY',
     ]);
-  });
-
-  it('never intersects the format map — pulls see markers, not values', () => {
-    const sensitive = new Set<string>(SENSITIVE_DEPLOY_ENV);
-    expect([...DEPLOY_ENV_FORMATS.keys()].filter((name) => sensitive.has(name))).toEqual([]);
   });
 });
 
@@ -145,20 +101,13 @@ describe('docs/deploy.md', () => {
     expect(missing).toEqual([]);
   });
 
-  it('stores readable project-env variables with --no-sensitive', () => {
-    const readable = REQUIRED_DEPLOY_ENV_VARS.filter(
-      (envVar) => !envVar.sensitive && envVar.source === 'vercel-env'
-    ).map(({ name }) => name);
+  it('stores every readable variable with --no-sensitive', () => {
+    const readable = REQUIRED_DEPLOY_ENV_VARS.filter(({ sensitive }) => !sensitive).map(
+      ({ name }) => name
+    );
     const missing = readable.filter(
       (name) => !docs.includes(`vercel env add ${name} production --no-sensitive`)
     );
     expect(missing).toEqual([]);
-  });
-
-  it('never adds a store-injected variable by hand', () => {
-    const injected = REQUIRED_DEPLOY_ENV_VARS.filter(
-      (envVar) => envVar.source === 'blob-store'
-    ).map(({ name }) => name);
-    expect(injected.filter((name) => docs.includes(`vercel env add ${name}`))).toEqual([]);
   });
 });

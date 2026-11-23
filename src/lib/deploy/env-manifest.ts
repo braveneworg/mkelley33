@@ -11,76 +11,44 @@
  * right for resilience and wrong as a deploy default).
  *
  * One record per variable. Everything downstream — the required list, the
- * format map, the docs partition guards in the spec — derives from
+ * sensitive list, the docs guards in the spec — derives from
  * REQUIRED_DEPLOY_ENV_VARS, so adding a variable is one edit here plus the
  * documentation the spec then demands.
  */
 
-export interface DeployEnvFormat {
-  /** Shown to whoever has to fix the value — never the value itself. */
-  hint: string;
-  pattern: RegExp;
-}
-
 /**
  * `sensitive: true` means the value is stored with
  * `vercel env add --sensitive`: `vercel pull` cannot read it back and
- * writes a redaction marker in its place, so the preflight can only assert
- * PRESENCE. The union makes declaring a `format` for a sensitive variable
- * unrepresentable — a pattern would test the marker and fail every deploy
- * against a perfectly good stored value. That mistake passed unit tests
- * once and nearly shipped; see
+ * writes a redaction marker in its place. That is why the preflight asserts
+ * PRESENCE and nothing else — it has no way to tell a marker from a value,
+ * so anything that judged what a value looks like would fail every deploy
+ * against a perfectly good stored one. A `DATABASE_URL` scheme check
+ * passed its unit tests and nearly shipped that way, and a shape check on
+ * the Blob token did stop the deploy on 2026-11-23, the day the owner made
+ * that token sensitive. See
  * docs/lessons/deploy/vercel-pull-redacts-sensitive-env.md.
  *
- * `source` records how production obtains the value: `vercel-env` for
- * `vercel env add`, `blob-store` for values a store connection injects
- * (adding those by hand desyncs them from the store — see docs/deploy.md).
+ * A value's shape is checked where the value is visible: the build on
+ * Vercel. For the Blob token that is the adapter itself, which refuses a
+ * token it cannot parse — src/payload.config.spec.ts pins it.
  */
-export type RequiredDeployEnvVar =
-  | {
-      format?: DeployEnvFormat;
-      name: string;
-      sensitive: false;
-      source: 'blob-store' | 'vercel-env';
-    }
-  | {
-      name: string;
-      sensitive: true;
-      source: 'vercel-env';
-    };
+export interface RequiredDeployEnvVar {
+  name: string;
+  sensitive: boolean;
+}
 
-/**
- * BLOB_READ_WRITE_TOKEN earns its format: src/payload.config.ts registers
- * the Vercel Blob adapter whenever the var is truthy, and the adapter
- * throws on a token it cannot parse. That throw happens inside buildConfig,
- * so Payload never initializes and every route that touches it — the whole
- * /admin — fails, while the presence-only audit reports a healthy
- * environment. It is checkable at all only because the Blob store
- * connection creates it readable rather than `vercel env add --sensitive`.
- *
- * A record without a format is unconstrained; only add one where the shape
- * is genuinely fixed, since a too-strict pattern blocks a valid deploy.
- */
 export const REQUIRED_DEPLOY_ENV_VARS: readonly RequiredDeployEnvVar[] = [
-  {
-    format: {
-      hint: 'vercel_blob_rw_<store id>_<random string>',
-      pattern: /^vercel_blob_rw_[A-Za-z0-9]+_[A-Za-z0-9]+$/,
-    },
-    name: 'BLOB_READ_WRITE_TOKEN',
-    sensitive: false,
-    source: 'blob-store',
-  },
-  { name: 'CONTACT_TO', sensitive: false, source: 'vercel-env' },
-  { name: 'DATABASE_URL', sensitive: true, source: 'vercel-env' },
-  { name: 'EMAIL_FROM', sensitive: false, source: 'vercel-env' },
-  { name: 'NEXT_PUBLIC_TURNSTILE_SITE_KEY', sensitive: false, source: 'vercel-env' },
-  { name: 'PAYLOAD_SECRET', sensitive: true, source: 'vercel-env' },
-  { name: 'SMTP_HOST', sensitive: false, source: 'vercel-env' },
-  { name: 'SMTP_PASS', sensitive: true, source: 'vercel-env' },
-  { name: 'SMTP_PORT', sensitive: false, source: 'vercel-env' },
-  { name: 'SMTP_USER', sensitive: true, source: 'vercel-env' },
-  { name: 'TURNSTILE_SECRET_KEY', sensitive: true, source: 'vercel-env' },
+  { name: 'BLOB_READ_WRITE_TOKEN', sensitive: true },
+  { name: 'CONTACT_TO', sensitive: false },
+  { name: 'DATABASE_URL', sensitive: true },
+  { name: 'EMAIL_FROM', sensitive: false },
+  { name: 'NEXT_PUBLIC_TURNSTILE_SITE_KEY', sensitive: false },
+  { name: 'PAYLOAD_SECRET', sensitive: true },
+  { name: 'SMTP_HOST', sensitive: false },
+  { name: 'SMTP_PASS', sensitive: true },
+  { name: 'SMTP_PORT', sensitive: false },
+  { name: 'SMTP_USER', sensitive: true },
+  { name: 'TURNSTILE_SECRET_KEY', sensitive: true },
 ];
 
 export const REQUIRED_DEPLOY_ENV: readonly string[] = REQUIRED_DEPLOY_ENV_VARS.map(
@@ -89,7 +57,7 @@ export const REQUIRED_DEPLOY_ENV: readonly string[] = REQUIRED_DEPLOY_ENV_VARS.m
 
 /** Names whose pulled "value" is a redaction marker — presence-only. */
 export const SENSITIVE_DEPLOY_ENV: readonly string[] = REQUIRED_DEPLOY_ENV_VARS.filter(
-  (envVar) => envVar.sensitive
+  ({ sensitive }) => sensitive
 ).map(({ name }) => name);
 
 /**
@@ -99,16 +67,6 @@ export const SENSITIVE_DEPLOY_ENV: readonly string[] = REQUIRED_DEPLOY_ENV_VARS.
  * production logs.
  */
 export const FORBIDDEN_DEPLOY_ENV = ['EMAIL_LOG_UNSENT'] as const;
-
-/**
- * Derived view of the records that declare a format — structurally free of
- * sensitive names, because the type refuses the combination.
- */
-export const DEPLOY_ENV_FORMATS: ReadonlyMap<string, DeployEnvFormat> = new Map(
-  REQUIRED_DEPLOY_ENV_VARS.flatMap((envVar) =>
-    envVar.sensitive || !envVar.format ? [] : [[envVar.name, envVar.format] as const]
-  )
-);
 
 export interface DeployEnvAudit {
   forbidden: string[];
@@ -127,15 +85,3 @@ export const auditDeployEnv = (presentKeys: Iterable<string>): DeployEnvAudit =>
     missing: REQUIRED_DEPLOY_ENV.filter((name) => !present.has(name)).sort(),
   };
 };
-
-/**
- * Audits env-var VALUES against the format map and returns the NAMES that
- * fail, sorted. Values enter this function but never leave it — the return is
- * names only, so a caller cannot accidentally print a secret it rejected.
- * Names with no declared format pass untouched.
- */
-export const auditDeployEnvFormats = (entries: Iterable<readonly [string, string]>): string[] =>
-  [...entries]
-    .filter(([name, value]) => DEPLOY_ENV_FORMATS.get(name)?.pattern.test(value) === false)
-    .map(([name]) => name)
-    .sort();
