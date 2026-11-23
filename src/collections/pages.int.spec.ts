@@ -152,6 +152,21 @@ describe('the Page visitors are served', () => {
     });
   });
 
+  /** The privacy Page shows this date as "last updated" (docs/adr/0002). */
+  it('keeps the date of the last publish while a newer draft exists', async () => {
+    const { id, updatedAt } = await publish('uses');
+    await payload.update({ collection: 'pages', data: { title: 'draft' }, draft: true, id });
+
+    await expect(findPublishedPage(payload, 'uses')).resolves.toMatchObject({ updatedAt });
+  });
+
+  it('keeps the date of the last publish for a Fixed Page that was unpublished', async () => {
+    const { id, updatedAt } = await publish('blog');
+    await unpublish(id, 'edited while unpublished');
+
+    await expect(findPublishedPage(payload, 'blog')).resolves.toMatchObject({ updatedAt });
+  });
+
   /** The owner's decision of 2026-11-23: a Fixed Page cannot be taken off the site. */
   it('stays the last published version of a Fixed Page that was unpublished', async () => {
     const { id } = await publish('blog', 'published title');

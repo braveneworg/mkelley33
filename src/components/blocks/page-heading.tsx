@@ -9,15 +9,21 @@
  *
  * `document` is the plainer form the CV uses: the title as it is, with no
  * `#` in front, and the intro in the monospace of a letterhead.
+ *
+ * `lastPublished` is a date (`2026-08-02`) shown after the intro as "Last
+ * updated". It is given by the code, from the Page's last publish — there
+ * is no field to type one into (docs/adr/0002).
  */
 export const PageHeading = ({
   command,
   intro,
+  lastPublished,
   title,
   variant,
 }: {
   command?: null | string;
   intro?: null | string;
+  lastPublished?: string;
   title: string;
   variant: 'document' | 'standard';
 }) => (
@@ -38,7 +44,7 @@ export const PageHeading = ({
         {title}
       </h1>
     )}
-    {intro ? (
+    {intro || lastPublished ? (
       <p
         className={
           variant === 'document'
@@ -47,6 +53,11 @@ export const PageHeading = ({
         }
       >
         {intro}
+        {lastPublished ? (
+          <>
+            {intro ? ' ' : null}Last updated <time dateTime={lastPublished}>{lastPublished}</time>.
+          </>
+        ) : null}
       </p>
     ) : null}
   </header>

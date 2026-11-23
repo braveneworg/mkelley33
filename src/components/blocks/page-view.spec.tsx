@@ -109,4 +109,36 @@ describe('PageView', () => {
 
     expect(screen.getByRole('heading', { level: 1, name: 'uses' })).toBeInTheDocument();
   });
+
+  /**
+   * The date is the last publish, never one the owner types, so the policy
+   * cannot claim to be newer or older than it is (docs/adr/0002).
+   */
+  it('says when the privacy Page was last published', () => {
+    render(<PageView page={page({ slug: 'privacy', updatedAt: '2026-08-02T15:04:05.000Z' })} />);
+
+    expect(screen.getByRole('banner')).toHaveTextContent('What I use. Last updated 2026-08-02.');
+  });
+
+  it('marks that date up as a date', () => {
+    render(<PageView page={page({ slug: 'privacy', updatedAt: '2026-08-02T15:04:05.000Z' })} />);
+
+    expect(screen.getByText('2026-08-02')).toHaveAttribute('datetime', '2026-08-02');
+  });
+
+  it('says so even when the privacy Page has no intro', () => {
+    render(
+      <PageView
+        page={page({ intro: null, slug: 'privacy', updatedAt: '2026-08-02T15:04:05.000Z' })}
+      />
+    );
+
+    expect(screen.getByRole('banner')).toHaveTextContent('Last updated 2026-08-02.');
+  });
+
+  it('puts no date on any other Page', () => {
+    render(<PageView page={page({ updatedAt: '2026-08-02T15:04:05.000Z' })} />);
+
+    expect(screen.getByRole('banner')).not.toHaveTextContent('Last updated');
+  });
 });
