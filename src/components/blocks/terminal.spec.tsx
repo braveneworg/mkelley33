@@ -6,29 +6,7 @@ import { render, screen } from '@testing-library/react';
 
 import { Terminal } from '@/components/blocks/terminal';
 import type { Media, TerminalBlock } from '@/payload-types';
-
-const paragraph = (text: string): TerminalBlock['body'] => ({
-  root: {
-    children: [
-      {
-        children: [
-          { detail: 0, format: 0, mode: 'normal', style: '', text, type: 'text', version: 1 },
-        ],
-        direction: 'ltr',
-        format: '',
-        indent: 0,
-        textFormat: 0,
-        type: 'paragraph',
-        version: 1,
-      },
-    ],
-    direction: 'ltr',
-    format: '',
-    indent: 0,
-    type: 'root',
-    version: 1,
-  },
-});
+import { paragraph, richText } from '@/test/lexical';
 
 const headshot: Media = {
   alt: 'The owner, smiling',
@@ -42,7 +20,7 @@ const headshot: Media = {
 
 const block = (overrides: Partial<TerminalBlock> = {}): TerminalBlock => ({
   blockType: 'terminal',
-  body: paragraph('I build things for the web.'),
+  body: richText(paragraph('I build things for the web.')),
   command: 'cat ./about.md',
   pictureStyle: 'plain',
   ...overrides,

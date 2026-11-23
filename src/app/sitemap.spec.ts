@@ -11,6 +11,7 @@ vi.mock('@/lib/repositories/pages', () => ({
   listPublishedPages: vi.fn(async () => [
     { href: '/', slug: 'home', title: 'home', updatedAt: '2026-11-01T00:00:00.000Z' },
     { href: '/uses', slug: 'uses', title: 'uses', updatedAt: '2026-11-02T00:00:00.000Z' },
+    { href: '/privacy', slug: 'privacy', title: 'privacy', updatedAt: '2026-11-04T00:00:00.000Z' },
   ]),
 }));
 
@@ -30,9 +31,13 @@ describe('sitemap', () => {
     );
   });
 
-  /** Still a route in code, so no Page lists it. */
-  it('lists the privacy policy', async () => {
-    expect(await sitemap()).toContainEqual({ url: 'https://mkelley33.com/privacy' });
+  /** The privacy policy is a Page like any other, so it is listed once, with its date. */
+  it('lists the privacy policy once', async () => {
+    const entries = await sitemap();
+
+    expect(entries.filter(({ url }) => url.endsWith('/privacy'))).toEqual([
+      { lastModified: '2026-11-04T00:00:00.000Z', url: 'https://mkelley33.com/privacy' },
+    ]);
   });
 
   it('lists every published Post', async () => {

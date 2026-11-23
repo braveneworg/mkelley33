@@ -17,18 +17,35 @@ const page = (slug: string, blocks: unknown[] = []) => ({
   title: slug,
 });
 
-const FIXED = ['home', 'blog', 'contact', 'services'].map((slug) => page(slug));
+/** The privacy Page cannot be published without these two (docs/adr/0002). */
+const GUARDED = [{ blockType: 'cookieInventory' }, { blockType: 'managePreferences' }];
+
+const FIXED = [
+  ...['home', 'blog', 'contact', 'services'].map((slug) => page(slug)),
+  page('privacy', GUARDED),
+];
 
 const accepts = (pages: unknown): boolean => pagesSeedSchema.safeParse(pages).success;
 
 describe('pagesSeedSchema', () => {
-  it('accepts the Fixed Pages with no Blocks', () => {
+  it('accepts the Fixed Pages with nothing on them but what the privacy Page must hold', () => {
     expect(accepts(FIXED)).toBe(true);
   });
 
   /** A database filled from the Seed has to build, and a build needs each of them. */
-  it.each(['home', 'blog', 'contact', 'services'])('rejects a Seed without the %s Page', (slug) => {
-    expect(accepts(FIXED.filter((fixed) => fixed.slug !== slug))).toBe(false);
+  it.each(['home', 'blog', 'contact', 'services', 'privacy'])(
+    'rejects a Seed without the %s Page',
+    (slug) => {
+      expect(accepts(FIXED.filter((fixed) => fixed.slug !== slug))).toBe(false);
+    }
+  );
+
+  /** The fill would be refused at the publish; the Seed says so before it writes anything. */
+  it.each(GUARDED)('rejects a privacy Page without its $blockType Block', (missing) => {
+    const others = FIXED.filter(({ slug }) => slug !== 'privacy');
+    const blocks = GUARDED.filter((block) => block !== missing);
+
+    expect(accepts([...others, page('privacy', blocks)])).toBe(false);
   });
 
   it('rejects two Pages at one address', () => {
@@ -42,6 +59,20 @@ describe('pagesSeedSchema', () => {
   it('rejects a kind of Block it does not know', () => {
     expect(accepts([...FIXED, page('uses', [{ blockType: 'carousel' }])])).toBe(false);
   });
+
+  /** Nothing to type into either (docs/adr/0002), so the Seed carries only the kind. */
+  it.each(['cookieInventory', 'managePreferences'])('accepts a %s Block', (blockType) => {
+    expect(accepts([...FIXED, page('uses', [{ blockType }])])).toBe(true);
+  });
+
+  it.each(['cookieInventory', 'managePreferences'])(
+    'rejects a %s Block that carries text of its own',
+    (blockType) => {
+      expect(accepts([...FIXED, page('uses', [{ blockType, command: 'ls ./cookies' }])])).toBe(
+        false
+      );
+    }
+  );
 
   it('rejects a key it does not know on a Block', () => {
     const block = { blockType: 'postList', command: null, colour: 'green' };

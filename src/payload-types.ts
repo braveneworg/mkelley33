@@ -162,7 +162,7 @@ export interface User {
   collection: 'users';
 }
 /**
- * Home, blog, contact and services are Fixed Pages: they cannot be moved or deleted, and unpublishing one does not take it off the site — visitors keep the last published version until you publish again.
+ * Home, blog, contact, services and privacy are Fixed Pages: they cannot be moved or deleted, and unpublishing one does not take it off the site — visitors keep the last published version until you publish again. The privacy Page cannot be published without its Cookie inventory and Manage preferences Blocks, and it shows the date of its last publish as "last updated".
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "pages".
@@ -205,6 +205,8 @@ export interface Page {
         | CvExperienceBlock
         | CvEntriesBlock
         | ResumeDownloadBlock
+        | CookieInventoryBlock
+        | ManagePreferencesBlock
       )[]
     | null;
   meta?: {
@@ -568,6 +570,24 @@ export interface ResumeDownloadBlock {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CookieInventoryBlock".
+ */
+export interface CookieInventoryBlock {
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'cookieInventory';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ManagePreferencesBlock".
+ */
+export interface ManagePreferencesBlock {
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'managePreferences';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "resume-files".
  */
 export interface ResumeFile {
@@ -835,6 +855,8 @@ export interface PagesSelect<T extends boolean = true> {
         cvExperience?: T | CvExperienceBlockSelect<T>;
         cvEntries?: T | CvEntriesBlockSelect<T>;
         resumeDownload?: T | ResumeDownloadBlockSelect<T>;
+        cookieInventory?: T | CookieInventoryBlockSelect<T>;
+        managePreferences?: T | ManagePreferencesBlockSelect<T>;
       };
   meta?:
     | T
@@ -1089,6 +1111,22 @@ export interface CvEntriesBlockSelect<T extends boolean = true> {
  * via the `definition` "ResumeDownloadBlock_select".
  */
 export interface ResumeDownloadBlockSelect<T extends boolean = true> {
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CookieInventoryBlock_select".
+ */
+export interface CookieInventoryBlockSelect<T extends boolean = true> {
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ManagePreferencesBlock_select".
+ */
+export interface ManagePreferencesBlockSelect<T extends boolean = true> {
   id?: T;
   blockName?: T;
 }

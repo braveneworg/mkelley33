@@ -46,6 +46,6 @@ describe('reserved Page names', () => {
 
   it('find the routes they are meant to guard', () => {
     // If the walk above ever comes back empty, the check above passes vacuously.
-    expect(served).toEqual(expect.arrayContaining(['admin', 'api', 'newsletter', 'privacy']));
+    expect(served).toEqual(expect.arrayContaining(['admin', 'api', 'newsletter', 'preview']));
   });
 });

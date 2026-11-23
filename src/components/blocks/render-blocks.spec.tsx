@@ -17,6 +17,9 @@ import { type PageBlock, RenderBlocks } from '@/components/blocks/render-blocks'
 vi.mock('@/components/blocks/all-posts', () => ({ AllPosts: () => <p>AllPosts</p> }));
 vi.mock('@/components/blocks/chip-list', () => ({ ChipList: () => <p>ChipList</p> }));
 vi.mock('@/components/blocks/contact', () => ({ Contact: () => <p>Contact</p> }));
+vi.mock('@/components/blocks/cookie-inventory', () => ({
+  CookieInventory: () => <p>CookieInventory</p>,
+}));
 vi.mock('@/components/blocks/cv-entries', () => ({ CvEntries: () => <p>CvEntries</p> }));
 vi.mock('@/components/blocks/cv-experience', () => ({ CvExperience: () => <p>CvExperience</p> }));
 vi.mock('@/components/blocks/cv-skills', () => ({ CvSkills: () => <p>CvSkills</p> }));
@@ -31,6 +34,9 @@ vi.mock('@/components/blocks/hero', () => ({
 }));
 vi.mock('@/components/blocks/latest-posts', () => ({ LatestPosts: () => <p>LatestPosts</p> }));
 vi.mock('@/components/blocks/link-list', () => ({ LinkList: () => <p>LinkList</p> }));
+vi.mock('@/components/blocks/manage-preferences', () => ({
+  ManagePreferences: () => <p>ManagePreferences</p>,
+}));
 vi.mock('@/components/blocks/newsletter-signup', () => ({
   NewsletterSignup: () => <p>NewsletterSignup</p>,
 }));
@@ -51,6 +57,7 @@ describe('RenderBlocks', () => {
   it.each([
     ['chipList', 'ChipList'],
     ['contactForm', 'Contact'],
+    ['cookieInventory', 'CookieInventory'],
     ['cvEntries', 'CvEntries'],
     ['cvExperience', 'CvExperience'],
     ['cvSkills', 'CvSkills'],
@@ -58,6 +65,7 @@ describe('RenderBlocks', () => {
     ['definitionList', 'DefinitionList'],
     ['latestPosts', 'LatestPosts'],
     ['linkList', 'LinkList'],
+    ['managePreferences', 'ManagePreferences'],
     ['newsletterSignup', 'NewsletterSignup'],
     ['picture', 'Picture'],
     ['postList', 'AllPosts'],

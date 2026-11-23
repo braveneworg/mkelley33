@@ -4,9 +4,8 @@
 
 import Image from 'next/image';
 
-import { RichText } from '@payloadcms/richtext-lexical/react';
-
 import { BlockSection } from '@/components/blocks/block-section';
+import { BlockText } from '@/components/blocks/block-text';
 import type { Media, TerminalBlock } from '@/payload-types';
 
 const PORTRAIT_SIZE = 120;
@@ -55,10 +54,7 @@ export const Terminal = ({
       {typeof picture === 'object' && picture !== null ? (
         <Picture media={picture} round={pictureStyle === 'roundPortrait'} />
       ) : null}
-      <RichText
-        className="text-fg [&_a]:text-phosphor max-w-2xl space-y-4 leading-relaxed [&_a]:underline [&_a]:underline-offset-4"
-        data={body}
-      />
+      <BlockText data={body} />
     </div>
   </BlockSection>
 );

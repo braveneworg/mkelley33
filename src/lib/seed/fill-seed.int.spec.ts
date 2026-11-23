@@ -6,7 +6,9 @@
 
 import { findPublishedPage } from '@/collections/published-page';
 import { findPublishedSiteSettings } from '@/globals/published-site-settings';
+import { pageLabel } from '@/lib/seed/fill-pages';
 import { fillSeed } from '@/lib/seed/fill-seed';
+import { loadSeed } from '@/lib/seed/seed-files';
 import type { Seed } from '@/lib/seed/seed-files';
 import { createTestPayload } from '@/test/payload-harness';
 
@@ -696,5 +698,34 @@ describe('the Resume uploads collection', () => {
         file: { data: Buffer.from('plain text'), mimetype: 'text/plain', name: 'cv.txt', size: 10 },
       })
     ).rejects.toThrow();
+  });
+});
+
+/**
+ * The specs above fill a small Seed of their own. This fills the one the
+ * repo carries — what CI, the E2E harness and the owner's `pnpm seed` run —
+ * so a Seed file Payload would refuse fails here, before a build does.
+ */
+describe('the committed Seed', () => {
+  it('fills an empty database with every Page it carries', async () => {
+    const committed = loadSeed('seed');
+
+    const { created } = await fillSeed(payload, committed);
+
+    expect(created).toEqual(expect.arrayContaining(committed.pages.map(pageLabel)));
+  });
+
+  /** It is published with its two guarded Blocks in place (docs/adr/0002). */
+  it('gives visitors a privacy Page with what it must hold', async () => {
+    await fillSeed(payload, loadSeed('seed'));
+
+    const privacy = await findPublishedPage(payload, 'privacy');
+
+    expect(privacy?.blocks?.map(({ blockType }) => blockType)).toEqual([
+      'terminal',
+      'cookieInventory',
+      'managePreferences',
+      'terminal',
+    ]);
   });
 });

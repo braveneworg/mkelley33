@@ -4,6 +4,7 @@
 
 import { PageHeading } from '@/components/blocks/page-heading';
 import { type PageBlock, RenderBlocks } from '@/components/blocks/render-blocks';
+import { PRIVACY_SLUG } from '@/lib/pages/page-address';
 import type { Page } from '@/payload-types';
 
 /** The kinds that make a Page a document: narrow, and laid out to print. */
@@ -14,14 +15,25 @@ const DOCUMENT_BLOCKS: ReadonlySet<PageBlock['blockType']> = new Set([
   'cvSummary',
 ]);
 
+/** The date part of a timestamp such as `2026-08-02T15:04:05.000Z`. */
+const DATE_LENGTH = 'yyyy-mm-dd'.length;
+
 /**
  * A whole Page: its heading, then its Blocks.
  *
  * A Page that opens with a Hero has no separate heading — the Hero is it.
  * A Page holding CV Blocks is shown as a document: one narrow column, which
  * `.cv-document` in `globals.css` widens again for paper.
+ *
+ * The privacy Page says when it was last published. `updatedAt` is that
+ * date: a draft saved later is kept apart from the published Page and does
+ * not move it.
  */
-export const PageView = ({ page: { blocks, command, intro, title } }: { page: Page }) => {
+export const PageView = ({
+  page: { blocks, command, intro, slug, title, updatedAt },
+}: {
+  page: Page;
+}) => {
   const all = blocks ?? [];
   const opensWithHero = all[0]?.blockType === 'hero';
   const isDocument = all.some(({ blockType }) => DOCUMENT_BLOCKS.has(blockType));
@@ -33,6 +45,7 @@ export const PageView = ({ page: { blocks, command, intro, title } }: { page: Pa
         <PageHeading
           command={command}
           intro={intro}
+          lastPublished={slug === PRIVACY_SLUG ? updatedAt.slice(0, DATE_LENGTH) : undefined}
           title={title}
           variant={isDocument ? 'document' : 'standard'}
         />

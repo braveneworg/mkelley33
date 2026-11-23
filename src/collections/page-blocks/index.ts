@@ -4,6 +4,7 @@
 
 import { ChipListBlock } from '@/collections/page-blocks/chip-list';
 import { ContactFormBlock } from '@/collections/page-blocks/contact-form';
+import { CookieInventoryBlock } from '@/collections/page-blocks/cookie-inventory';
 import { CvEntriesBlock } from '@/collections/page-blocks/cv-entries';
 import { CvExperienceBlock } from '@/collections/page-blocks/cv-experience';
 import { CvSkillsBlock } from '@/collections/page-blocks/cv-skills';
@@ -12,6 +13,7 @@ import { DefinitionListBlock } from '@/collections/page-blocks/definition-list';
 import { HeroBlock } from '@/collections/page-blocks/hero';
 import { LatestPostsBlock } from '@/collections/page-blocks/latest-posts';
 import { LinkListBlock } from '@/collections/page-blocks/link-list';
+import { ManagePreferencesBlock } from '@/collections/page-blocks/manage-preferences';
 import { NewsletterSignupBlock } from '@/collections/page-blocks/newsletter-signup';
 import { PictureBlock } from '@/collections/page-blocks/picture';
 import { PostListBlock } from '@/collections/page-blocks/post-list';
@@ -52,4 +54,6 @@ export const PAGE_BLOCKS: readonly Block[] = [
   CvExperienceBlock,
   CvEntriesBlock,
   ResumeDownloadBlock,
+  CookieInventoryBlock,
+  ManagePreferencesBlock,
 ];

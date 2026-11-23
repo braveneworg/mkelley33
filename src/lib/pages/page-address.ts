@@ -13,11 +13,23 @@
 export const HOME_SLUG = 'home';
 
 /**
+ * The address of the privacy policy. The footer links to it by itself, and
+ * the Page there is guarded: see `privacy-page.ts`.
+ */
+export const PRIVACY_SLUG = 'privacy';
+
+/**
  * The Fixed Pages (see `CONTEXT.md`): the rest of the site depends on
  * finding each at its address, so the owner edits them but cannot move or
- * delete them. The privacy Page joins this list when it becomes a Page.
+ * delete them.
  */
-export const FIXED_PAGE_SLUGS: readonly string[] = [HOME_SLUG, 'blog', 'contact', 'services'];
+export const FIXED_PAGE_SLUGS: readonly string[] = [
+  HOME_SLUG,
+  'blog',
+  'contact',
+  'services',
+  PRIVACY_SLUG,
+];
 
 export const isFixedPage = (slug: string): boolean => FIXED_PAGE_SLUGS.includes(slug);
 
@@ -28,8 +40,6 @@ export const isFixedPage = (slug: string): boolean => FIXED_PAGE_SLUGS.includes(
  * fails when a route is added without its name here.
  *
  * `index` is not a route file: Next answers `/index` with the root route.
- * `privacy` is still a code route and leaves this list when it becomes a
- * Fixed Page.
  */
 export const RESERVED_PAGE_SLUGS: ReadonlySet<string> = new Set([
   'admin',
@@ -38,7 +48,6 @@ export const RESERVED_PAGE_SLUGS: ReadonlySet<string> = new Set([
   'newsletter',
   'opengraph-image',
   'preview',
-  'privacy',
 ]);
 
 /** Lower-case words joined by hyphens: what an address can carry unescaped. */

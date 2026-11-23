@@ -138,7 +138,7 @@ describe('Pages access', () => {
 
   it('lets the owner delete any Page except a Fixed Page', () => {
     expect(accessOf(Pages, 'delete')(ADMIN)).toEqual({
-      slug: { not_in: ['home', 'blog', 'contact', 'services'] },
+      slug: { not_in: ['home', 'blog', 'contact', 'services', 'privacy'] },
     });
   });
 });

@@ -5,6 +5,7 @@
 // @vitest-environment node
 
 import { findPageDraft, findPublishedPage } from '@/collections/published-page';
+import { pageLink, paragraph, richText } from '@/test/lexical';
 import { createTestPayload } from '@/test/payload-harness';
 
 import type { Payload } from 'payload';
@@ -151,6 +152,21 @@ describe('the Page visitors are served', () => {
     });
   });
 
+  /** The privacy Page shows this date as "last updated" (docs/adr/0002). */
+  it('keeps the date of the last publish while a newer draft exists', async () => {
+    const { id, updatedAt } = await publish('uses');
+    await payload.update({ collection: 'pages', data: { title: 'draft' }, draft: true, id });
+
+    await expect(findPublishedPage(payload, 'uses')).resolves.toMatchObject({ updatedAt });
+  });
+
+  it('keeps the date of the last publish for a Fixed Page that was unpublished', async () => {
+    const { id, updatedAt } = await publish('blog');
+    await unpublish(id, 'edited while unpublished');
+
+    await expect(findPublishedPage(payload, 'blog')).resolves.toMatchObject({ updatedAt });
+  });
+
   /** The owner's decision of 2026-11-23: a Fixed Page cannot be taken off the site. */
   it('stays the last published version of a Fixed Page that was unpublished', async () => {
     const { id } = await publish('blog', 'published title');
@@ -192,5 +208,105 @@ describe('the Page the owner previews', () => {
 
   it('is nothing at an address no Page has', async () => {
     await expect(findPageDraft(payload, 'uses')).resolves.toBeNull();
+  });
+});
+
+describe("a link in a Terminal's text", () => {
+  const publishWithText = (slug: string, body: ReturnType<typeof richText>) =>
+    payload.create({
+      collection: 'pages',
+      data: {
+        _status: 'published',
+        blocks: [{ blockType: 'terminal', body, pictureStyle: 'plain' }],
+        slug,
+        title: slug,
+      },
+    });
+
+  /** The renderer needs the Page itself to know its address and whether it is published. */
+  it('reads back with the Page it points at', async () => {
+    const { id } = await publish('uses');
+    await publishWithText('cv', richText(paragraph(pageLink(id, 'what I use'))));
+
+    const page = await findPublishedPage(payload, 'cv');
+
+    expect(JSON.stringify(page?.blocks)).toContain('"slug":"uses"');
+  });
+});
+
+/** docs/adr/0002: the owner edits the policy; the two consent Blocks stay. */
+describe('the privacy Page', () => {
+  const GUARDED = [
+    { blockType: 'cookieInventory' as const },
+    { blockType: 'managePreferences' as const },
+  ];
+
+  const publishPrivacy = (blocks: typeof GUARDED) =>
+    payload.create({
+      collection: 'pages',
+      data: { _status: 'published', blocks, slug: 'privacy', title: 'privacy' },
+    });
+
+  it('is published with both guarded Blocks', async () => {
+    await publishPrivacy(GUARDED);
+
+    await expect(findPublishedPage(payload, 'privacy')).resolves.toMatchObject({
+      slug: 'privacy',
+    });
+  });
+
+  it.each(GUARDED)('cannot be published without its $blockType Block', async (missing) => {
+    await expect(publishPrivacy(GUARDED.filter((block) => block !== missing))).rejects.toThrow();
+  });
+
+  it('can be drafted without them', async () => {
+    await expect(saveDraft('privacy')).resolves.toMatchObject({ slug: 'privacy' });
+  });
+
+  /** The admin's Save draft on a published Page: visitors keep what was published. */
+  it('keeps both Blocks in front of visitors while a draft without them is saved', async () => {
+    const { id } = await publishPrivacy(GUARDED);
+    await payload.update({ collection: 'pages', data: { blocks: [] }, draft: true, id });
+
+    const served = await findPublishedPage(payload, 'privacy');
+
+    expect(served?.blocks?.map(({ blockType }) => blockType)).toEqual([
+      'cookieInventory',
+      'managePreferences',
+    ]);
+  });
+
+  it('cannot have a guarded Block taken off it by a published save', async () => {
+    const { id } = await publishPrivacy(GUARDED);
+
+    await expect(
+      payload.update({ collection: 'pages', data: { blocks: [GUARDED[0]] }, id })
+    ).rejects.toThrow();
+  });
+
+  it('cannot be published from a draft that lacks them', async () => {
+    const { id } = await saveDraft('privacy');
+
+    await expect(
+      payload.update({ collection: 'pages', data: { _status: 'published' }, id })
+    ).rejects.toThrow();
+  });
+
+  it('is a Fixed Page: unpublishing leaves visitors the last published version', async () => {
+    const { id } = await publishPrivacy(GUARDED);
+    await unpublish(id, 'edited while unpublished');
+
+    await expect(findPublishedPage(payload, 'privacy')).resolves.toMatchObject({
+      title: 'privacy',
+    });
+  });
+
+  it('cannot be deleted, even by the owner', async () => {
+    const { id } = await publishPrivacy(GUARDED);
+    const user = await owner();
+
+    await expect(
+      payload.delete({ collection: 'pages', id, overrideAccess: false, user })
+    ).rejects.toThrow();
   });
 });
