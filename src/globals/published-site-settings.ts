@@ -46,3 +46,10 @@ export const findPublishedSiteSettings = async (
   });
   return docs[0]?.version ?? null;
 };
+
+/**
+ * The newest saved state of the Site settings, published or not — what the
+ * owner previews. Never serve this to a visitor.
+ */
+export const findSiteSettingsDraft = (payload: Payload, depth = 0): Promise<SiteSetting> =>
+  payload.findGlobal({ depth, draft: true, overrideAccess: true, slug: SITE_SETTINGS });

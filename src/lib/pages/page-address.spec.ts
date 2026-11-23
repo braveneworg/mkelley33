@@ -9,6 +9,7 @@ import {
   HOME_SLUG,
   isFixedPage,
   pageHref,
+  previewAddress,
   RESERVED_PAGE_SLUGS,
   validatePageSlug,
 } from '@/lib/pages/page-address';
@@ -56,5 +57,15 @@ describe('validatePageSlug', () => {
 
   it('never reserves a Fixed Page, which has to be created', () => {
     expect(FIXED_PAGE_SLUGS.filter((slug) => RESERVED_PAGE_SLUGS.has(slug))).toEqual([]);
+  });
+});
+
+describe('previewAddress', () => {
+  it('is the preview route, told where to go next', () => {
+    expect(previewAddress('/uses')).toBe('/preview?path=%2Fuses');
+  });
+
+  it('carries the root as a path too', () => {
+    expect(previewAddress('/')).toBe('/preview?path=%2F');
   });
 });

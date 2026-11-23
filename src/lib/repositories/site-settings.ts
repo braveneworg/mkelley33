@@ -8,13 +8,23 @@ import { getPayload } from 'payload';
 
 import config from '@payload-config';
 
-import { findPublishedSiteSettings } from '@/globals/published-site-settings';
+import {
+  findPublishedSiteSettings,
+  findSiteSettingsDraft,
+} from '@/globals/published-site-settings';
 import { type LinkFields, resolveLink, type ResolvedLink } from '@/lib/pages/links';
+import { isPreviewing } from '@/lib/pages/preview';
 import type { SiteSettingsContent } from '@/lib/site-settings-content';
 
 /** The CMS stores an optional link the owner left empty as '' or not at all. */
 const linkOrNull = (value: null | string | undefined): null | string =>
   value === undefined || value === null || value === '' ? null : value;
+
+/**
+ * Deep enough to resolve the Resume upload into its file's address, and a
+ * menu item's Page into the address it is served at.
+ */
+const DEPTH = 1;
 
 /** A menu as visitors see it: without the items that currently lead nowhere. */
 const resolveMenu = (items: LinkFields[] | null | undefined): ResolvedLink[] =>
@@ -35,9 +45,11 @@ const resolveMenu = (items: LinkFields[] | null | undefined): ResolvedLink[] =>
  */
 export const getSiteSettings = cache(async (): Promise<SiteSettingsContent> => {
   const payload = await getPayload({ config });
-  // Deep enough to resolve the Resume upload into its file's address, and a
-  // menu item's Page into the address it is served at.
-  const settings = await findPublishedSiteSettings(payload, 1);
+  // The owner, previewing, sees the newest saved state; everyone else the
+  // published one. Draft mode is only ever on for a signed-in owner.
+  const settings = (await isPreviewing())
+    ? await findSiteSettingsDraft(payload, DEPTH)
+    : await findPublishedSiteSettings(payload, DEPTH);
   if (settings === null) {
     throw new Error(
       'Site settings are not published. An empty database is filled with `pnpm seed`; ' +

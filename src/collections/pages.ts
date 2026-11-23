@@ -8,7 +8,12 @@ import {
   revalidatePageAfterDelete,
 } from '@/collections/hooks/revalidate-page';
 import { PAGE_BLOCKS } from '@/collections/page-blocks';
-import { FIXED_PAGE_SLUGS, validatePageSlug } from '@/lib/pages/page-address';
+import {
+  FIXED_PAGE_SLUGS,
+  pageHref,
+  previewAddress,
+  validatePageSlug,
+} from '@/lib/pages/page-address';
 
 import type { CollectionConfig } from 'payload';
 
@@ -32,6 +37,8 @@ export const Pages: CollectionConfig = {
     defaultColumns: ['title', 'slug', '_status', 'updatedAt'],
     description:
       'Home, blog, contact and services are Fixed Pages: they cannot be moved or deleted, and unpublishing one does not take it off the site — visitors keep the last published version until you publish again.',
+    // Opens the Page, drafts included, in a new tab — for the signed-in owner only.
+    preview: ({ slug }) => (typeof slug === 'string' ? previewAddress(pageHref(slug)) : null),
     useAsTitle: 'title',
   },
   fields: [

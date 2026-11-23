@@ -164,9 +164,11 @@ body {
     background: #ffffff !important;
     color: #000000 !important;
   }
-  .cv-document {
-    max-width: none;
-    padding: 0;
+  /* A Page of CV Blocks is one narrow column on screen. On paper each part
+     of it — the heading and every Block — takes the full width of the sheet. */
+  .cv-document > * {
+    max-width: none !important;
+    padding-inline: 0 !important;
   }
   .cv-document a {
     color: #000000;

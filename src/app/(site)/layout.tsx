@@ -13,6 +13,7 @@ import { PaletteHotkey } from '@/components/palette/palette-hotkey';
 import { PaletteMount } from '@/components/palette/palette-mount';
 import { palettePages } from '@/components/palette/palette-pages';
 import { GoogleAnalyticsTag } from '@/components/site/google-analytics-tag';
+import { PreviewBanner } from '@/components/site/preview-banner';
 import { SerwistRegister } from '@/components/site/serwist-register';
 import { SiteFooter } from '@/components/site/site-footer';
 import { SiteNav } from '@/components/site/site-nav';
@@ -21,6 +22,7 @@ import { ThemeProvider } from '@/components/site/theme-provider';
 import { VercelAnalyticsTag } from '@/components/site/vercel-analytics-tag';
 import { feedAlternateTypes } from '@/lib/feed-alternates';
 import { serializeJsonLd } from '@/lib/json-ld';
+import { isPreviewing } from '@/lib/pages/preview';
 import { listPublishedPages } from '@/lib/repositories/pages';
 import { getSiteSettings } from '@/lib/repositories/site-settings';
 import { siteConfig } from '@/lib/site-config';
@@ -96,7 +98,11 @@ const personJsonLd = ({ name, socials }: SiteSettingsContent): PersonJsonLd => (
 });
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const [settings, pages] = await Promise.all([getSiteSettings(), listPublishedPages()]);
+  const [settings, pages, previewing] = await Promise.all([
+    getSiteSettings(),
+    listPublishedPages(),
+    isPreviewing(),
+  ]);
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
@@ -111,6 +117,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           <ThemeProvider>
             <ConsentProvider>
               <div className="flex min-h-dvh flex-col">
+                {previewing ? <PreviewBanner /> : null}
                 <SiteNav links={settings.headerMenu} />
                 {/* tabIndex={-1}: older Safari won't move sequential focus past
                     the skip link's target unless it is programmatically

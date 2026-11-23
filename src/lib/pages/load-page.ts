@@ -2,9 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-import { draftMode } from 'next/headers';
-
 import { isFixedPage } from '@/lib/pages/page-address';
+import { isPreviewing } from '@/lib/pages/preview';
 import { getFixedPage, getPage, getPageDraft } from '@/lib/repositories/pages';
 import type { Page } from '@/payload-types';
 
@@ -19,8 +18,7 @@ import type { Metadata } from 'next';
  * on by the preview route, after it has checked who is asking.
  */
 export const loadPage = async (slug: string): Promise<null | Page> => {
-  const { isEnabled } = await draftMode();
-  if (isEnabled) {
+  if (await isPreviewing()) {
     return getPageDraft(slug);
   }
   return isFixedPage(slug) ? getFixedPage(slug) : getPage(slug);

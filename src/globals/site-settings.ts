@@ -5,6 +5,7 @@
 import { menuField } from '@/collections/page-blocks/fields';
 import { revalidateSiteSettings } from '@/globals/hooks/revalidate-site-settings';
 import { validateHttpsUrl, validateRequiredHttpsUrl } from '@/globals/validate-https-url';
+import { previewAddress } from '@/lib/pages/page-address';
 
 import type { GlobalConfig } from 'payload';
 
@@ -87,6 +88,8 @@ export const SiteSettings: GlobalConfig = {
   admin: {
     description:
       'Shared by every page. Unpublishing does not take these off the site: visitors keep the last published version until you publish again.',
+    // Shows the home Page with these settings, drafts included, in a new tab.
+    preview: () => previewAddress('/'),
   },
   label: 'Site settings',
   versions: { drafts: true },

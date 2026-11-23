@@ -63,3 +63,12 @@ export const validatePageSlug = (value: null | string | undefined): string | tru
   }
   return true;
 };
+
+/**
+ * Where the admin's Preview button goes for the page at `path`: the preview
+ * route, which checks who is asking before it shows any draft. It lives
+ * here, away from that route's helpers, so the Payload config can use it
+ * without pulling Next's request APIs into scripts that load the config.
+ */
+export const previewAddress = (path: string): string =>
+  `/preview?${new URLSearchParams({ path }).toString()}`;
