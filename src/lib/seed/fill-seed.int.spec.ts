@@ -229,6 +229,17 @@ describe('fillSeed on an empty database', () => {
     });
   });
 
+  /**
+   * A spec's uploads belong in the directory the harness made for it. Left
+   * to Payload's default they land in `media/` under the working tree, where
+   * every run leaves another copy and renames the next run's upload.
+   */
+  it('keeps the pictures it uploads out of the working tree', () => {
+    expect(payload.collections.media.config.upload.staticDir).toMatch(
+      /payload-uploads-[^/]+\/media$/
+    );
+  });
+
   it("stores a role's points one by one", async () => {
     await fillSeed(payload, seed);
 
