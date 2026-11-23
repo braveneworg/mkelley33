@@ -171,11 +171,22 @@ protects nothing and only costs you the ability to check it.
 Anything a preview deployment also needs takes a comma-separated target —
 `pnpm exec vercel env add DATABASE_URL production,preview --sensitive`.
 Only Production is audited by the preflight, so a preview missing a variable
-degrades the same way local dev does — with one exception. A preview build
-still runs with `NODE_ENV=production` (Vercel sets `VERCEL_ENV=preview`, not
-`NODE_ENV`), so `TURNSTILE_SECRET_KEY` fails **closed** there too: give
-preview the `production,preview` target for that variable, or accept that
-every contact and newsletter submission on a preview URL is rejected.
+degrades the same way local dev does — with two exceptions.
+
+`DATABASE_URL` is one. Every page reads the Site settings and nothing falls
+back to source
+([ADR 0001](adr/0001-the-database-is-the-only-copy-of-owner-content.md)), so
+a preview build fails when it has no database, or when the database it has
+holds no published Site settings. Whichever database preview builds against
+has to be seeded like the live one — see "Seed before a deploy that needs
+new records" below. When the Vercel check on a pull request is red, rule
+this out first.
+
+`TURNSTILE_SECRET_KEY` is the other. A preview build still runs with
+`NODE_ENV=production` (Vercel sets `VERCEL_ENV=preview`, not `NODE_ENV`), so
+it fails **closed** there too: give preview the `production,preview` target
+for that variable, or accept that every contact and newsletter submission on
+a preview URL is rejected.
 
 Replacing an existing value — the only way to change a sensitive one —
 takes `--force`:
