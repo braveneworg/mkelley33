@@ -46,6 +46,8 @@ describe('getSiteSettings', () => {
 
     await expect(getSiteSettings()).resolves.toEqual({
       description: 'a description',
+      footerMenu: [],
+      headerMenu: [],
       name: 'Owner Name',
       repoUrl: 'https://example.com/repo',
       resumeUrl: '/api/resume-files/file/resume.pdf',

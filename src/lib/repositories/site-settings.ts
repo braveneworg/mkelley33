@@ -9,11 +9,19 @@ import { getPayload } from 'payload';
 import config from '@payload-config';
 
 import { findPublishedSiteSettings } from '@/globals/published-site-settings';
+import { type LinkFields, resolveLink, type ResolvedLink } from '@/lib/pages/links';
 import type { SiteSettingsContent } from '@/lib/site-settings-content';
 
 /** The CMS stores an optional link the owner left empty as '' or not at all. */
 const linkOrNull = (value: null | string | undefined): null | string =>
   value === undefined || value === null || value === '' ? null : value;
+
+/** A menu as visitors see it: without the items that currently lead nowhere. */
+const resolveMenu = (items: LinkFields[] | null | undefined): ResolvedLink[] =>
+  (items ?? []).flatMap((item) => {
+    const link = resolveLink(item);
+    return link === null ? [] : [link];
+  });
 
 /**
  * The Site settings visitors are served. Drafts never reach a rendered page,
@@ -27,7 +35,8 @@ const linkOrNull = (value: null | string | undefined): null | string =>
  */
 export const getSiteSettings = cache(async (): Promise<SiteSettingsContent> => {
   const payload = await getPayload({ config });
-  // Deep enough to resolve the Resume upload into its file's address.
+  // Deep enough to resolve the Resume upload into its file's address, and a
+  // menu item's Page into the address it is served at.
   const settings = await findPublishedSiteSettings(payload, 1);
   if (settings === null) {
     throw new Error(
@@ -35,9 +44,12 @@ export const getSiteSettings = cache(async (): Promise<SiteSettingsContent> => {
         'otherwise publish them in the admin.'
     );
   }
-  const { description, name, repoUrl, resume, socials, tagline, title } = settings;
+  const { description, footerMenu, headerMenu, name, repoUrl, resume, socials, tagline, title } =
+    settings;
   return {
     description,
+    footerMenu: resolveMenu(footerMenu),
+    headerMenu: resolveMenu(headerMenu),
     name,
     repoUrl: linkOrNull(repoUrl),
     // An id rather than a document means the upload could not be resolved.

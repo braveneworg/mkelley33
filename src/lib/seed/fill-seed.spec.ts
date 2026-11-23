@@ -18,9 +18,12 @@ import type { Payload } from 'payload';
 
 const seed: Seed = {
   directory: 'seed',
+  pages: [],
   services: [],
   siteSettings: {
     description: 'seed description',
+    footerMenu: [],
+    headerMenu: [],
     name: 'Seed Name',
     repoUrl: null,
     resume: 'files/michaux-kelley-resume.pdf',

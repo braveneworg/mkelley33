@@ -9,5 +9,39 @@
     "bluesky": "https://bsky.app/profile/mkelley33.com"
   },
   "repoUrl": "https://github.com/braveneworg/mkelley33",
-  "resume": "files/michaux-kelley-resume.pdf"
+  "resume": "files/michaux-kelley-resume.pdf",
+  "headerMenu": [
+    {
+      "label": "./home",
+      "page": "home",
+      "url": null
+    },
+    {
+      "label": "./blog",
+      "page": "blog",
+      "url": null
+    },
+    {
+      "label": "./services",
+      "page": "services",
+      "url": null
+    },
+    {
+      "label": "./cv",
+      "page": "cv",
+      "url": null
+    },
+    {
+      "label": "./contact",
+      "page": "contact",
+      "url": null
+    }
+  ],
+  "footerMenu": [
+    {
+      "label": "uses",
+      "page": "uses",
+      "url": null
+    }
+  ]
 }

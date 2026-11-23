@@ -1272,6 +1272,40 @@ export interface SiteSetting {
    * The PDF served at /michaux-kelley-resume.pdf. Leave empty to hide the download button.
    */
   resume?: (string | null) | ResumeFile;
+  /**
+   * The links at the top of every page. An item whose Page is unpublished is hidden until the Page is published again.
+   */
+  headerMenu?:
+    | {
+        label: string;
+        /**
+         * A Page on this site. The link follows it if its address changes.
+         */
+        page?: (string | null) | Page;
+        /**
+         * Or a full https:// address elsewhere. Leave empty when a Page is set.
+         */
+        url?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Extra links at the bottom of every page. The footer adds your social links, the RSS feed and the privacy link by itself.
+   */
+  footerMenu?:
+    | {
+        label: string;
+        /**
+         * A Page on this site. The link follows it if its address changes.
+         */
+        page?: (string | null) | Page;
+        /**
+         * Or a full https:// address elsewhere. Leave empty when a Page is set.
+         */
+        url?: string | null;
+        id?: string | null;
+      }[]
+    | null;
   _status?: ('draft' | 'published') | null;
   updatedAt?: string | null;
   createdAt?: string | null;
@@ -1294,6 +1328,22 @@ export interface SiteSettingsSelect<T extends boolean = true> {
       };
   repoUrl?: T;
   resume?: T;
+  headerMenu?:
+    | T
+    | {
+        label?: T;
+        page?: T;
+        url?: T;
+        id?: T;
+      };
+  footerMenu?:
+    | T
+    | {
+        label?: T;
+        page?: T;
+        url?: T;
+        id?: T;
+      };
   _status?: T;
   updatedAt?: T;
   createdAt?: T;

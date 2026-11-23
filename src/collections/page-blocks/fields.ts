@@ -4,7 +4,7 @@
 
 import { validateHttpsUrl } from '@/globals/validate-https-url';
 
-import type { GroupField, TextField, TextFieldSingleValidation } from 'payload';
+import type { ArrayField, Field, GroupField, TextField, TextFieldSingleValidation } from 'payload';
 
 /**
  * The `$ command` line shown above a Block. Every Block that has one lets
@@ -31,32 +31,48 @@ export const validateLinkUrl: TextFieldSingleValidation = (value, { siblingData 
   return validateHttpsUrl(value);
 };
 
+const linkFields = (labelRequired: boolean): Field[] => [
+  { name: 'label', type: 'text', required: labelRequired },
+  {
+    name: 'page',
+    type: 'relationship',
+    admin: { description: 'A Page on this site. The link follows it if its address changes.' },
+    relationTo: 'pages',
+  },
+  {
+    name: 'url',
+    type: 'text',
+    admin: {
+      description: 'Or a full https:// address elsewhere. Leave empty when a Page is set.',
+    },
+    label: 'Outside address',
+    validate: validateLinkUrl,
+  },
+];
+
 /**
  * A link the owner points somewhere: at a Page, so that it follows the Page
  * when its address changes, or at a full address elsewhere. Menus and Blocks
  * share this shape, and `resolveLink` in `src/lib/pages/links.ts` turns it
- * into an `href`.
+ * into an `href`. A link left empty is simply not shown.
  */
 export const linkGroup = (name: string, label: string): GroupField => ({
   name,
   type: 'group',
-  fields: [
-    { name: 'label', type: 'text' },
-    {
-      name: 'page',
-      type: 'relationship',
-      admin: { description: 'A Page on this site. The link follows it if its address changes.' },
-      relationTo: 'pages',
-    },
-    {
-      name: 'url',
-      type: 'text',
-      admin: {
-        description: 'Or a full https:// address elsewhere. Leave empty when a Page is set.',
-      },
-      label: 'Outside address',
-      validate: validateLinkUrl,
-    },
-  ],
+  fields: linkFields(false),
   label,
+});
+
+/**
+ * A menu: links in the order the owner arranged them. An item whose Page is
+ * unpublished or deleted stays here and is hidden from visitors until the
+ * Page is published again (owner's decision, 2026-11-23).
+ */
+export const menuField = (name: string, label: string, description: string): ArrayField => ({
+  name,
+  type: 'array',
+  admin: { description },
+  fields: linkFields(true),
+  label,
+  labels: { plural: 'Items', singular: 'Item' },
 });

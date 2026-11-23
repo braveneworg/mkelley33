@@ -11,6 +11,7 @@ import { inspectSeed } from '@/lib/seed/inspect-seed';
 import { loadSeed } from '@/lib/seed/seed-files';
 import { createTestPayload } from '@/test/payload-harness';
 
+import type { MongooseAdapter } from '@payloadcms/db-mongodb';
 import type { Payload } from 'payload';
 
 let payload: Payload;
@@ -44,6 +45,7 @@ describe('inspectSeed on an empty database', () => {
     const { missing } = await inspectSeed(payload, seed);
 
     expect(missing).toEqual([
+      ...seed.pages.map(({ slug }) => `page ${slug}`),
       'site settings',
       ...seed.services.map(({ slug }) => `service ${slug}`),
     ]);
@@ -81,6 +83,12 @@ describe('inspectSeed on a filled database', () => {
     });
   });
 
+  it('has no menus left to add', async () => {
+    await fillSeed(payload, seed);
+
+    await expect(inspectSeed(payload, seed)).resolves.toMatchObject({ menusMustWait: null });
+  });
+
   it('reports unpublished Site settings', async () => {
     await fillSeed(payload, seed);
     await payload.updateGlobal({ data: { _status: 'draft' }, slug: 'site-settings' });
@@ -88,6 +96,39 @@ describe('inspectSeed on a filled database', () => {
     await expect(inspectSeed(payload, seed)).resolves.toMatchObject({
       siteSettings: 'unpublished',
     });
+  });
+});
+
+/** The live record was saved before menus existed; see the fill's own spec. */
+describe('inspectSeed on Site settings that have never had a menu', () => {
+  beforeEach(async () => {
+    await fillSeed(payload, seed);
+    const { connection } = payload.db as MongooseAdapter;
+    await connection
+      .collection('globals')
+      .updateOne({ globalType: 'site-settings' }, { $unset: { footerMenu: '', headerMenu: '' } });
+  });
+
+  it('lists the menus a fill would add', async () => {
+    const { missing } = await inspectSeed(payload, seed);
+
+    expect(missing).toEqual(['site settings header menu', 'site settings footer menu']);
+  });
+
+  it('says a fill would add them', async () => {
+    await expect(inspectSeed(payload, seed)).resolves.toMatchObject({ menusMustWait: null });
+  });
+
+  it('says why a fill would wait when the settings are unpublished', async () => {
+    await payload.updateGlobal({ data: { _status: 'draft' }, slug: 'site-settings' });
+    const { connection } = payload.db as MongooseAdapter;
+    await connection
+      .collection('globals')
+      .updateOne({ globalType: 'site-settings' }, { $unset: { footerMenu: '', headerMenu: '' } });
+
+    const { menusMustWait } = await inspectSeed(payload, seed);
+
+    expect(menusMustWait).toContain('Site settings are unpublished');
   });
 });
 

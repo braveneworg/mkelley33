@@ -9,6 +9,11 @@ export const makeSiteSettings = (
   overrides: Partial<SiteSettingsContent> = {}
 ): SiteSettingsContent => ({
   description: 'a site description',
+  footerMenu: [{ external: false, href: '/uses', label: 'uses' }],
+  headerMenu: [
+    { external: false, href: '/', label: './home' },
+    { external: false, href: '/blog', label: './blog' },
+  ],
   name: 'Owner Name',
   repoUrl: 'https://example.com/repo',
   resumeUrl: '/api/resume-files/file/resume.pdf',
