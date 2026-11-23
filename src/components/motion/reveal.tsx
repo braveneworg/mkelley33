@@ -17,7 +17,10 @@ export const Reveal = ({ children, delay = 0 }: { children: ReactNode; delay?: n
     <motion.div
       initial={{ opacity: 0, y: 24 }}
       transition={{ bounce: 0.2, delay, duration: 0.6, type: 'spring' }}
-      viewport={{ amount: 0.2, once: true }}
+      // "Any of it, a little way in" rather than a share of its height: a
+      // Block can be taller than the screen, and a share of a tall one may
+      // never be in view at once, leaving it hidden for good.
+      viewport={{ amount: 'some', margin: '0px 0px -80px 0px', once: true }}
       whileInView={{ opacity: 1, y: 0 }}
     >
       {children}

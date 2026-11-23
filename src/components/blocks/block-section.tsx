@@ -9,6 +9,11 @@ import { Reveal } from '@/components/motion/reveal';
  * `$ command` line when the owner gave it one. A Block with a command line
  * is a section of its own and gets room around it; one without sits close
  * under whatever came before, as a continuation of the Page.
+ *
+ * Only a Block with a command line fades in as it scrolls into view. The
+ * rest is the body of a Page — the CV, a list on the uses Page — and must
+ * be there the moment the Page is: it is read from the top, it is printed,
+ * and a part of it can be taller than the screen.
  */
 export const BlockSection = ({
   children,
@@ -21,15 +26,19 @@ export const BlockSection = ({
     className={`mx-auto w-full max-w-5xl px-5 ${command ? 'py-12 sm:py-16' : 'py-5 sm:py-6'}`}
   >
     {command ? (
-      <h2 className="text-fg-muted font-mono text-sm print:hidden">
-        <span aria-hidden="true" className="text-phosphor">
-          $
-        </span>{' '}
-        {command}
-      </h2>
-    ) : null}
-    <Reveal>
-      <div className={command ? 'mt-6' : undefined}>{children}</div>
-    </Reveal>
+      <>
+        <h2 className="text-fg-muted font-mono text-sm print:hidden">
+          <span aria-hidden="true" className="text-phosphor">
+            $
+          </span>{' '}
+          {command}
+        </h2>
+        <Reveal>
+          <div className="mt-6">{children}</div>
+        </Reveal>
+      </>
+    ) : (
+      children
+    )}
   </section>
 );
