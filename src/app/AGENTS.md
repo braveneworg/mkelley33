@@ -33,9 +33,9 @@ binding. Everything below it applies only once the thing it names exists.
 - Almost every page is a Page from the database (see `CONTEXT.md`):
   `(site)/page.tsx` renders the home Page and `(site)/[slug]/page.tsx` any
   other, both through `PageView` in `src/components/blocks/`. The routes
-  that stay in code — a post, the privacy policy, the newsletter pages, the
-  feed, the Resume, the preview — have files of their own and win over
-  `[slug]`. Adding one means adding its name to `RESERVED_PAGE_SLUGS`;
+  that stay in code — a post, the newsletter pages, the feed, the Resume,
+  the preview — have files of their own and win over `[slug]`. Adding one
+  means adding its name to `RESERVED_PAGE_SLUGS`;
   `src/lib/pages/reserved-names.spec.ts` fails until you do.
 - A kind of Block is two halves that must agree: its definition in
   `src/collections/page-blocks/` (listed in `PAGE_BLOCKS`) and its component
@@ -46,6 +46,19 @@ binding. Everything below it applies only once the thing it names exists.
 - Every Block renders inside `BlockSection`, and every link the owner can
   point at a Page goes through `resolveLink`, so a link to an unpublished
   Page is hidden the same way everywhere.
+- Text the owner writes into a Block is rendered by `BlockText`, never by
+  Payload's `RichText` directly: it gives headings, lists and links the
+  site's look, keeps the Page to one main heading, and sends a link to a
+  Page through `resolveLink` like every other.
+- The privacy policy is a Page with two Blocks nobody can type into, the
+  Cookie inventory and Manage preferences (`docs/adr/0002`). What they show
+  comes from `src/lib/consent/`, so do not give either a field. The Page
+  cannot be published without both — `keepPrivacyPageWhole` on the
+  collection and the Seed's schema apply one rule, in
+  `src/lib/pages/privacy-page.ts` — and its "last updated" date is its last
+  publish, set by `PageView`. Its legal claims are pinned against the Seed
+  in `src/lib/seed/privacy-claims.spec.tsx`: when the code's behaviour
+  changes, change the Seed's text with it.
 
 ## Forms
 

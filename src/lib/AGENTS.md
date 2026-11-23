@@ -49,8 +49,9 @@ binding. Everything below it applies only once the thing it names exists.
   the owner emptied. Read `docs/lessons/seed/` before changing any of them.
 - `pages/` — what a Page's address is and where it leads, with no React in
   it: `page-address.ts` (the home address, the Fixed Pages, the reserved
-  names, the field validator), `links.ts` (a stored link into an `href`, or
-  nothing when its Page is unpublished or deleted), `load-page.ts` (the Page
+  names, the field validator), `privacy-page.ts` (the two Blocks the privacy
+  Page cannot be published without), `links.ts` (a stored link into an
+  `href`, or nothing when its Page is unpublished or deleted), `load-page.ts` (the Page
   a route renders — published for a visitor, the newest draft for the
   owner's preview), and `preview.ts` (whether a request is previewing, and
   which paths a preview may redirect to).

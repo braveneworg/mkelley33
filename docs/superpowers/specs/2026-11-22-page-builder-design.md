@@ -256,6 +256,33 @@ does not rediscover them.
   form** are a Link list and a Newsletter signup Block, so they look like
   those Blocks rather than the one-off markup they replaced.
 
+### What PR 4 found
+
+- **The policy's prose is two Terminal Blocks** around the Cookie inventory
+  and Manage preferences. Its headings, lists and links are the Terminal's
+  own rich text, which PR 4 taught the site to show: headings with their
+  `#` marks, and links that behave like every other link. A link in the
+  text to a Page is hidden while that Page is unpublished, as a menu item
+  is; a link to any other kind of record keeps its words and loses the link.
+- **"Cannot be published without both Blocks"** is checked when the Page is
+  published and again by the Seed before it writes anything. A draft is not
+  held to it.
+- **"Last updated" is the published Page's own timestamp.** On a database
+  the Seed has just filled it is therefore the day the Seed ran, not
+  2026-08-02, the date the hard-coded page carried.
+- **Pages keep every version.** ADR 0002 makes the admin's history the
+  record of what the policy said on a given date, and Payload's default
+  deletes the oldest version after a hundred saves. The setting belongs to
+  the collection, so it holds for every Page, not the privacy Page alone.
+- **The Seed's link to the contact form is a typed address**, `/contact`.
+  The Seed can name a Page by address in a Block's link or a menu item, but
+  not inside rich text, where the editor stores a database id. Contact is a
+  Fixed Page, so the address cannot change under it. Capture will meet
+  links to Pages inside text the owner has edited, and has to turn each
+  back into something the Seed can carry.
+- **The claim specs** live in `src/lib/seed/privacy-claims.spec.tsx` and
+  render the Seed's privacy Page through the site's own components.
+
 ## Open points
 
 **Not discussed.**
