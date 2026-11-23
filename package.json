@@ -33,7 +33,8 @@
     "db:backup": "tsx --env-file-if-exists=.env.local scripts/db-backup.ts",
     "db:restore": "tsx --env-file-if-exists=.env.local scripts/db-restore.ts",
     "seed:first-user": "tsx --env-file-if-exists=.env.local scripts/seed-first-user.ts",
-    "seed:services": "tsx --env-file-if-exists=.env.local scripts/seed-services.ts",
+    "seed": "tsx --env-file-if-exists=.env.local scripts/seed.ts",
+    "seed:check": "tsx --env-file-if-exists=.env.local scripts/seed.ts --check",
     "prepare": "husky",
     "test:coverage:check": "vitest run --coverage"
   },

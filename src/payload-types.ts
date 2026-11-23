@@ -69,6 +69,7 @@ export interface Config {
   collections: {
     users: User;
     media: Media;
+    'resume-files': ResumeFile;
     posts: Post;
     services: Service;
     'contact-submissions': ContactSubmission;
@@ -83,6 +84,7 @@ export interface Config {
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    'resume-files': ResumeFilesSelect<false> | ResumeFilesSelect<true>;
     posts: PostsSelect<false> | PostsSelect<true>;
     services: ServicesSelect<false> | ServicesSelect<true>;
     'contact-submissions': ContactSubmissionsSelect<false> | ContactSubmissionsSelect<true>;
@@ -97,8 +99,12 @@ export interface Config {
     defaultIDType: string;
   };
   fallbackLocale: null;
-  globals: {};
-  globalsSelect: {};
+  globals: {
+    'site-settings': SiteSetting;
+  };
+  globalsSelect: {
+    'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
+  };
   locale: null;
   widgets: {
     collections: CollectionsWidget;
@@ -160,6 +166,24 @@ export interface User {
 export interface Media {
   id: string;
   alt: string;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "resume-files".
+ */
+export interface ResumeFile {
+  id: string;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -301,6 +325,10 @@ export interface PayloadLockedDocument {
         value: string | Media;
       } | null)
     | ({
+        relationTo: 'resume-files';
+        value: string | ResumeFile;
+      } | null)
+    | ({
         relationTo: 'posts';
         value: string | Post;
       } | null)
@@ -391,6 +419,23 @@ export interface UsersSelect<T extends boolean = true> {
  */
 export interface MediaSelect<T extends boolean = true> {
   alt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "resume-files_select".
+ */
+export interface ResumeFilesSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   url?: T;
@@ -513,6 +558,65 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   batch?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site-settings".
+ */
+export interface SiteSetting {
+  id: string;
+  name: string;
+  tagline: string;
+  /**
+   * Shown in the browser tab and in search results.
+   */
+  title: string;
+  /**
+   * The summary search engines and link previews show.
+   */
+  description: string;
+  socials: {
+    github: string;
+    linkedin: string;
+    /**
+     * Leave empty to hide it everywhere.
+     */
+    bluesky?: string | null;
+  };
+  /**
+   * This site's public repository. Leave empty to hide the links to it.
+   */
+  repoUrl?: string | null;
+  /**
+   * The PDF served at /michaux-kelley-resume.pdf. Leave empty to hide the download button.
+   */
+  resume?: (string | null) | ResumeFile;
+  _status?: ('draft' | 'published') | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site-settings_select".
+ */
+export interface SiteSettingsSelect<T extends boolean = true> {
+  name?: T;
+  tagline?: T;
+  title?: T;
+  description?: T;
+  socials?:
+    | T
+    | {
+        github?: T;
+        linkedin?: T;
+        bluesky?: T;
+      };
+  repoUrl?: T;
+  resume?: T;
+  _status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

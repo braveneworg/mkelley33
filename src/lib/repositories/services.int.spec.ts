@@ -4,38 +4,47 @@
 
 // @vitest-environment node
 
-import { SERVICES } from '@/lib/services-content';
-import { seedServices } from '@/lib/services-seed';
+import type * as servicesRepo from '@/lib/repositories/services';
+import { fillSeed } from '@/lib/seed/fill-seed';
+import { loadSeed } from '@/lib/seed/seed-files';
 import { createTestPayload } from '@/test/payload-harness';
 
 import type { Payload } from 'payload';
 
 let payload: Payload;
+let reset: () => Promise<void>;
 let teardown: () => Promise<void>;
 
+const importFresh = async (): Promise<typeof servicesRepo> => {
+  vi.resetModules();
+  return import('@/lib/repositories/services');
+};
+
 beforeAll(async () => {
-  ({ payload, teardown } = await createTestPayload());
+  ({ payload, reset, teardown } = await createTestPayload());
 }, 120_000);
+
+// Every test starts from an empty database and arranges what it needs.
+beforeEach(async () => {
+  await reset();
+});
 
 afterAll(async () => {
   await teardown();
 });
 
-describe('services seed + repository', () => {
-  it('falls back to canonical content while the collection is empty', async () => {
-    const { listServices } = await import('@/lib/repositories/services');
-    const services = await listServices();
-    expect(services).toEqual(SERVICES);
+describe('the services repository', () => {
+  it('lists nothing while the collection is empty', async () => {
+    const { listServices } = await importFresh();
+
+    await expect(listServices()).resolves.toEqual([]);
   });
 
-  it('seeds all five services and is idempotent', async () => {
-    const first = await seedServices(payload);
-    expect(first.created).toHaveLength(5);
-    expect(first.updated).toHaveLength(0);
-    const second = await seedServices(payload);
-    expect(second.created).toHaveLength(0);
-    expect(second.updated).toHaveLength(5);
-    const found = await payload.find({ collection: 'services', sort: 'order' });
-    expect(found.docs.map((doc) => doc.slug)).toEqual(SERVICES.map((service) => service.slug));
+  it("lists the committed Seed's services in Seed order", async () => {
+    const seed = loadSeed('seed');
+    await fillSeed(payload, seed);
+    const { listServices } = await importFresh();
+
+    await expect(listServices()).resolves.toEqual(seed.services);
   });
 });

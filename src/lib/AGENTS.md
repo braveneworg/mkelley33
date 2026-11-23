@@ -13,11 +13,12 @@ binding. Everything below it applies only once the thing it names exists.
   shared result shape from `actions/types.ts` rather than throwing at the
   caller.
 - `repositories/` — ALL Payload/MongoDB access lives here (repository
-  pattern); keep database logic out of components and routes. Read paths
-  swallow connection failures and render empty so a blip cannot take a page
-  down — see `listPublishedPosts`. That is deliberate at request time and
-  wrong at build time, which is why `scripts/ci-build.ts` fails the build if
-  Payload never reached Mongo.
+  pattern); keep database logic out of components and routes. The older read
+  paths swallow connection failures and render empty so a blip cannot take a
+  page down — see `listPublishedPosts`. That is deliberate at request time
+  and wrong at build time, which is why `scripts/ci-build.ts` fails the build
+  if Payload never reached Mongo. The Owner-content repositories do not
+  swallow anything; see the rule below.
 - `validation/` — Zod schemas for all external input, one module per form.
 - `harness/` — where `pnpm build:ci` and `pnpm e2e` run and how they get
   their throwaway Mongo: `run-mode.ts` decides (a container on a developer's
@@ -39,19 +40,35 @@ binding. Everything below it applies only once the thing it names exists.
   imported by `actions/run-form-submission.ts` alone. Never merge them: one
   file exporting both halves puts the secret-reading code in the client
   graph and leaves tree-shaking as the only thing removing it.
-- Loose modules for cross-cutting concerns: `site-config.ts`, `json-ld.ts`,
-  `rss.ts`, `highlight.ts`, `newsletter-tokens.ts`, `cv-content.ts`,
-  `services-content.ts`, `services-seed.ts`, and `db-backup.ts` (pure
-  decisions for `scripts/db-backup.ts` / `scripts/db-restore.ts` — the
-  wrappers keep the side effects).
+- `seed/` — the Seed: `seed-files.ts` reads and validates the JSON in the
+  repo's `seed/` directory, `fill-seed.ts` writes it into a database,
+  fill-only, and `inspect-seed.ts` reports what a fill would do without
+  writing (`pnpm seed:check`). Read `docs/lessons/seed/` before changing
+  any of them.
+- Loose modules for cross-cutting concerns: `site-config.ts` (what stays in
+  code — the domain, the Resume's permanent address, `handle`, and the
+  headshot's path until it moves into Media; the owner's identity and links
+  are Site settings, read through `repositories/site-settings.ts`, with
+  their type and the social-link list in `site-settings-content.ts`),
+  `https-url.ts` (the one rule for a link the owner types),
+  `json-ld.ts`, `rss.ts`, `highlight.ts`, `newsletter-tokens.ts`,
+  `cv-content.ts`, `services-content.ts` (the `ServiceContent` type), and
+  `db-backup.ts` (pure decisions for `scripts/db-backup.ts` /
+  `scripts/db-restore.ts` — the wrappers keep the side effects).
 
 ## Rules
 
 - Revalidation is not the actions' job — it happens in Payload collection
   hooks (`src/collections/hooks/revalidate-post.ts`) so a CMS edit invalidates
   the same paths a form submission would.
-- Handle connection failures explicitly; never let a repository throw into a
-  Server Component render.
+- Owner content has one copy, the database (`docs/adr/0001`). A repository
+  that reads it — `services.ts`, `site-settings.ts` — never falls back to
+  source and does not catch a database failure: the error fails a build, and
+  during revalidation Next keeps serving the last page it built. Do not add a
+  fallback back to "harden" one.
+- The repositories that predate that decision (`posts.ts`, `comments.ts`,
+  `subscribers.ts`) still handle a connection failure explicitly and render
+  empty. Leave them as they are until their own change.
 - Secrets come from env vars, never hardcoded, and never appear in logs or
   error messages returned to a caller.
 - A missing secret fails closed in production rather than substituting a

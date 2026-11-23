@@ -4,7 +4,8 @@
 
 // @vitest-environment node
 
-import { seedServices } from '@/lib/services-seed';
+import { fillSeed } from '@/lib/seed/fill-seed';
+import { loadSeed } from '@/lib/seed/seed-files';
 import { createTestPayload } from '@/test/payload-harness';
 
 import type { Payload } from 'payload';
@@ -14,7 +15,7 @@ let teardown: () => Promise<void>;
 
 beforeAll(async () => {
   ({ payload, teardown } = await createTestPayload());
-  await seedServices(payload);
+  await fillSeed(payload, loadSeed('seed'));
 }, 120_000);
 
 afterAll(async () => {

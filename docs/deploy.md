@@ -177,11 +177,21 @@ protects nothing and only costs you the ability to check it.
 Anything a preview deployment also needs takes a comma-separated target —
 `pnpm exec vercel env add DATABASE_URL production,preview --sensitive`.
 Only Production is audited by the preflight, so a preview missing a variable
-degrades the same way local dev does — with one exception. A preview build
-still runs with `NODE_ENV=production` (Vercel sets `VERCEL_ENV=preview`, not
-`NODE_ENV`), so `TURNSTILE_SECRET_KEY` fails **closed** there too: give
-preview the `production,preview` target for that variable, or accept that
-every contact and newsletter submission on a preview URL is rejected.
+degrades the same way local dev does — with two exceptions.
+
+`DATABASE_URL` is one. Every page reads the Site settings and nothing falls
+back to source
+([ADR 0001](adr/0001-the-database-is-the-only-copy-of-owner-content.md)), so
+a preview build fails when it has no database, or when the database it has
+holds no published Site settings. Whichever database preview builds against
+has to be seeded like the live one — see "Seed before a deploy that needs
+new records" below.
+
+`TURNSTILE_SECRET_KEY` is the other. A preview build still runs with
+`NODE_ENV=production` (Vercel sets `VERCEL_ENV=preview`, not `NODE_ENV`), so
+it fails **closed** there too: give preview the `production,preview` target
+for that variable, or accept that every contact and newsletter submission on
+a preview URL is rejected.
 
 Replacing an existing value — the only way to change a sensitive one —
 takes `--force`:
@@ -239,6 +249,52 @@ Forbidden in Production (the audit fails the deploy if set):
 
 If the audit names it, drop it:
 `pnpm exec vercel env rm EMAIL_LOG_UNSENT production`.
+
+## Seed before a deploy that needs new records
+
+The database is the only copy of Owner content
+([ADR 0001](adr/0001-the-database-is-the-only-copy-of-owner-content.md)).
+Code that reads a record the live database does not have yet fails its
+build, and Vercel then keeps serving the current site. So the order is:
+**seed first, then merge.**
+
+`pnpm seed` fills the database `DATABASE_URL` names from the Seed in `seed/`.
+It is fill-only — it creates what is missing and never changes a record that
+exists — so running it against the live site is safe, and running it twice
+does nothing the second time. Run it from the branch that is about to merge,
+with the production values in the environment, and read its last line: it
+lists what it created and what it kept.
+
+The Seed uploads the Resume, so `BLOB_READ_WRITE_TOKEN` has to be in the
+environment as well as `DATABASE_URL`. Without it the upload lands on the
+disk of the machine running the Seed while its record lands in the live
+database, and the site answers 502 at the Resume's address. The command
+warns when it uploaded to disk; the repair is to upload the Resume again in
+the admin under Site settings.
+
+Look before you fill. `pnpm seed:check` takes the same environment, reads
+the database, and writes nothing. It lists what a fill would create and what
+it would keep, and says what state the Site settings and their Resume are
+in:
+
+```text
+seed check — nothing was written
+  would create: [site settings]
+  would keep: [service ai-enablement, …]
+  site settings: missing
+  resume: none
+  resume uploads nothing points at: 0
+```
+
+**If a fill fails part-way**, run `pnpm seed:check` again before anything
+else. A fill uploads the Resume and then saves the Site settings, so a
+failure between the two can leave an upload nothing points at. It is private
+and harmless, and can be deleted in the admin under Resume files once the
+site is deployed. Running the fill again is always safe: it will create the
+settings if they are still missing and leave them alone if they are not.
+
+Only the owner can do any of this. It needs the production database and blob
+storage credentials, which no agent may read.
 
 ## Why Vercel builds, not the runner
 

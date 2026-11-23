@@ -14,7 +14,7 @@ import { motion, useReducedMotion } from 'motion/react';
 import { useTheme } from 'next-themes';
 
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { siteConfig } from '@/lib/site-config';
+import { listSocialLinks, type SiteSettingsContent } from '@/lib/site-settings-content';
 
 interface SearchResult {
   slug: string;
@@ -71,7 +71,12 @@ const PostResults = ({
   );
 };
 
-const PaletteDialog = () => {
+export interface PaletteProps {
+  /** The owner's profiles, from Site settings; a `null` one is left out. */
+  readonly socials: SiteSettingsContent['socials'];
+}
+
+const PaletteDialog = ({ socials }: PaletteProps) => {
   const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme();
   const reduced = useReducedMotion();
@@ -111,11 +116,7 @@ const PaletteDialog = () => {
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
-  const socials = [
-    { label: 'github', url: siteConfig.socials.github },
-    { label: 'linkedin', url: siteConfig.socials.linkedin },
-    ...(siteConfig.socials.bluesky ? [{ label: 'bluesky', url: siteConfig.socials.bluesky }] : []),
-  ];
+  const socialLinks = listSocialLinks(socials);
 
   return (
     <Dialog onOpenChange={setOpen} open={open}>
@@ -159,7 +160,7 @@ const PaletteDialog = () => {
               </Command.Group>
               <PostResults onNavigate={navigate} query={query} />
               <Command.Group heading="links">
-                {socials.map((social) => (
+                {socialLinks.map((social) => (
                   <Command.Item
                     className={ITEM_CLASSES}
                     key={social.label}
@@ -197,11 +198,11 @@ const PaletteDialog = () => {
   );
 };
 
-export const CommandPalette = () => {
+export const CommandPalette = ({ socials }: PaletteProps) => {
   const [client] = useState(() => new QueryClient());
   return (
     <QueryClientProvider client={client}>
-      <PaletteDialog />
+      <PaletteDialog socials={socials} />
     </QueryClientProvider>
   );
 };

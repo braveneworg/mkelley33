@@ -3,10 +3,11 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 /**
- * `pnpm build` against a throwaway Mongo container, with the three checks a
- * green exit cannot give on its own: that the build actually reached the
- * database, that the service worker was emitted, and that every function
- * bundle carrying sharp also carries the libvips it loads.
+ * Seeds a throwaway Mongo container and runs `pnpm build` against it, with
+ * the three checks a green exit cannot give on its own: that the build
+ * actually reached the database, that the service worker was emitted, and
+ * that every function bundle carrying sharp also carries the libvips it
+ * loads.
  *
  * Where it runs is `@/lib/harness/docker-harness`'s decision, not this
  * file's: on a developer's machine the whole script is re-run inside the
@@ -36,6 +37,9 @@ import { harnessDeps } from './harness-deps';
 // Attempt 1 leaves a warm .next cache, and a fresh `pnpm build` then renders
 // those routes instantly, so one full retry is the effective mitigation.
 const MAX_ATTEMPTS = 2;
+
+// Seeding takes seconds; a seed still running after this is wedged.
+const SEED_TIMEOUT_MS = 240_000;
 
 // Prerender workers can freeze >30s on cold-cache module evaluation; give the
 // driver timeouts that outlast the freeze so connections survive it.
@@ -99,25 +103,48 @@ const artifactProblem = (): null | string => {
   return null;
 };
 
-/** Runs the build, streaming output through while retaining it for inspection. */
-const runBuild = (uri: string): Promise<ChildResult> =>
-  runChild({
-    args: ['build'],
-    command: 'pnpm',
-    env: {
-      ...process.env,
-      DATABASE_URL: `${uri}?${DRIVER_PARAMS}`,
-      PAYLOAD_SECRET: process.env.PAYLOAD_SECRET ?? 'ci-build-secret',
-    },
-    output: 'capture',
-  });
+/** The environment both steps run in: this one's, pointed at the throwaway database. */
+const databaseEnv = (uri: string): NodeJS.ProcessEnv => ({
+  ...process.env,
+  // Uploads stay on this machine's disk: the Seed must never write to a
+  // blob store from here, whatever token the surrounding shell carries.
+  BLOB_READ_WRITE_TOKEN: '',
+  DATABASE_URL: `${uri}?${DRIVER_PARAMS}`,
+  PAYLOAD_SECRET: process.env.PAYLOAD_SECRET ?? 'ci-build-secret',
+});
 
 /**
- * One build against a database of its own. The Mongo container outlives the
- * attempt, so a fresh database is a new name on the same server.
+ * Fills the empty database from the Seed. The database is the only copy of
+ * Owner content (docs/adr/0001), so a build against an unseeded one has
+ * nothing to render and is meant to fail.
+ */
+const runSeed = (uri: string): Promise<ChildResult> =>
+  runChild({
+    args: ['exec', 'tsx', 'scripts/seed.ts'],
+    command: 'pnpm',
+    env: databaseEnv(uri),
+    output: 'inherit',
+    timeoutMs: SEED_TIMEOUT_MS,
+  });
+
+/** Runs the build, streaming output through while retaining it for inspection. */
+const runBuild = (uri: string): Promise<ChildResult> =>
+  runChild({ args: ['build'], command: 'pnpm', env: databaseEnv(uri), output: 'capture' });
+
+/**
+ * One seed and build against a database of its own. The Mongo container
+ * outlives the attempt, so a fresh database is a new name on the same server.
  */
 const buildOnce = async (mongoUrl: string, attempt: number): Promise<number> => {
-  const result = await runBuild(databaseUrl(mongoUrl, `build-${attempt}`));
+  const uri = databaseUrl(mongoUrl, `build-${attempt}`);
+  const seeded = await runSeed(uri);
+  if (seeded.code !== 0) {
+    console.error(
+      `build:ci: seeding failed (exit ${String(seeded.code)}) — nothing to build from.`
+    );
+    return seeded.code ?? 1;
+  }
+  const result = await runBuild(uri);
 
   if (result.spawnError) {
     console.error(`build:ci could not spawn the build: ${result.spawnError.message}`);

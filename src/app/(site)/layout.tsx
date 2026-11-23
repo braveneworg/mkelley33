@@ -20,7 +20,9 @@ import { ThemeProvider } from '@/components/site/theme-provider';
 import { VercelAnalyticsTag } from '@/components/site/vercel-analytics-tag';
 import { feedAlternateTypes } from '@/lib/feed-alternates';
 import { serializeJsonLd } from '@/lib/json-ld';
+import { getSiteSettings } from '@/lib/repositories/site-settings';
 import { siteConfig } from '@/lib/site-config';
+import { listSocialLinks, type SiteSettingsContent } from '@/lib/site-settings-content';
 
 import type { Metadata, Viewport } from 'next';
 
@@ -32,22 +34,29 @@ const jetbrainsMono = JetBrains_Mono({
   variable: '--font-jetbrains-mono',
 });
 
-export const metadata: Metadata = {
-  alternates: {
-    // './' resolves against the request pathname, so every page gets a
-    // self-referencing canonical (e.g. /blog/foo → siteConfig.url/blog/foo).
-    // Except the root: its internal pathname is '/index', so the homepage
-    // pins its own canonical in (site)/page.tsx.
-    canonical: './',
-    types: feedAlternateTypes,
-  },
-  description: siteConfig.description,
-  metadataBase: new URL(siteConfig.url),
-  title: {
-    default: siteConfig.title,
-    template: '%s · mkelley33',
-  },
-  twitter: { card: 'summary_large_image' },
+/**
+ * A function rather than a constant: the browser title and description are
+ * Site settings, which live in the database (docs/adr/0001).
+ */
+export const generateMetadata = async (): Promise<Metadata> => {
+  const { description, title } = await getSiteSettings();
+  return {
+    alternates: {
+      // './' resolves against the request pathname, so every page gets a
+      // self-referencing canonical (e.g. /blog/foo → siteConfig.url/blog/foo).
+      // Except the root: its internal pathname is '/index', so the homepage
+      // pins its own canonical in (site)/page.tsx.
+      canonical: './',
+      types: feedAlternateTypes,
+    },
+    description,
+    metadataBase: new URL(siteConfig.url),
+    title: {
+      default: title,
+      template: '%s · mkelley33',
+    },
+    twitter: { card: 'summary_large_image' },
+  };
 };
 
 export const viewport: Viewport = {
@@ -65,20 +74,27 @@ export const viewport: Viewport = {
  */
 export const MAIN_CLASSES = 'flex flex-1 flex-col';
 
-const personJsonLd = {
+/** The schema.org Person the layout publishes on every page. */
+interface PersonJsonLd {
+  '@context': 'https://schema.org';
+  '@type': 'Person';
+  jobTitle: string;
+  name: string;
+  sameAs: string[];
+  url: string;
+}
+
+const personJsonLd = ({ name, socials }: SiteSettingsContent): PersonJsonLd => ({
   '@context': 'https://schema.org',
   '@type': 'Person',
   jobTitle: 'Full-Stack AI Forward Deployed Engineer',
-  name: siteConfig.name,
-  sameAs: [
-    siteConfig.socials.github,
-    siteConfig.socials.linkedin,
-    ...(siteConfig.socials.bluesky ? [siteConfig.socials.bluesky] : []),
-  ],
+  name,
+  sameAs: listSocialLinks(socials).map(({ url }) => url),
   url: siteConfig.url,
-};
+});
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const settings = await getSiteSettings();
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
@@ -111,9 +127,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                       footer. */}
                   <ConsentCookieTrigger />
                 </main>
-                <SiteFooter />
+                <SiteFooter settings={settings} />
               </div>
-              <PaletteMount />
+              <PaletteMount socials={settings.socials} />
               <ThemeColorSync />
               <ConsentBanner />
               <ConsentPreferencesDialog />
@@ -122,7 +138,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             </ConsentProvider>
           </ThemeProvider>
           <script
-            dangerouslySetInnerHTML={{ __html: serializeJsonLd(personJsonLd) }}
+            dangerouslySetInnerHTML={{ __html: serializeJsonLd(personJsonLd(settings)) }}
             type="application/ld+json"
           />
         </SerwistRegister>

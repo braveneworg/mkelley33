@@ -7,7 +7,7 @@ import { join } from 'node:path';
 
 import { ImageResponse } from 'next/og';
 
-import { siteConfig } from '@/lib/site-config';
+import { getSiteSettings } from '@/lib/repositories/site-settings';
 
 export const alt = 'mkelley33 — full-stack AI forward deployed engineer';
 export const contentType = 'image/png';
@@ -15,6 +15,7 @@ export const size = { height: 630, width: 1200 };
 
 export default async function Image() {
   const mono = await readFile(join(process.cwd(), 'src/assets/fonts/JetBrainsMono-Bold.ttf'));
+  const { name, tagline } = await getSiteSettings();
   return new ImageResponse(
     <div
       style={{
@@ -30,8 +31,8 @@ export default async function Image() {
       }}
     >
       <div style={{ color: '#46e08a', fontSize: 36 }}>$ whoami</div>
-      <div style={{ fontSize: 72, fontWeight: 700, marginTop: 24 }}>{siteConfig.name}</div>
-      <div style={{ color: '#46e08a', fontSize: 38, marginTop: 16 }}>{siteConfig.tagline}</div>
+      <div style={{ fontSize: 72, fontWeight: 700, marginTop: 24 }}>{name}</div>
+      <div style={{ color: '#46e08a', fontSize: 38, marginTop: 16 }}>{tagline}</div>
       <div style={{ color: '#7d93a5', fontSize: 28, marginTop: 48 }}>mkelley33.com</div>
     </div>,
     {

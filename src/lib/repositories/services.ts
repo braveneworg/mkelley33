@@ -9,32 +9,28 @@ import { getPayload } from 'payload';
 import config from '@payload-config';
 
 import type { ServiceContent } from '@/lib/services-content';
-import { SERVICES } from '@/lib/services-content';
 
+/**
+ * The services in the order the owner arranged them. An empty collection is
+ * an empty list; a database failure is not caught. There is no fallback to
+ * source (docs/adr/0001): the error fails a build, and during revalidation
+ * Next keeps serving the last page it built.
+ */
 export const listServices = cache(async (): Promise<ServiceContent[]> => {
-  try {
-    const payload = await getPayload({ config });
-    const result = await payload.find({
-      collection: 'services',
-      limit: 20,
-      overrideAccess: false,
-      sort: 'order',
-    });
-    if (result.docs.length === 0) {
-      return SERVICES;
-    }
-    return result.docs.map((doc) => ({
-      credibility: doc.credibility,
-      deliverables: doc.deliverables,
-      name: doc.name,
-      pitch: doc.pitch,
-      slug: doc.slug,
-    }));
-  } catch (error) {
-    // DB unreachable (e.g. CI build) — serve the canonical static list.
-    console.error('listServices falling back to static content:', error);
-    return SERVICES;
-  }
+  const payload = await getPayload({ config });
+  const result = await payload.find({
+    collection: 'services',
+    limit: 20,
+    overrideAccess: false,
+    sort: 'order',
+  });
+  return result.docs.map((doc) => ({
+    credibility: doc.credibility,
+    deliverables: doc.deliverables,
+    name: doc.name,
+    pitch: doc.pitch,
+    slug: doc.slug,
+  }));
 });
 
 export const findServiceIdsBySlugs = async (slugs: string[]): Promise<string[]> => {

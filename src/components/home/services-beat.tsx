@@ -5,12 +5,12 @@
 import Link from 'next/link';
 
 import { TerminalSection } from '@/components/home/terminal-section';
-import { SERVICES } from '@/lib/services-content';
+import type { ServiceContent } from '@/lib/services-content';
 
-export const ServicesBeat = () => (
+export const ServicesBeat = ({ services }: { services: ServiceContent[] }) => (
   <TerminalSection command="ls ./services">
     <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {SERVICES.map((service) => (
+      {services.map((service) => (
         <li key={service.slug}>
           <Link
             className="border-edge bg-surface hover:border-phosphor block h-full rounded-lg border p-4 transition-colors"

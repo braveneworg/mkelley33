@@ -5,9 +5,18 @@
 import { buildRssXml } from '@/lib/rss';
 import { makePost } from '@/test/make-post';
 
+const channel = { description: 'Feed & description', title: 'Feed <title>' };
+
 describe('buildRssXml', () => {
+  it('titles and describes the channel from Site settings, escaped', () => {
+    const xml = buildRssXml([], channel);
+
+    expect(xml).toContain('<title>Feed &lt;title&gt;</title>');
+    expect(xml).toContain('<description>Feed &amp; description</description>');
+  });
+
   it('produces channel metadata and one item per post', () => {
-    const xml = buildRssXml([makePost({ slug: 'a-post', title: 'A <Post> & Friends' })]);
+    const xml = buildRssXml([makePost({ slug: 'a-post', title: 'A <Post> & Friends' })], channel);
     expect(xml).toContain('<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">');
     expect(xml).toContain('<link>https://mkelley33.com/blog/a-post</link>');
     expect(xml).toContain('A &lt;Post&gt; &amp; Friends');
@@ -15,27 +24,27 @@ describe('buildRssXml', () => {
   });
 
   it('handles zero posts', () => {
-    const xml = buildRssXml([]);
+    const xml = buildRssXml([], channel);
     expect(xml).toContain('</channel>');
     expect(xml).not.toContain('<item>');
   });
 
   it('omits the item description element when a post has no excerpt', () => {
-    const xml = buildRssXml([makePost({ excerpt: null, slug: 'no-excerpt-post' })]);
+    const xml = buildRssXml([makePost({ excerpt: null, slug: 'no-excerpt-post' })], channel);
     const itemXml = xml.slice(xml.indexOf('<item>'), xml.indexOf('</item>'));
     expect(itemXml).toContain('<item>');
     expect(itemXml).not.toContain('<description>');
   });
 
   it('declares itself via atom:link rel=self', () => {
-    const xml = buildRssXml([]);
+    const xml = buildRssXml([], channel);
     expect(xml).toContain(
       '<atom:link href="https://mkelley33.com/feed.xml" rel="self" type="application/rss+xml" />'
     );
   });
 
   it('escapes ampersands in item link and guid', () => {
-    const xml = buildRssXml([makePost({ slug: 'a&b' })]);
+    const xml = buildRssXml([makePost({ slug: 'a&b' })], channel);
     expect(xml).toContain('<link>https://mkelley33.com/blog/a&amp;b</link>');
     expect(xml).toContain('<guid>https://mkelley33.com/blog/a&amp;b</guid>');
     expect(xml).not.toContain('/blog/a&b<');

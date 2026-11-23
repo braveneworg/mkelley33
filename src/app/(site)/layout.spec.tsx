@@ -2,8 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-import { MAIN_CLASSES, metadata, viewport } from '@/app/(site)/layout';
+import { generateMetadata, MAIN_CLASSES, viewport } from '@/app/(site)/layout';
 import { siteConfig } from '@/lib/site-config';
+import { makeSiteSettings } from '@/test/make-site-settings';
+
+vi.mock('@/lib/repositories/site-settings', () => ({
+  getSiteSettings: vi.fn(async () => makeSiteSettings()),
+}));
 
 vi.mock('next/font/google', () => ({
   Inter: () => ({ variable: '--font-inter' }),
@@ -11,18 +16,36 @@ vi.mock('next/font/google', () => ({
 }));
 
 describe('site layout metadata', () => {
-  it('resolves relative metadata URLs against the production origin', () => {
+  it('resolves relative metadata URLs against the production origin', async () => {
+    const metadata = await generateMetadata();
+
     expect(String(metadata.metadataBase)).toBe(`${siteConfig.url}/`);
   });
 
-  it('gives every page a self-referencing canonical', () => {
+  it('gives every page a self-referencing canonical', async () => {
     // './' resolves per request pathname, so /blog/foo canonicalizes to
     // itself rather than to the homepage.
+    const metadata = await generateMetadata();
+
     expect(metadata.alternates?.canonical).toBe('./');
   });
 
-  it('keeps the RSS feed alternate', () => {
+  it('keeps the RSS feed alternate', async () => {
+    const metadata = await generateMetadata();
+
     expect(metadata.alternates?.types?.['application/rss+xml']).toBe('/feed.xml');
+  });
+
+  it('takes the browser title from Site settings', async () => {
+    const metadata = await generateMetadata();
+
+    expect(metadata.title).toEqual({ default: 'a browser title', template: '%s · mkelley33' });
+  });
+
+  it('takes the description from Site settings', async () => {
+    const metadata = await generateMetadata();
+
+    expect(metadata.description).toBe('a site description');
   });
 });
 

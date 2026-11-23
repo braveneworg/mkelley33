@@ -44,6 +44,7 @@ const PINNED = [
   'PAYLOAD_SECRET',
   'SMTP_HOST',
   'TURNSTILE_SECRET_KEY',
+  'UPLOADS_DIR',
   'VERCEL_ENV',
 ] as const;
 
@@ -84,6 +85,11 @@ describe('makeEnv hermeticity', () => {
 
   it('points the app at the throwaway database it is handed, with the driver params', () => {
     expect(envFor(URI, PARAMS).get('DATABASE_URL')).toBe(`${URI}?${PARAMS}`);
+  });
+
+  /** '' leaves uploads in the working directory, which in the container is thrown away. */
+  it('keeps uploads where the harness runs, whatever the shell says', () => {
+    expect(envFor(URI, PARAMS).get('UPLOADS_DIR')).toBe('');
   });
 
   it('pins a throwaway Payload secret rather than reusing a real one', () => {

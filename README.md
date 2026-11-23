@@ -91,7 +91,7 @@ Seed the database, then start the dev server:
 
 ```sh
 pnpm seed:first-user   # create the initial Payload admin user
-pnpm seed:services     # seed the services shown on /services
+pnpm seed              # fill the database from the Seed in seed/
 pnpm dev               # http://localhost:3000, admin at /admin
 ```
 
@@ -132,12 +132,13 @@ pnpm dev               # http://localhost:3000, admin at /admin
 
 ### Database & seeding
 
-| Script            | What it does                                                           |
-| ----------------- | ---------------------------------------------------------------------- |
-| `db:backup`       | Dump the database configured in `.env.local` (`scripts/db-backup.ts`). |
-| `db:restore`      | Restore a previously created dump (`scripts/db-restore.ts`).           |
-| `seed:first-user` | Create the initial Payload admin user if none exists.                  |
-| `seed:services`   | Seed the `services` collection rendered on `/services`.                |
+| Script            | What it does                                                                                                                                                            |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `db:backup`       | Dump the database configured in `.env.local` (`scripts/db-backup.ts`).                                                                                                  |
+| `db:restore`      | Restore a previously created dump (`scripts/db-restore.ts`).                                                                                                            |
+| `seed:first-user` | Create the initial Payload admin user if none exists.                                                                                                                   |
+| `seed`            | Fill the database from the Seed in `seed/`: Site settings, the Resume, and the services. Fill-only — it creates what is missing and never changes a record that exists. |
+| `seed:check`      | Report what `seed` would create and keep, and the state of the Site settings and their Resume. Reads only; writes nothing.                                              |
 
 ### Code generation & misc
 

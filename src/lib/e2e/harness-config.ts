@@ -78,6 +78,9 @@ export const makeEnv = (uri: string, driverParams: string): NodeJS.ProcessEnv =>
   // '' forces the JSON transport so no real email can ever leave the suite.
   SMTP_HOST: '',
   TURNSTILE_SECRET_KEY: '1x0000000000000000000000000000000AA',
+  // Where uploads go without blob storage (src/collections/resume-files.ts).
+  // '' keeps them in the working directory, whatever the shell says.
+  UPLOADS_DIR: '',
   // This is a production build running the test secret above, which
   // src/lib/turnstile/verify.ts refuses only on Vercel's production target.
   // Pinned to '' so a developer's shell cannot make the suite look like one.

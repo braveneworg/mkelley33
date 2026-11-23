@@ -4,7 +4,7 @@
 
 import Link from 'next/link';
 
-import { siteConfig } from '@/lib/site-config';
+import { listSocialLinks, type SiteSettingsContent } from '@/lib/site-settings-content';
 
 interface FooterLink {
   href: string;
@@ -19,33 +19,13 @@ interface FooterLink {
   label: string;
 }
 
-const externalLinks = (): FooterLink[] => {
-  const candidates: { href: null | string; identity: boolean; label: string }[] = [
-    {
-      href: siteConfig.socials.github,
-      identity: true,
-      label: 'github',
-    },
-    {
-      href: siteConfig.socials.linkedin,
-      identity: true,
-      label: 'linkedin',
-    },
-    {
-      href: siteConfig.socials.bluesky,
-      identity: true,
-      label: 'bluesky',
-    },
-    {
-      href: siteConfig.repoUrl,
-      identity: false,
-      label: 'source',
-    },
-  ];
-  return candidates.filter((candidate): candidate is FooterLink => candidate.href !== null);
-};
+/** The owner's profiles, then the repository when the owner has set one. */
+const externalLinks = ({ repoUrl, socials }: SiteSettingsContent): FooterLink[] => [
+  ...listSocialLinks(socials).map(({ label, url }) => ({ href: url, identity: true, label })),
+  ...(repoUrl === null ? [] : [{ href: repoUrl, identity: false, label: 'source' }]),
+];
 
-export const SiteFooter = () => (
+export const SiteFooter = ({ settings }: { settings: SiteSettingsContent }) => (
   <footer className="border-edge border-t">
     <div className="text-fg-muted mx-auto flex w-full max-w-5xl flex-wrap items-center gap-x-5 gap-y-2 px-5 py-6 font-mono text-xs">
       <p>
@@ -53,7 +33,7 @@ export const SiteFooter = () => (
         share alike
       </p>
       <ul className="ml-auto flex flex-wrap gap-x-4">
-        {externalLinks().map((link) => (
+        {externalLinks(settings).map((link) => (
           <li key={link.label}>
             {/* Both rel values are written out in full rather than composed
                 from a shared constant: the lint rule reads the attribute

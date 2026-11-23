@@ -3,13 +3,17 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 import { listPublishedPosts } from '@/lib/repositories/posts';
+import { getSiteSettings } from '@/lib/repositories/site-settings';
 import { buildRssXml } from '@/lib/rss';
 
 export const revalidate = 300;
 
 export async function GET(): Promise<Response> {
-  const posts = await listPublishedPosts();
-  return new Response(buildRssXml(posts), {
+  const [posts, { description, title }] = await Promise.all([
+    listPublishedPosts(),
+    getSiteSettings(),
+  ]);
+  return new Response(buildRssXml(posts, { description, title }), {
     headers: { 'Content-Type': 'application/rss+xml; charset=utf-8' },
   });
 }

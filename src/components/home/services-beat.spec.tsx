@@ -5,13 +5,15 @@
 import { render, screen } from '@testing-library/react';
 
 import { ServicesBeat } from '@/components/home/services-beat';
-import { SERVICES } from '@/lib/services-content';
+import { makeService } from '@/test/make-service';
+
+const services = [makeService({ slug: 'audit' }), makeService({ slug: 'mentoring' })];
 
 describe('ServicesBeat', () => {
   it('renders a card per service linking to its anchor', () => {
-    render(<ServicesBeat />);
+    render(<ServicesBeat services={services} />);
     expect(screen.getByText('ls ./services')).toBeInTheDocument();
-    for (const service of SERVICES) {
+    for (const service of services) {
       // Function matcher rather than a regex built from fixture data: the
       // slug is interpolated, and a plain containment check says what is
       // meant without compiling a pattern from it.

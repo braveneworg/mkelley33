@@ -13,7 +13,13 @@ export const escapeXml = (value: string): string =>
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&apos;');
 
-export const buildRssXml = (posts: Post[]): string => {
+/** What the feed says about itself — the browser title and description from Site settings. */
+export interface RssChannel {
+  description: string;
+  title: string;
+}
+
+export const buildRssXml = (posts: Post[], { description, title }: RssChannel): string => {
   const items = posts
     .map((post) => {
       const url = `${siteConfig.url}/blog/${post.slug}`;
@@ -34,9 +40,9 @@ export const buildRssXml = (posts: Post[]): string => {
     '<?xml version="1.0" encoding="UTF-8"?>',
     '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">',
     '  <channel>',
-    `    <title>${escapeXml(siteConfig.title)}</title>`,
+    `    <title>${escapeXml(title)}</title>`,
     `    <link>${siteConfig.url}</link>`,
-    `    <description>${escapeXml(siteConfig.description)}</description>`,
+    `    <description>${escapeXml(description)}</description>`,
     `    <language>en</language>`,
     `    <atom:link href="${siteConfig.url}/feed.xml" rel="self" type="application/rss+xml" />`,
     items,

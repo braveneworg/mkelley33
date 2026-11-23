@@ -6,11 +6,10 @@ import { render, screen } from '@testing-library/react';
 
 import { CvDocument } from '@/components/cv/cv-document';
 import { CV_EDUCATION, CV_EXPERIENCE, CV_SKILLS } from '@/lib/cv-content';
-import { siteConfig } from '@/lib/site-config';
 
 describe('CvDocument', () => {
   it('renders summary, every skill group, every role, and education', () => {
-    render(<CvDocument resumePdf={null} />);
+    render(<CvDocument name="Owner Name" resumePdf={null} />);
     expect(screen.getByText(/Senior full-stack software engineer/)).toBeInTheDocument();
     for (const group of CV_SKILLS) {
       expect(screen.getByText(group.label)).toBeInTheDocument();
@@ -24,25 +23,15 @@ describe('CvDocument', () => {
   });
 
   it('hides the download button while the pdf is pending', () => {
-    render(<CvDocument resumePdf={null} />);
+    render(<CvDocument name="Owner Name" resumePdf={null} />);
     expect(screen.queryByRole('link', { name: /download pdf/i })).not.toBeInTheDocument();
   });
 
   it('shows the download button when the pdf exists', () => {
-    render(<CvDocument resumePdf="/michaux-kelley-resume.pdf" />);
+    render(<CvDocument name="Owner Name" resumePdf="/michaux-kelley-resume.pdf" />);
     expect(screen.getByRole('link', { name: /download pdf/i })).toHaveAttribute(
       'href',
       '/michaux-kelley-resume.pdf'
-    );
-  });
-
-  // Pins the shipped default, not just the prop: the page renders <CvDocument />
-  // with no arguments, so a null in site-config would silently drop the button.
-  it('defaults to the resume configured in site config', () => {
-    render(<CvDocument />);
-    expect(screen.getByRole('link', { name: /download pdf/i })).toHaveAttribute(
-      'href',
-      siteConfig.resumePdf
     );
   });
 });

@@ -3,8 +3,12 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 import { CvDocument } from '@/components/cv/cv-document';
+import { getSiteSettings } from '@/lib/repositories/site-settings';
+import { RESUME_PATH } from '@/lib/site-config';
 
 import type { Metadata } from 'next';
+
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   description:
@@ -12,6 +16,7 @@ export const metadata: Metadata = {
   title: 'cv',
 };
 
-export default function CvPage() {
-  return <CvDocument />;
+export default async function CvPage() {
+  const { name, resumeUrl } = await getSiteSettings();
+  return <CvDocument name={name} resumePdf={resumeUrl === null ? null : RESUME_PATH} />;
 }

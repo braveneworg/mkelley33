@@ -8,6 +8,12 @@ import userEvent from '@testing-library/user-event';
 import { CommandPalette } from '@/components/palette/command-palette';
 import { installPaletteHotkey } from '@/components/palette/palette-hotkey';
 
+const socials = {
+  bluesky: 'https://example.com/bluesky',
+  github: 'https://example.com/github',
+  linkedin: 'https://example.com/linkedin',
+};
+
 const push = vi.fn();
 const setTheme = vi.fn();
 
@@ -58,7 +64,7 @@ afterEach(() => {
 describe('CommandPalette', () => {
   it('opens on meta+k and lists page entries', async () => {
     const user = userEvent.setup();
-    render(<CommandPalette />);
+    render(<CommandPalette socials={socials} />);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     await user.keyboard('{Meta>}k{/Meta}');
     expect(await screen.findByRole('dialog')).toBeInTheDocument();
@@ -68,7 +74,7 @@ describe('CommandPalette', () => {
 
   it('lands focus in the search input when it opens', async () => {
     const user = userEvent.setup();
-    render(<CommandPalette />);
+    render(<CommandPalette socials={socials} />);
     await user.keyboard('{Meta>}k{/Meta}');
     await screen.findByRole('dialog');
     await waitFor(() => {
@@ -77,14 +83,14 @@ describe('CommandPalette', () => {
   });
 
   it('opens on the palette:open window event', async () => {
-    render(<CommandPalette />);
+    render(<CommandPalette socials={socials} />);
     window.dispatchEvent(new Event('palette:open'));
     expect(await screen.findByRole('dialog')).toBeInTheDocument();
   });
 
   it('navigates when a page entry is selected', async () => {
     const user = userEvent.setup();
-    render(<CommandPalette />);
+    render(<CommandPalette socials={socials} />);
     await user.keyboard('{Meta>}k{/Meta}');
     await user.click(await screen.findByText('./services'));
     expect(push).toHaveBeenCalledWith('/services');
@@ -92,7 +98,7 @@ describe('CommandPalette', () => {
 
   it('searches posts once two characters are typed', async () => {
     const user = userEvent.setup();
-    render(<CommandPalette />);
+    render(<CommandPalette socials={socials} />);
     await user.keyboard('{Meta>}k{/Meta}');
     await user.type(screen.getByPlaceholderText('type a command or search…'), 'next');
     expect(await screen.findByText('Create a Next.js blog')).toBeInTheDocument();
@@ -102,7 +108,7 @@ describe('CommandPalette', () => {
 
   it('toggles the theme from the theme entry', async () => {
     const user = userEvent.setup();
-    render(<CommandPalette />);
+    render(<CommandPalette socials={socials} />);
     await user.keyboard('{Meta>}k{/Meta}');
     await user.click(screen.getByText(/toggle theme/));
     expect(setTheme).toHaveBeenCalledWith('light');
@@ -111,7 +117,7 @@ describe('CommandPalette', () => {
   it('switches to dark when the resolved theme is light', async () => {
     resolvedTheme = 'light';
     const user = userEvent.setup();
-    render(<CommandPalette />);
+    render(<CommandPalette socials={socials} />);
     await user.keyboard('{Meta>}k{/Meta}');
     await user.click(screen.getByText(/toggle theme/));
     expect(setTheme).toHaveBeenCalledWith('dark');
@@ -119,14 +125,14 @@ describe('CommandPalette', () => {
 
   it('opens on ctrl+k for non-mac keyboards', async () => {
     const user = userEvent.setup();
-    render(<CommandPalette />);
+    render(<CommandPalette socials={socials} />);
     await user.keyboard('{Control>}k{/Control}');
     expect(await screen.findByRole('dialog')).toBeInTheDocument();
   });
 
   it('closes again when the shortcut is pressed while open', async () => {
     const user = userEvent.setup();
-    render(<CommandPalette />);
+    render(<CommandPalette socials={socials} />);
     await user.keyboard('{Meta>}k{/Meta}');
     expect(await screen.findByRole('dialog')).toBeInTheDocument();
     await user.keyboard('{Meta>}k{/Meta}');
@@ -139,7 +145,7 @@ describe('CommandPalette', () => {
     const open = vi.fn();
     vi.stubGlobal('open', open);
     const user = userEvent.setup();
-    render(<CommandPalette />);
+    render(<CommandPalette socials={socials} />);
     await user.keyboard('{Meta>}k{/Meta}');
 
     await user.click(await screen.findByText(/github/));
@@ -158,7 +164,7 @@ describe('CommandPalette', () => {
       vi.fn().mockResolvedValue(new Response('upstream down', { status: 500 }))
     );
     const user = userEvent.setup();
-    render(<CommandPalette />);
+    render(<CommandPalette socials={socials} />);
     await user.keyboard('{Meta>}k{/Meta}');
 
     await user.type(screen.getByPlaceholderText('type a command or search…'), 'next');
@@ -169,7 +175,7 @@ describe('CommandPalette', () => {
   it('announces readiness for the pre-hydration hotkey bridge', async () => {
     const ready = vi.fn();
     window.addEventListener('palette:ready', ready);
-    render(<CommandPalette />);
+    render(<CommandPalette socials={socials} />);
     await waitFor(() => {
       expect(ready).toHaveBeenCalled();
     });
@@ -181,7 +187,7 @@ describe('CommandPalette', () => {
     window.dispatchEvent(
       new KeyboardEvent('keydown', { cancelable: true, key: 'k', metaKey: true })
     );
-    render(<CommandPalette />);
+    render(<CommandPalette socials={socials} />);
     expect(await screen.findByRole('dialog')).toBeInTheDocument();
   });
 
@@ -189,11 +195,21 @@ describe('CommandPalette', () => {
     const open = vi.fn();
     vi.stubGlobal('open', open);
     const user = userEvent.setup();
-    render(<CommandPalette />);
+    render(<CommandPalette socials={socials} />);
     await user.keyboard('{Meta>}k{/Meta}');
 
     await user.click(await screen.findByText(/rss/));
 
     expect(open).toHaveBeenCalledWith('/feed.xml', '_blank', 'noopener,noreferrer');
+  });
+
+  it('leaves bluesky out when the owner cleared that link', async () => {
+    const user = userEvent.setup();
+    render(<CommandPalette socials={{ ...socials, bluesky: null }} />);
+    await user.keyboard('{Meta>}k{/Meta}');
+
+    await screen.findByText(/github/);
+
+    expect(screen.queryByText(/bluesky/)).not.toBeInTheDocument();
   });
 });
