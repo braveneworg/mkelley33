@@ -40,13 +40,20 @@ binding. Everything below it applies only once the thing it names exists.
   imported by `actions/run-form-submission.ts` alone. Never merge them: one
   file exporting both halves puts the secret-reading code in the client
   graph and leaves tree-shaking as the only thing removing it.
-- `seed/` — the Seed: `seed-files.ts` and `page-seed.ts` read and validate
-  the JSON in the repo's `seed/` directory, `fill-seed.ts` and
-  `fill-pages.ts` write it into a database, fill-only, and
-  `inspect-seed.ts` reports what a fill would do without writing
-  (`pnpm seed:check`). `stored-fields.ts` is the one place that reads a
-  stored record directly, to tell a field a record has never had from one
-  the owner emptied. Read `docs/lessons/seed/` before changing any of them.
+- `seed/` — the Seed, and its two directions. Reading it:
+  `seed-files.ts`, `page-seed.ts` and `post-seed.ts` validate the JSON in
+  the repo's `seed/` directory, built from the values in `seed-values.ts`
+  and the rich-text rules in `seed-text.ts`. Filling a database from it,
+  fill-only: `fill-seed.ts`, `fill-pages.ts`, `fill-posts.ts`, with
+  `inspect-seed.ts` reporting what a fill would do without writing
+  (`pnpm seed:check`). Capture, the other way (`pnpm capture`):
+  `capture-seed.ts` reads what a database publishes, `capture-pages.ts`
+  maps a stored Page back, `capture-files.ts` names the files,
+  `read-upload.ts` fetches an upload's bytes, and `write-seed.ts` with
+  `seed-json.ts` rewrites the directory. `stored-fields.ts` is the one place
+  that reads a stored record directly, to tell a field a record has never
+  had from one the owner emptied. Read `docs/lessons/seed/` before changing
+  any of them.
 - `pages/` — what a Page's address is and where it leads, with no React in
   it: `page-address.ts` (the home address, the Fixed Pages, the reserved
   names, the field validator), `privacy-page.ts` (the two Blocks the privacy
@@ -67,6 +74,16 @@ binding. Everything below it applies only once the thing it names exists.
 
 ## Rules
 
+- The fill and Capture are two ends of one thing: whatever the Seed's
+  schemas accept, Capture must be able to write and the fill to read. A new
+  field on a Block or on Site settings goes into the schema, the fill and
+  `capture-pages.ts` / `capture-seed.ts` together;
+  `src/lib/seed/capture-seed.int.spec.ts` fills a database from the
+  committed Seed, captures it, and fails unless every JSON file comes back
+  byte for byte.
+- Capture takes only what visitors are served, writes each record out field
+  by field — never a stored record copied whole — and never reads Visitor
+  data. The Seed is public.
 - Revalidation is not the actions' job — it happens in Payload collection
   hooks (`src/collections/hooks/revalidate-post.ts`) so a CMS edit invalidates
   the same paths a form submission would.

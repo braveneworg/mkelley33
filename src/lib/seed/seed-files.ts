@@ -6,8 +6,8 @@
  * The Seed as it sits on disk: the JSON files in `seed/` and what they must
  * look like. The Seed is the public starting set of Owner content that turns
  * an empty database into the working site (see `CONTEXT.md`); `fill-seed.ts`
- * writes it into a database, and Capture will rewrite these files from the
- * live site, which is why every schema here is strict.
+ * writes it into a database, and Capture (`capture-seed.ts`) rewrites these
+ * files from the live site, which is why every schema here is strict.
  */
 
 import { readFileSync } from 'node:fs';
