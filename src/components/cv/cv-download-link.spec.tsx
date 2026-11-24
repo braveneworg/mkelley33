@@ -13,7 +13,7 @@ vi.mock('@/lib/analytics', () => ({ trackEvent: vi.fn() }));
 describe('CvDownloadLink', () => {
   it('renders a download link to the pdf', () => {
     render(<CvDownloadLink resumePdf="/michaux-kelley-resume.pdf" />);
-    expect(screen.getByRole('link', { name: /download pdf/i })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /download resume \(pdf\)/i })).toHaveAttribute(
       'href',
       '/michaux-kelley-resume.pdf'
     );
@@ -22,7 +22,7 @@ describe('CvDownloadLink', () => {
   it('tracks the download click', async () => {
     const user = userEvent.setup();
     render(<CvDownloadLink resumePdf="/michaux-kelley-resume.pdf" />);
-    await user.click(screen.getByRole('link', { name: /download pdf/i }));
+    await user.click(screen.getByRole('link', { name: /download resume \(pdf\)/i }));
     expect(trackEvent).toHaveBeenCalledWith('cv_download', { format: 'pdf' });
   });
 });
