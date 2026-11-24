@@ -954,6 +954,20 @@ describe('fillSeed on posts', () => {
     expect(report.uploads).toBe(3);
   });
 
+  /** Left behind, the next run would upload a second copy beside it. */
+  it('removes the picture it had uploaded for a post it could not create', async () => {
+    const missing = { ...pictureInText, value: { alt: 'x', file: 'files/not-in-the-seed.webp' } };
+    const broken: Seed = {
+      ...seedOf(),
+      posts: [{ ...post, body: richText(pictureInText, missing) }],
+      siteSettings: { ...seed.siteSettings, headerMenu: [], resume: null },
+    };
+
+    await fillSeed(payload, broken).catch(() => undefined);
+
+    await expect(payload.count({ collection: 'media' })).resolves.toMatchObject({ totalDocs: 0 });
+  });
+
   it('never overwrites a post the owner has edited', async () => {
     await fillSeed(payload, withPosts);
     const [created] = await hello();

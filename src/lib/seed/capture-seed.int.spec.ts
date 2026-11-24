@@ -399,6 +399,21 @@ describe('captureSeed on pictures', () => {
     ]);
   });
 
+  it('holds a picture two Blocks show once', async () => {
+    const { id } = await uploadPicture('diagram.png', 'how it fits together');
+    await publishPage(
+      'now',
+      { blockType: 'picture', media: id },
+      { blockType: 'picture', media: id }
+    );
+
+    const { files } = await capture();
+
+    expect([...files.keys()].filter((name) => name.includes('diagram'))).toEqual([
+      'files/diagram.png',
+    ]);
+  });
+
   /** The Media library takes any file; a Block's picture has to be a picture. */
   it('leaves out an upload that is not a picture', async () => {
     const pdf = readFileSync('seed/files/michaux-kelley-resume.pdf');
@@ -462,6 +477,24 @@ describe('captureSeed on Site settings', () => {
       null,
       false,
     ]);
+  });
+
+  it('carries no Resume when its upload is gone', async () => {
+    const settings = await payload.findGlobal({ depth: 0, slug: 'site-settings' });
+    await payload.delete({ collection: 'resume-files', id: String(settings.resume) });
+
+    const { content } = await capture();
+
+    expect(content.siteSettings.resume).toBeNull();
+  });
+
+  it('says that the Resume was left out', async () => {
+    const settings = await payload.findGlobal({ depth: 0, slug: 'site-settings' });
+    await payload.delete({ collection: 'resume-files', id: String(settings.resume) });
+
+    const { leftOut } = await capture();
+
+    expect(leftOut).toEqual(['site settings: the Resume: its upload is gone']);
   });
 
   it('carries no link the owner has cleared', async () => {
