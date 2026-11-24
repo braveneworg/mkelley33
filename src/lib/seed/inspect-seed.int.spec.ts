@@ -9,6 +9,8 @@ import { readFileSync } from 'node:fs';
 import { fillSeed } from '@/lib/seed/fill-seed';
 import { inspectSeed } from '@/lib/seed/inspect-seed';
 import { loadSeed } from '@/lib/seed/seed-files';
+import type { Seed } from '@/lib/seed/seed-files';
+import { paragraph, richText } from '@/test/lexical';
 import { createTestPayload } from '@/test/payload-harness';
 
 import type { MongooseAdapter } from '@payloadcms/db-mongodb';
@@ -18,7 +20,20 @@ let payload: Payload;
 let reset: () => Promise<void>;
 let teardown: () => Promise<void>;
 
-const seed = loadSeed('seed');
+/** The committed Seed, with a post: it carries none until the first Capture. */
+const seed: Seed = {
+  ...loadSeed('seed'),
+  posts: [
+    {
+      body: richText(paragraph('Hello.')),
+      excerpt: null,
+      publishedAt: '2026-01-02T12:00:00.000Z',
+      slug: 'hello',
+      tags: [],
+      title: 'Hello',
+    },
+  ],
+};
 const pdf = readFileSync('seed/files/michaux-kelley-resume.pdf');
 
 const uploadPdf = (name: string): Promise<{ id: string }> =>
@@ -48,6 +63,7 @@ describe('inspectSeed on an empty database', () => {
       ...seed.pages.map(({ slug }) => `page ${slug}`),
       'site settings',
       ...seed.services.map(({ slug }) => `service ${slug}`),
+      'post hello',
     ]);
   });
 

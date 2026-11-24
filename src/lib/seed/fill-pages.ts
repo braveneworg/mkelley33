@@ -8,10 +8,10 @@
  * exists — published, draft or unpublished — is left exactly as it is.
  */
 
-import path from 'node:path';
-
-import type { BlockSeed, LinkSeed, PageSeed, PictureSeed } from '@/lib/seed/page-seed';
+import type { BlockSeed, LinkSeed, PageSeed } from '@/lib/seed/page-seed';
 import { pagesLinkedFrom } from '@/lib/seed/page-seed';
+import { type StoredRefs, toStoredText } from '@/lib/seed/seed-text';
+import { withPictures } from '@/lib/seed/seed-uploads';
 
 import type { Payload } from 'payload';
 
@@ -38,35 +38,29 @@ export const findPageId = async (payload: Payload, slug: string): Promise<null |
  * The Pages with every Page before the ones that link to it, because a link
  * is stored as the id of its target and the target has to exist first.
  *
- * Two Pages that link to each other cannot be ordered, and the Seed refuses
- * them rather than create one with a link missing: a Page that exists is
- * never touched again, so the gap would be permanent.
+ * Pages that link in a circle cannot all come first. Each is listed once,
+ * where the walk first leaves it, and `fillPages` deals with the link that
+ * points at a Page not yet created.
  */
 export const inFillOrder = (pages: readonly PageSeed[]): PageSeed[] => {
   const bySlug = new Map(pages.map((page) => [page.slug, page]));
   const ordered: PageSeed[] = [];
-  const done = new Set<string>();
-  const visit = (page: PageSeed, trail: readonly string[]): void => {
-    if (done.has(page.slug)) {
+  const seen = new Set<string>();
+  const visit = (page: PageSeed): void => {
+    if (seen.has(page.slug)) {
       return;
     }
-    if (trail.includes(page.slug)) {
-      throw new Error(
-        `the Seed's Pages link in a circle (${[...trail, page.slug].join(' → ')}), ` +
-          'so none of them can be created first'
-      );
-    }
+    seen.add(page.slug);
     for (const slug of pagesLinkedFrom(page)) {
       const target = bySlug.get(slug);
       if (target !== undefined) {
-        visit(target, [...trail, page.slug]);
+        visit(target);
       }
     }
-    done.add(page.slug);
     ordered.push(page);
   };
   for (const page of pages) {
-    visit(page, []);
+    visit(page);
   }
   return ordered;
 };
@@ -97,16 +91,11 @@ export const toLinkData = (
   return { label, page: id, url: null };
 };
 
-interface FillContext {
-  readonly pageIds: ReadonlyMap<string, string>;
-  readonly upload: (picture: PictureSeed) => Promise<string>;
-}
-
-const optionalLink = (link: LinkSeed | null, { pageIds }: FillContext): LinkData | undefined =>
+const optionalLink = (link: LinkSeed | null, { pageIds }: StoredRefs): LinkData | undefined =>
   link === null ? undefined : toLinkData(link, pageIds);
 
 /** One Block as Payload stores it. Most kinds are stored just as the Seed has them. */
-const toBlockData = async (block: BlockSeed, context: FillContext) => {
+const toBlockData = async (block: BlockSeed, refs: StoredRefs) => {
   switch (block.blockType) {
     case 'cvExperience':
       return {
@@ -119,81 +108,148 @@ const toBlockData = async (block: BlockSeed, context: FillContext) => {
     case 'hero':
       return {
         ...block,
-        primaryAction: optionalLink(block.primaryAction, context),
-        secondaryAction: optionalLink(block.secondaryAction, context),
+        primaryAction: optionalLink(block.primaryAction, refs),
+        secondaryAction: optionalLink(block.secondaryAction, refs),
       };
     case 'picture':
-      return { ...block, media: await context.upload(block.media) };
+      return { ...block, media: await refs.upload(block.media) };
     case 'terminal':
       return {
         ...block,
-        picture: block.picture === null ? null : await context.upload(block.picture),
+        // The picture beside the text first, then the ones inside it.
+        picture: block.picture === null ? null : await refs.upload(block.picture),
+        // Awaited after the picture: properties are evaluated in this order.
+        body: await toStoredText(block.body, refs),
       };
     case 'timeline':
-      return { ...block, link: optionalLink(block.link, context) };
+      return { ...block, link: optionalLink(block.link, refs) };
     default:
       return block;
   }
 };
 
-/**
- * Tidies up after a failed Page: removes the pictures uploaded for it, so
- * the next run does not upload a second copy beside them.
- *
- * It must not delete an upload that is in use — a create can fail after it
- * has written the Page, because the version history is saved second — and
- * it must not throw: the failure worth reporting is the one that stopped
- * the Seed. See `docs/lessons/seed/a-cleanup-must-not-outrank-the-failure.md`.
- */
-const removeUnusedUploads = async (
-  payload: Payload,
-  slug: string,
-  uploads: readonly string[]
-): Promise<void> => {
-  try {
-    if ((await findPageId(payload, slug)) !== null) {
-      return;
-    }
-    for (const id of uploads) {
-      await payload.delete({ collection: MEDIA, id });
-    }
-  } catch {
-    // Best effort — see above.
-  }
+/** True when visitors are served the Page with this id. */
+const isPublished = async (payload: Payload, id: string): Promise<boolean> => {
+  const page = await payload.findByID({ collection: PAGES, depth: 0, draft: false, id });
+  return page._status === 'published';
 };
 
-/** Creates one Page, published, and returns its id and how many files it uploaded. */
-const createPage = async (
-  payload: Payload,
-  directory: string,
+/**
+ * A Page with nothing on it, unpublished. It exists so that Pages which
+ * link in a circle have an id to point at; `savePage` fills it in.
+ */
+const createShell = async (payload: Payload, { slug, title }: PageSeed): Promise<string> => {
+  const { id } = await payload.create({
+    collection: PAGES,
+    data: { _status: 'draft', slug, title },
+    draft: true,
+  });
+  return id;
+};
+
+/** What one run of the fill has done so far. */
+interface Run {
+  /**
+   * The Pages and uploads made since the first shell, or null while no
+   * shell has been needed. If the run stops, these are undone together.
+   */
+  circle: null | { slugs: string[]; uploads: string[] };
+  readonly created: Set<string>;
+  readonly directory: string;
+  readonly pageIds: Map<string, string>;
+  readonly payload: Payload;
+  /** Pages created as a shell, still waiting for their Blocks. */
+  readonly shells: PageSeed[];
+  uploads: number;
+}
+
+/**
+ * Saves one Page with its Blocks, published, and resolves to its id and the
+ * ids of the files it uploaded. The Page is a new record, or the shell made
+ * for it earlier.
+ */
+const savePage = (
+  { directory, pageIds, payload }: Pick<Run, 'directory' | 'pageIds' | 'payload'>,
   { blocks, slug, ...page }: PageSeed,
-  pageIds: ReadonlyMap<string, string>
-): Promise<{ id: string; uploads: number }> => {
-  const uploads: string[] = [];
-  const upload = async ({ alt, file }: PictureSeed): Promise<string> => {
-    const { id } = await payload.create({
-      collection: MEDIA,
-      data: { alt },
-      filePath: path.resolve(directory, file),
-    });
-    uploads.push(id);
-    return id;
-  };
-  try {
-    const stored = [];
-    // One at a time: a Page's pictures are uploaded in the order it shows them.
-    for (const block of blocks) {
-      stored.push(await toBlockData(block, { pageIds, upload }));
-    }
-    const { id } = await payload.create({
-      collection: PAGES,
+  shell?: string
+): Promise<{ saved: string; uploads: string[] }> =>
+  withPictures(
+    payload,
+    directory,
+    async () =>
+      shell === undefined
+        ? (await findPageId(payload, slug)) !== null
+        : await isPublished(payload, shell),
+    async (upload) => {
+      const stored = [];
+      // One at a time: a Page's pictures are uploaded in the order it shows them.
+      for (const block of blocks) {
+        stored.push(await toBlockData(block, { pageIds, upload }));
+      }
       // Published at once: the build that follows renders every Page from them.
-      data: { ...page, _status: 'published', blocks: stored, slug },
-    });
-    return { id, uploads: uploads.length };
-  } catch (error) {
-    await removeUnusedUploads(payload, slug, uploads);
-    throw error;
+      const data = { ...page, _status: 'published' as const, blocks: stored, slug };
+      const { id } =
+        shell === undefined
+          ? await payload.create({ collection: PAGES, data })
+          : await payload.update({ collection: PAGES, data, id: shell });
+      return id;
+    }
+  );
+
+/** Saves a Page — new, or the shell made for it — and records what that made. */
+const saveAndRecord = async (run: Run, page: PageSeed, shell?: string): Promise<void> => {
+  run.circle?.slugs.push(page.slug);
+  const { saved, uploads } = await savePage(run, page, shell);
+  run.pageIds.set(page.slug, saved);
+  run.circle?.uploads.push(...uploads);
+  run.uploads += uploads.length;
+};
+
+/**
+ * Creates a Page the database lacks. One whose links all have a Page to
+ * point at is created whole. One that links to a Page not yet created is in
+ * a circle of links, and gets a shell: an id for the others to point at.
+ */
+const createMissing = async (run: Run, page: PageSeed): Promise<void> => {
+  run.created.add(page.slug);
+  if (pagesLinkedFrom(page).every((slug) => run.pageIds.has(slug))) {
+    await saveAndRecord(run, page);
+    return;
+  }
+  run.circle ??= { slugs: [], uploads: [] };
+  run.circle.slugs.push(page.slug);
+  run.pageIds.set(page.slug, await createShell(run.payload, page));
+  run.shells.push(page);
+};
+
+/**
+ * Undoes a run that stopped among Pages that link in a circle: removes
+ * every Page made since the first shell, and the pictures uploaded for
+ * them. A Page that exists is never touched again, so a shell left behind
+ * would stay empty for good, and a Page left pointing at a removed shell
+ * would keep a link to nowhere. Nothing made earlier can point at any of
+ * these, because none of them had an id yet. The next run starts over.
+ *
+ * Best effort, one record at a time, and it never throws: the failure worth
+ * reporting is the one that stopped the Seed.
+ */
+const undoCircle = async ({ circle, payload }: Run): Promise<void> => {
+  for (const slug of circle?.slugs ?? []) {
+    try {
+      const id = await findPageId(payload, slug);
+      if (id !== null) {
+        await payload.delete({ collection: PAGES, id });
+      }
+    } catch {
+      // Best effort — see above.
+    }
+  }
+  for (const id of circle?.uploads ?? []) {
+    try {
+      await payload.delete({ collection: MEDIA, id });
+    } catch {
+      // Best effort — see above.
+    }
   }
 };
 
@@ -214,25 +270,37 @@ export const fillPages = async (
   directory: string,
   pages: readonly PageSeed[]
 ): Promise<PagesFill> => {
-  const created = new Set<string>();
-  const pageIds = new Map<string, string>();
-  let uploads = 0;
-  for (const page of inFillOrder(pages)) {
-    const existing = await findPageId(payload, page.slug);
-    if (existing === null) {
-      const result = await createPage(payload, directory, page, pageIds);
-      pageIds.set(page.slug, result.id);
-      uploads += result.uploads;
-      created.add(page.slug);
-    } else {
-      pageIds.set(page.slug, existing);
+  const run: Run = {
+    circle: null,
+    created: new Set(),
+    directory,
+    pageIds: new Map(),
+    payload,
+    shells: [],
+    uploads: 0,
+  };
+  try {
+    for (const page of inFillOrder(pages)) {
+      const existing = await findPageId(payload, page.slug);
+      if (existing === null) {
+        await createMissing(run, page);
+      } else {
+        run.pageIds.set(page.slug, existing);
+      }
     }
+    // Every Page has an id now, so the shells can hold their links.
+    for (const page of run.shells) {
+      await saveAndRecord(run, page, run.pageIds.get(page.slug));
+    }
+  } catch (error) {
+    await undoCircle(run);
+    throw error;
   }
   // Reported in the Seed's own order, not the order they had to be created in.
   return {
-    created: pages.filter(({ slug }) => created.has(slug)).map(pageLabel),
-    kept: pages.filter(({ slug }) => !created.has(slug)).map(pageLabel),
-    pageIds,
-    uploads,
+    created: pages.filter(({ slug }) => run.created.has(slug)).map(pageLabel),
+    kept: pages.filter(({ slug }) => !run.created.has(slug)).map(pageLabel),
+    pageIds: run.pageIds,
+    uploads: run.uploads,
   };
 };

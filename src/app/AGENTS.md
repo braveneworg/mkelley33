@@ -41,8 +41,9 @@ binding. Everything below it applies only once the thing it names exists.
   `src/collections/page-blocks/` (listed in `PAGE_BLOCKS`) and its component
   in `src/components/blocks/` (a case in `render-blocks.tsx`). The type-check
   fails when one exists without the other. After changing a definition, run
-  `pnpm generate:types` and `pnpm generate:importmap`, and add the kind to
-  the Seed's schema in `src/lib/seed/page-seed.ts`.
+  `pnpm generate:types` and `pnpm generate:importmap`, add the kind to the
+  Seed's schema in `src/lib/seed/page-seed.ts`, and give it a case in
+  `src/lib/seed/capture-pages.ts`, which does not type-check without one.
 - Every Block renders inside `BlockSection`, and every link the owner can
   point at a Page goes through `resolveLink`, so a link to an unpublished
   Page is hidden the same way everywhere.

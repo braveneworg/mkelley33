@@ -4,11 +4,17 @@
 
 // @vitest-environment node
 
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { loadSeed, servicesSeedSchema, siteSettingsSeedSchema } from '@/lib/seed/seed-files';
+import {
+  filesNamedBy,
+  loadSeed,
+  servicesSeedSchema,
+  siteSettingsSeedSchema,
+} from '@/lib/seed/seed-files';
+import { docLink, paragraph, richText } from '@/test/lexical';
 
 const service = {
   credibility: 'shipped it',
@@ -33,58 +39,44 @@ describe('the committed Seed', () => {
   });
 
   /** A Seed that names a file it does not carry would fail every build at the upload. */
-  it('carries the Resume it names', () => {
-    const { directory, siteSettings } = loadSeed('seed');
+  it('carries every file it names: the Resume, and the pictures Pages and posts show', () => {
+    const seed = loadSeed('seed');
 
-    expect(existsSync(join(directory, siteSettings.resume ?? 'missing'))).toBe(true);
+    expect(filesNamedBy(seed).filter((file) => !existsSync(join(seed.directory, file)))).toEqual(
+      []
+    );
   });
 
-  /** A build against a database filled from the Seed needs every Fixed Page. */
-  it('carries a Page for every address the site is built around, and the rest', () => {
-    expect(loadSeed('seed').pages.map(({ slug }) => slug)).toEqual([
-      'blog',
-      'contact',
-      'services',
-      'uses',
-      'cv',
-      'home',
-      'privacy',
-    ]);
+  /** A file nothing names is one Capture should have removed. */
+  it('carries no file it does not name', () => {
+    const seed = loadSeed('seed');
+    const carried = readdirSync(join(seed.directory, 'files')).map((name) => `files/${name}`);
+
+    expect(carried.filter((file) => !filesNamedBy(seed).includes(file))).toEqual([]);
   });
 
-  /** A Seed that names a picture it does not carry would fail every build at the upload. */
-  it('carries every picture its Pages name', () => {
-    const { directory, pages } = loadSeed('seed');
-    const pictures = pages
-      .flatMap(({ blocks }) => blocks)
-      .flatMap((block) => {
-        if (block.blockType === 'terminal') {
-          return block.picture === null ? [] : [block.picture.file];
-        }
-        return block.blockType === 'picture' ? [block.media.file] : [];
-      });
-
-    expect(pictures.filter((file) => !existsSync(join(directory, file)))).toEqual([]);
+  /**
+   * A build against a database filled from the Seed needs every Fixed Page.
+   * The rest, and what the menus and services say, are the owner's to
+   * change, and a Capture rewrites them — so nothing here pins them.
+   */
+  it('carries a Page for every address the site is built around', () => {
+    expect(loadSeed('seed').pages.map(({ slug }) => slug)).toEqual(
+      expect.arrayContaining(['blog', 'contact', 'home', 'privacy', 'services'])
+    );
   });
 
-  it('carries the header menu the site has today', () => {
-    expect(loadSeed('seed').siteSettings.headerMenu.map(({ label }) => label)).toEqual([
-      './home',
-      './blog',
-      './services',
-      './cv',
-      './contact',
-    ]);
+  it('carries at least one service', () => {
+    expect(loadSeed('seed').services.length).toBeGreaterThan(0);
   });
+});
 
-  it('carries the services, in the order the site shows them', () => {
-    expect(loadSeed('seed').services.map(({ slug }) => slug)).toEqual([
-      'ai-enablement',
-      'product-dev',
-      'accessibility',
-      'performance',
-      'mentoring',
-    ]);
+describe('filesNamedBy', () => {
+  it('lists a file once, however many records show it', () => {
+    const seed = loadSeed('seed');
+    const twice = { ...seed, pages: [...seed.pages, ...seed.pages] };
+
+    expect(filesNamedBy(twice)).toEqual(filesNamedBy(seed));
   });
 });
 
@@ -183,9 +175,10 @@ describe('servicesSeedSchema', () => {
 });
 
 describe('loadSeed', () => {
-  const write = (directory: string, siteSettingsFile: object): void => {
+  const write = (directory: string, siteSettingsFile: object, posts: object[] = []): void => {
     mkdirSync(directory, { recursive: true });
     writeFileSync(join(directory, 'pages.json'), JSON.stringify(loadSeed('seed').pages));
+    writeFileSync(join(directory, 'posts.json'), JSON.stringify(posts));
     writeFileSync(join(directory, 'services.json'), JSON.stringify([service]));
     writeFileSync(join(directory, 'site-settings.json'), JSON.stringify(siteSettingsFile));
   };
@@ -212,5 +205,27 @@ describe('loadSeed', () => {
     write(directory, { ...siteSettings, headerMenu });
 
     expect(() => loadSeed(directory)).toThrow('a menu links to the now Page');
+  });
+
+  const post = (page: string) => ({
+    body: richText(paragraph(docLink('pages', page, 'a Page'))),
+    excerpt: null,
+    publishedAt: '2026-01-02T12:00:00.000Z',
+    slug: 'a-post',
+    tags: [],
+    title: 'A post',
+  });
+
+  it('reads a Seed whose posts link to Pages it carries', () => {
+    write(directory, siteSettings, [post('contact')]);
+
+    expect(loadSeed(directory).posts).toHaveLength(1);
+  });
+
+  /** The fill would have no Page to point the link at. */
+  it('refuses a post that links to a Page the Seed does not carry', () => {
+    write(directory, siteSettings, [post('now')]);
+
+    expect(() => loadSeed(directory)).toThrow('a post links to the now Page');
   });
 });

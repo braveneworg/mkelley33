@@ -248,8 +248,8 @@ does not rediscover them.
   upload, so a file name cannot say whether a picture is already there.
 - **The Seed names a Page by address** wherever the database stores an id —
   a Block's link, a menu item. It creates Pages in an order that puts a
-  link's target first, and refuses Pages that link in a circle. Capture has
-  to cope with a site whose Pages do.
+  link's target first. In PR 3 it refused Pages that link in a circle; PR 5
+  taught it to fill them, because a live site's Pages may.
 - **The preview has no shared secret.** `/preview` switches draft mode on
   only for a request carrying the admin's own sign-in.
 - **The uses Page's "view source" line and the contact Page's newsletter
@@ -282,6 +282,43 @@ does not rediscover them.
   back into something the Seed can carry.
 - **The claim specs** live in `src/lib/seed/privacy-claims.spec.tsx` and
   render the Seed's privacy Page through the site's own components.
+
+### What PR 5 found
+
+- **Capture is `pnpm capture`.** It reads a database and rewrites `seed/`
+  in the working tree. `docs/deploy.md` has the owner's steps.
+- **Posts joined the Seed** as `seed/posts.json`, empty until the first
+  Capture. The fill creates a missing post, published, and leaves alone any
+  post that exists, a draft at the same slug included.
+- **Text names a Page by address too.** A link in a Terminal's or a post's
+  text carries the address of its Page, and a picture in the text a file
+  with its alt text. The fill turns both into ids and Capture turns them
+  back. The Seed's privacy Page still links to the contact form by the
+  typed address `/contact`; a Capture keeps it that way, because that is
+  what the live Page holds.
+- **Pages that link in a circle are filled.** One of them is created first
+  as an empty draft, so the others have an id to point at, then filled in
+  and published. If the run stops part-way, every Page made since that
+  draft is removed again.
+- **What the Seed cannot carry is left out, and reported.** A link or menu
+  item pointing at a Page visitors are not served, a link to any other kind
+  of record, a picture whose upload is gone. Visitors do not see those
+  either. The run lists each one.
+- **A Capture with nothing to capture changes nothing.** Pages are written
+  by address, every object's keys in alphabetical order, through Prettier.
+  The committed Seed was rewritten that way once.
+- **A file is known by its bytes, not its name.** Storage renames every
+  upload, so Capture keeps the name a file already has in the Seed when the
+  bytes match, and removes a file the new Seed no longer names.
+- **Payload re-encodes a WebP or GIF as it stores it.** The headshot the
+  live site serves is 57 KB; the file the Seed uploaded was 100 KB. Capture
+  takes what the site serves, so the Seed's copy was replaced with the live
+  one, byte for byte, in PR 5. See
+  `docs/lessons/seed/an-upload-is-not-stored-as-it-was-uploaded.md`.
+- **Specs no longer pin what the owner may change.** The specs that listed
+  the Seed's Pages, menu items and services by name now check only what a
+  build needs. The privacy claims stay pinned (ADR 0002), and
+  `e2e/pages.spec.ts` still looks for a few headings by name.
 
 ## Open points
 

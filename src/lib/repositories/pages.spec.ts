@@ -8,13 +8,14 @@ import type * as pagesRepo from '@/lib/repositories/pages';
 
 const findPublished = vi.fn();
 const findDraft = vi.fn();
-const find = vi.fn();
-const payload = { find: (...args: unknown[]) => find(...args) };
+const findAllPublished = vi.fn();
+const payload = {};
 
 vi.mock('payload', () => ({ getPayload: vi.fn(async () => payload) }));
 vi.mock('@/collections/published-page', () => ({
   findPageDraft: (...args: unknown[]) => findDraft(...args),
   findPublishedPage: (...args: unknown[]) => findPublished(...args),
+  findPublishedPages: (...args: unknown[]) => findAllPublished(...args),
 }));
 vi.mock('@payload-config', () => ({ default: {} }));
 
@@ -35,7 +36,7 @@ const page = (slug: string, status: 'draft' | 'published' = 'published') => ({
 beforeEach(() => {
   findPublished.mockReset();
   findDraft.mockReset();
-  find.mockReset();
+  findAllPublished.mockReset();
 });
 
 describe('getPage', () => {
@@ -98,8 +99,9 @@ describe('getPageDraft', () => {
 });
 
 describe('listPublishedPages', () => {
-  it('lists the published Pages with the address each is served at', async () => {
-    find.mockResolvedValue({ docs: [page('home'), page('uses')] });
+  /** Which Pages those are is `findPublishedPages`' to say; see its own spec. */
+  it('lists the Pages visitors are served with the address of each', async () => {
+    findAllPublished.mockResolvedValue([page('home'), page('uses')]);
     const { listPublishedPages } = await importFresh();
 
     await expect(listPublishedPages()).resolves.toEqual([
@@ -108,45 +110,10 @@ describe('listPublishedPages', () => {
     ]);
   });
 
-  it('leaves out a Page that is not published', async () => {
-    find.mockResolvedValue({ docs: [page('uses', 'draft')] });
+  it('lists nothing when no Page is served', async () => {
+    findAllPublished.mockResolvedValue([]);
     const { listPublishedPages } = await importFresh();
 
     await expect(listPublishedPages()).resolves.toEqual([]);
-  });
-
-  /** An unpublished Fixed Page is still served, as its last published version. */
-  it('lists an unpublished Fixed Page by its last published version', async () => {
-    find.mockResolvedValue({ docs: [page('blog', 'draft')] });
-    findPublished.mockResolvedValue({ ...page('blog'), title: 'the published title' });
-    const { listPublishedPages } = await importFresh();
-
-    await expect(listPublishedPages()).resolves.toEqual([
-      {
-        href: '/blog',
-        slug: 'blog',
-        title: 'the published title',
-        updatedAt: '2026-11-23T00:00:00.000Z',
-      },
-    ]);
-  });
-
-  it('leaves out a Fixed Page that was never published', async () => {
-    find.mockResolvedValue({ docs: [page('blog', 'draft')] });
-    findPublished.mockResolvedValue(null);
-    const { listPublishedPages } = await importFresh();
-
-    await expect(listPublishedPages()).resolves.toEqual([]);
-  });
-
-  it('reads every Page without their Blocks', async () => {
-    find.mockResolvedValue({ docs: [] });
-    const { listPublishedPages } = await importFresh();
-
-    await listPublishedPages();
-
-    expect(find).toHaveBeenCalledWith(
-      expect.objectContaining({ collection: 'pages', depth: 0, draft: false, pagination: false })
-    );
   });
 });

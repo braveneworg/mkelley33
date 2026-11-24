@@ -13,6 +13,36 @@ const PAGES = 'pages';
 const DEPTH = 1;
 
 /**
+ * What visitors are served for the record `current`, or null when it is
+ * nothing: the record itself while it is published, and otherwise — for a
+ * Fixed Page only — the last version of it that was.
+ */
+const servedVersion = async (
+  payload: Payload,
+  current: Page,
+  depth: number
+): Promise<null | Page> => {
+  if (current._status === 'published') {
+    return current;
+  }
+  if (!isFixedPage(current.slug)) {
+    return null;
+  }
+  const versions = await payload.findVersions({
+    collection: PAGES,
+    depth,
+    limit: 1,
+    overrideAccess: true,
+    sort: '-updatedAt',
+    where: {
+      and: [{ parent: { equals: current.id } }, { 'version._status': { equals: 'published' } }],
+    },
+  });
+  const published = versions.docs[0]?.version;
+  return published === undefined ? null : { ...published, id: current.id };
+};
+
+/**
  * The Page visitors are served at `slug`, or null when there is none.
  *
  * Normally that is the record itself. A Fixed Page is the exception: the
@@ -36,27 +66,25 @@ export const findPublishedPage = async (payload: Payload, slug: string): Promise
     where: { slug: { equals: slug } },
   });
   const current = docs[0];
-  if (current === undefined) {
-    return null;
-  }
-  if (current._status === 'published') {
-    return current;
-  }
-  if (!isFixedPage(slug)) {
-    return null;
-  }
-  const versions = await payload.findVersions({
+  return current === undefined ? null : servedVersion(payload, current, DEPTH);
+};
+
+/**
+ * Every Page visitors are served, in the order of their addresses: the
+ * published ones, and each unpublished Fixed Page as it was last published.
+ * The menus, the sitemap and Capture all go by this list.
+ */
+export const findPublishedPages = async (payload: Payload, depth = 0): Promise<Page[]> => {
+  const { docs } = await payload.find({
     collection: PAGES,
-    depth: DEPTH,
-    limit: 1,
+    depth,
+    draft: false,
     overrideAccess: true,
-    sort: '-updatedAt',
-    where: {
-      and: [{ parent: { equals: current.id } }, { 'version._status': { equals: 'published' } }],
-    },
+    pagination: false,
+    sort: 'slug',
   });
-  const published = versions.docs[0]?.version;
-  return published === undefined ? null : { ...published, id: current.id };
+  const served = await Promise.all(docs.map((page) => servedVersion(payload, page, depth)));
+  return served.flatMap((page) => (page === null ? [] : [page]));
 };
 
 /**

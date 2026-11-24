@@ -10,6 +10,7 @@ import { pageLabel } from '@/lib/seed/fill-pages';
 import { fillSeed } from '@/lib/seed/fill-seed';
 import { loadSeed } from '@/lib/seed/seed-files';
 import type { Seed } from '@/lib/seed/seed-files';
+import { docLink, paragraph as words, richText } from '@/test/lexical';
 import { createTestPayload } from '@/test/payload-harness';
 
 import type { MongooseAdapter } from '@payloadcms/db-mongodb';
@@ -96,6 +97,7 @@ const seed: Seed = {
   // The committed Seed's own directory, for the real files a fill uploads.
   directory: 'seed',
   pages,
+  posts: [],
   services: [
     {
       credibility: 'first credibility',
@@ -227,6 +229,17 @@ describe('fillSeed on an empty database', () => {
       blockType: 'terminal',
       picture: { alt: 'seed alt text', mimeType: 'image/webp' },
     });
+  });
+
+  /**
+   * A spec's uploads belong in the directory the harness made for it. Left
+   * to Payload's default they land in `media/` under the working tree, where
+   * every run leaves another copy and renames the next run's upload.
+   */
+  it('keeps the pictures it uploads out of the working tree', () => {
+    expect(payload.collections.media.config.upload.staticDir).toMatch(
+      /payload-uploads-[^/]+\/media$/
+    );
   });
 
   it("stores a role's points one by one", async () => {
@@ -685,6 +698,308 @@ describe('fillSeed when saving the Site settings fails', () => {
     await expect(payload.count({ collection: 'resume-files' })).resolves.toMatchObject({
       totalDocs: 0,
     });
+  });
+});
+
+/** A Timeline whose link names a Page, the plainest Block that can point at one. */
+const linkTo = (target: string) => ({
+  blockType: 'timeline' as const,
+  command: null,
+  entries: [{ marker: null, period: null, title: 'an entry' }],
+  link: { label: target, page: target, url: null },
+});
+
+const terminal = (body: ReturnType<typeof richText>, picture: null | string = null) => ({
+  blockType: 'terminal' as const,
+  body,
+  command: null,
+  picture: picture === null ? null : { alt: 'a picture', file: picture },
+  pictureStyle: 'plain' as const,
+});
+
+const pageOf = (
+  slug: string,
+  ...blocks: Seed['pages'][number]['blocks']
+): Seed['pages'][number] => ({
+  blocks,
+  command: null,
+  intro: null,
+  meta: noMeta,
+  slug,
+  title: slug,
+});
+
+/** A Seed of nothing but these Pages: no menu points at one that is missing. */
+const seedOf = (...of: Seed['pages'][number][]): Seed => ({
+  ...seed,
+  pages: of,
+  siteSettings: { ...seed.siteSettings, headerMenu: [] },
+});
+
+/** A picture inside text, as the Seed names it. */
+const pictureInText = {
+  fields: null,
+  format: '',
+  relationTo: 'media',
+  type: 'upload',
+  value: { alt: 'a picture in the text', file: 'files/headshot.webp' },
+  version: 3,
+};
+
+describe('fillSeed on text that points elsewhere', () => {
+  const withText = seedOf(
+    pageOf('blog'),
+    pageOf(
+      'now',
+      terminal(richText(words('Read ', docLink('pages', 'blog', 'the blog'), '.'))),
+      terminal(richText(pictureInText))
+    )
+  );
+
+  /** The editor stores a link to a Page as its id, which the Seed cannot know. */
+  it('points a link in the text at the Page the Seed names by address', async () => {
+    await fillSeed(payload, withText);
+
+    const now = await findPublishedPage(payload, 'now');
+    expect(now?.blocks?.[0]).toMatchObject({
+      body: {
+        root: {
+          children: [
+            {
+              children: [
+                {},
+                { fields: { doc: { relationTo: 'pages', value: { slug: 'blog' } } } },
+                {},
+              ],
+            },
+          ],
+        },
+      },
+    });
+  });
+
+  it('uploads a picture the text shows', async () => {
+    await fillSeed(payload, withText);
+
+    const now = await findPublishedPage(payload, 'now');
+    expect(now?.blocks?.[1]).toMatchObject({
+      body: { root: { children: [{ value: { alt: 'a picture in the text' } }] } },
+    });
+  });
+
+  it('counts the picture among the files it uploaded', async () => {
+    const report = await fillSeed(payload, withText);
+
+    expect(report.uploads).toBe(2);
+  });
+});
+
+/**
+ * A link is stored as the id of its target, so the target has to exist
+ * first — and Pages that link to each other cannot both be first. The live
+ * site's Pages may well link in a circle, and Capture writes what it finds.
+ */
+describe('fillSeed on Pages that link in a circle', () => {
+  const circle = seedOf(pageOf('home', linkTo('cv')), pageOf('cv', linkTo('home')));
+
+  it('creates every one of them', async () => {
+    const report = await fillSeed(payload, circle);
+
+    expect(report.created).toEqual(expect.arrayContaining(['page home', 'page cv']));
+  });
+
+  it('publishes every one of them', async () => {
+    await fillSeed(payload, circle);
+
+    const { docs } = await payload.find({
+      collection: 'pages',
+      overrideAccess: false,
+      sort: 'slug',
+    });
+    expect(docs.map(({ slug }) => slug)).toEqual(['cv', 'home']);
+  });
+
+  it('points the first of them at the second', async () => {
+    await fillSeed(payload, circle);
+
+    const home = await findPublishedPage(payload, 'home');
+    expect(home?.blocks?.[0]).toMatchObject({ link: { page: { slug: 'cv' } } });
+  });
+
+  it('points the second of them back at the first', async () => {
+    await fillSeed(payload, circle);
+
+    const cv = await findPublishedPage(payload, 'cv');
+    expect(cv?.blocks?.[0]).toMatchObject({ link: { page: { slug: 'home' } } });
+  });
+
+  it('creates a Page that links to itself', async () => {
+    await fillSeed(payload, seedOf(pageOf('now', linkTo('now'))));
+
+    const now = await findPublishedPage(payload, 'now');
+    expect(now?.blocks?.[0]).toMatchObject({ link: { page: { slug: 'now' } } });
+  });
+
+  it('closes a circle that runs through a link in the text', async () => {
+    const throughText = seedOf(
+      pageOf('home', terminal(richText(words(docLink('pages', 'cv', 'my CV'))))),
+      pageOf('cv', linkTo('home'))
+    );
+
+    await fillSeed(payload, throughText);
+
+    const home = await findPublishedPage(payload, 'home');
+    expect(home?.blocks?.[0]).toMatchObject({
+      body: {
+        root: { children: [{ children: [{ fields: { doc: { value: { slug: 'cv' } } } }] }] },
+      },
+    });
+  });
+
+  it('creates nothing the second time', async () => {
+    await fillSeed(payload, circle);
+
+    const second = await fillSeed(payload, circle);
+
+    expect(second.created).toEqual([]);
+  });
+});
+
+/**
+ * A Page that exists is never touched again. A circle that stopped half-way
+ * would leave a Page empty for good, or one pointing at a Page that was
+ * never finished — so a failed circle is taken back whole, and the next run
+ * starts over.
+ */
+describe('fillSeed when a Page in a circle cannot be saved', () => {
+  const broken = seedOf(
+    pageOf('home', linkTo('cv'), terminal(richText(words('about')), 'files/headshot.webp')),
+    pageOf('cv', linkTo('home'), terminal(richText(words('cv')), 'files/not-in-the-seed.webp'))
+  );
+
+  it('fails', async () => {
+    await expect(fillSeed(payload, broken)).rejects.toThrow();
+  });
+
+  it('leaves none of the circle behind', async () => {
+    await fillSeed(payload, broken).catch(() => undefined);
+
+    await expect(payload.count({ collection: 'pages' })).resolves.toMatchObject({ totalDocs: 0 });
+  });
+
+  it('removes the pictures it had uploaded for the circle', async () => {
+    await fillSeed(payload, broken).catch(() => undefined);
+
+    await expect(payload.count({ collection: 'media' })).resolves.toMatchObject({ totalDocs: 0 });
+  });
+
+  it('leaves a Page it created before the circle where it is', async () => {
+    const afterAnother = seedOf(pageOf('blog'), ...broken.pages);
+
+    await fillSeed(payload, afterAnother).catch(() => undefined);
+
+    await expect(findPublishedPage(payload, 'blog')).resolves.toMatchObject({ slug: 'blog' });
+  });
+});
+
+describe('fillSeed on posts', () => {
+  const post = {
+    body: richText(words('Hello. ', docLink('pages', 'blog', 'More posts'))),
+    excerpt: null,
+    publishedAt: '2024-02-06T12:00:00.000Z',
+    slug: 'hello',
+    tags: ['react'],
+    title: 'Hello',
+  };
+  const withPosts: Seed = { ...seed, posts: [post] };
+
+  const hello = async () => {
+    const { docs } = await payload.find({
+      collection: 'posts',
+      where: { slug: { equals: 'hello' } },
+    });
+    return docs;
+  };
+
+  it('creates a post the database lacks', async () => {
+    const report = await fillSeed(payload, withPosts);
+
+    expect(report.created).toContain('post hello');
+  });
+
+  /** The build that follows lists the posts, and it reads as a visitor would. */
+  it('publishes the post with the date the Seed gives it', async () => {
+    await fillSeed(payload, withPosts);
+
+    const { docs } = await payload.find({ collection: 'posts', overrideAccess: false });
+    expect(docs).toMatchObject([
+      { publishedAt: '2024-02-06T12:00:00.000Z', slug: 'hello', tags: ['react'], title: 'Hello' },
+    ]);
+  });
+
+  it('points a link in the post at the Page the Seed names by address', async () => {
+    await fillSeed(payload, withPosts);
+
+    const [stored] = await hello();
+    expect(stored?.body).toMatchObject({
+      root: { children: [{ children: [{}, { fields: { doc: { value: { slug: 'blog' } } } }] }] },
+    });
+  });
+
+  it('uploads a picture the post shows', async () => {
+    const pictured: Seed = { ...seed, posts: [{ ...post, body: richText(pictureInText) }] };
+
+    const report = await fillSeed(payload, pictured);
+
+    expect(report.uploads).toBe(3);
+  });
+
+  /** Left behind, the next run would upload a second copy beside it. */
+  it('removes the picture it had uploaded for a post it could not create', async () => {
+    const missing = { ...pictureInText, value: { alt: 'x', file: 'files/not-in-the-seed.webp' } };
+    const broken: Seed = {
+      ...seedOf(),
+      posts: [{ ...post, body: richText(pictureInText, missing) }],
+      siteSettings: { ...seed.siteSettings, headerMenu: [], resume: null },
+    };
+
+    await fillSeed(payload, broken).catch(() => undefined);
+
+    await expect(payload.count({ collection: 'media' })).resolves.toMatchObject({ totalDocs: 0 });
+  });
+
+  it('never overwrites a post the owner has edited', async () => {
+    await fillSeed(payload, withPosts);
+    const [created] = await hello();
+    await payload.update({
+      collection: 'posts',
+      data: { title: 'edited by the owner' },
+      id: created?.id ?? 'missing',
+    });
+
+    await fillSeed(payload, withPosts);
+
+    await expect(hello()).resolves.toMatchObject([{ title: 'edited by the owner' }]);
+  });
+
+  it('reports a post that was already there as kept', async () => {
+    await fillSeed(payload, withPosts);
+
+    const second = await fillSeed(payload, withPosts);
+
+    expect(second.kept).toContain('post hello');
+  });
+
+  /** A draft at the same slug is the owner's work, and the Seed publishes nothing for them. */
+  it('leaves a draft the owner has at the same slug as it is', async () => {
+    await payload.create({
+      collection: 'posts',
+      data: { ...post, body: richText(words('a draft')), status: 'draft', title: 'A draft' },
+    });
+
+    await fillSeed(payload, withPosts);
+
+    await expect(hello()).resolves.toMatchObject([{ status: 'draft', title: 'A draft' }]);
   });
 });
 

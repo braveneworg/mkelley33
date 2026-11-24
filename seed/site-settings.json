@@ -1,15 +1,12 @@
 {
-  "name": "Michaux Kelley",
-  "tagline": "Full-stack engineering, AI at the terminal.",
-  "title": "Michaux Kelley — Full-Stack AI Forward Deployed Engineer",
   "description": "Production React, Next.js, and Node.js engineering — and AI-assisted development, deployed forward into teams.",
-  "socials": {
-    "github": "https://github.com/mkelley33",
-    "linkedin": "https://www.linkedin.com/in/mkelley33",
-    "bluesky": "https://bsky.app/profile/mkelley33.com"
-  },
-  "repoUrl": "https://github.com/braveneworg/mkelley33",
-  "resume": "files/michaux-kelley-resume.pdf",
+  "footerMenu": [
+    {
+      "label": "uses",
+      "page": "uses",
+      "url": null
+    }
+  ],
   "headerMenu": [
     {
       "label": "./home",
@@ -37,11 +34,14 @@
       "url": null
     }
   ],
-  "footerMenu": [
-    {
-      "label": "uses",
-      "page": "uses",
-      "url": null
-    }
-  ]
+  "name": "Michaux Kelley",
+  "repoUrl": "https://github.com/braveneworg/mkelley33",
+  "resume": "files/michaux-kelley-resume.pdf",
+  "socials": {
+    "bluesky": "https://bsky.app/profile/mkelley33.com",
+    "github": "https://github.com/mkelley33",
+    "linkedin": "https://www.linkedin.com/in/mkelley33"
+  },
+  "tagline": "Full-stack engineering, AI at the terminal.",
+  "title": "Michaux Kelley — Full-Stack AI Forward Deployed Engineer"
 }

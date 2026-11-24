@@ -310,6 +310,61 @@ alone.
 Only the owner can do any of this. It needs the production database and blob
 storage credentials, which no agent may read.
 
+## Capture: bringing the Seed up to date
+
+The Seed in `seed/` is what turns an empty database into the working site:
+CI and the E2E harness fill one from it before every build. Once the owner
+edits in the admin, the live site and the Seed drift apart. **Capture**
+rewrites the Seed from what the live site currently publishes
+(`CONTEXT.md`).
+
+```bash
+git switch -c chore/capture-seed   # from a fresh main, in a worktree
+pnpm capture
+git diff --stat seed/
+```
+
+`pnpm capture` reads the database `DATABASE_URL` names and writes only to
+`seed/` in the working tree. It never writes to the database. With the live
+database it needs `BLOB_READ_WRITE_TOKEN` as well, because the pictures and
+the Resume are fetched from storage; without it the run stops and says so.
+
+It takes what visitors are served and nothing else:
+
+- the Pages the menus and the sitemap list — published ones, and an
+  unpublished Fixed Page as it was last published;
+- the published Site settings, with their menus and the Resume;
+- the services, in the order the site shows them;
+- published posts;
+- the pictures those show.
+
+A draft, a version from the history, a subscriber, a contact message, a
+comment and the owner's login are never read. The Seed is public.
+
+Its last lines say what the Seed now holds. A line starting
+`capture: left out —` names something the site holds that the Seed cannot
+carry: a link or a menu item pointing at an unpublished Page, a picture
+whose upload has been deleted. Visitors do not see any of those either, so
+the Seed still matches the site; publish the Page, or upload the picture
+again, and capture once more if it should be there.
+
+Then review `git diff seed/` like any other change, commit it, and open a
+PR. The gate fills a database from the new Seed, and the E2E run builds the
+site from it, so a Seed the site cannot be built from never merges. Two
+kinds of spec quote the Seed's text and may need to follow an edit:
+
+- `src/lib/seed/privacy-claims.spec.tsx` pins the privacy policy's legal
+  claims ([ADR 0002](adr/0002-the-privacy-page-is-editable-but-guarded.md)).
+  A failure there is the point: the policy's text changed, and someone
+  should check it still says what the code does.
+- `e2e/pages.spec.ts` looks for a few headings and menu items by name.
+
+A Capture changes nothing on the live site, and the fill never overwrites a
+record that exists, so merging one cannot alter what the owner wrote.
+
+Only the owner can run it, for the same reason as the Seed: it needs the
+production credentials, which no agent may read.
+
 ## Why Vercel builds, not the runner
 
 `vercel pull` **cannot read back a variable stored as sensitive**. It writes a

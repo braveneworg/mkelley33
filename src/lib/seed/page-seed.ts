@@ -13,25 +13,25 @@
  *   carries its alt text. The Seed uploads it when it creates the Page —
  *   see `docs/lessons/seed/seed-inputs-stay-in-the-repo.md`.
  *
+ * Both hold inside a Terminal's text as well (`seed-text.ts`).
+ *
  * Every optional value is written out as `null` rather than left out, so
  * that two Captures of the same content produce the same file.
  */
 
 import { z } from 'zod';
 
-import { isHttpsUrl } from '@/lib/https-url';
-import { FIXED_PAGE_SLUGS, PRIVACY_SLUG, validatePageSlug } from '@/lib/pages/page-address';
+import { FIXED_PAGE_SLUGS, PRIVACY_SLUG } from '@/lib/pages/page-address';
 import { missingPrivacyBlocks } from '@/lib/pages/privacy-page';
-
-const text = z.string().min(1);
-const optionalText = text.nullable();
-
-/** A link the site renders as an `href` — the same rule the admin applies. */
-const httpsUrl = z.string().refine(isHttpsUrl, { message: 'not a full https:// address' });
-
-const pageSlug = z
-  .string()
-  .refine((value) => validatePageSlug(value) === true, { message: 'not a usable Page address' });
+import { pagesLinkedInText, picturesInText, richTextSchema } from '@/lib/seed/seed-text';
+import {
+  httpsUrl,
+  optionalText,
+  pageSlug,
+  type PictureSeed,
+  pictureSeedSchema,
+  text,
+} from '@/lib/seed/seed-values';
 
 /** A link to a Page, by its address, or to a full address elsewhere — one or the other. */
 export const linkSeedSchema = z
@@ -41,40 +41,6 @@ export const linkSeedSchema = z
   });
 
 export type LinkSeed = z.infer<typeof linkSeedSchema>;
-
-const SEED_FILES = 'files/';
-const PICTURE = /^[\w-]+\.(?:webp|png|jpe?g)$/;
-
-/**
- * A picture directly inside the Seed's `files` directory. The Seed uploads
- * the file this names, so it must not be able to name one anywhere else.
- */
-const isSeedPicture = (value: string): boolean =>
-  value.startsWith(SEED_FILES) && PICTURE.test(value.slice(SEED_FILES.length));
-
-const pictureSeedSchema = z.strictObject({
-  alt: text,
-  file: z.string().refine(isSeedPicture, {
-    message: 'not a picture inside the Seed files directory',
-  }),
-});
-
-export type PictureSeed = z.infer<typeof pictureSeedSchema>;
-
-/**
- * Rich text as the editor stores it: the frame Payload's own type requires,
- * and whatever the editor puts inside it.
- */
-const richText = z.looseObject({
-  root: z.looseObject({
-    children: z.array(z.looseObject({ type: z.string(), version: z.number() })),
-    direction: z.enum(['ltr', 'rtl']).nullable(),
-    format: z.enum(['left', 'start', 'center', 'right', 'end', 'justify', '']),
-    indent: z.number(),
-    type: z.string(),
-    version: z.number(),
-  }),
-});
 
 const command = { command: optionalText };
 
@@ -89,7 +55,7 @@ const blockSeedSchema = z.discriminatedUnion('blockType', [
   z.strictObject({
     blockType: z.literal('terminal'),
     ...command,
-    body: richText,
+    body: richTextSchema,
     picture: pictureSeedSchema.nullable(),
     pictureStyle: z.enum(['plain', 'roundPortrait']),
   }),
@@ -201,11 +167,30 @@ const blockLinks = (block: BlockSeed): (LinkSeed | null)[] => {
   return block.blockType === 'timeline' ? [block.link] : [];
 };
 
+/** The addresses a Block points at: its own links, and the links in its text. */
+const pagesLinkedFromBlock = (block: BlockSeed): string[] => [
+  ...blockLinks(block).flatMap((link) => (link === null || link.page === null ? [] : [link.page])),
+  ...(block.blockType === 'terminal' ? pagesLinkedInText(block.body) : []),
+];
+
 /** The addresses of the Pages this Page links to. */
 export const pagesLinkedFrom = ({ blocks }: PageSeed): string[] =>
-  blocks
-    .flatMap(blockLinks)
-    .flatMap((link) => (link === null || link.page === null ? [] : [link.page]));
+  blocks.flatMap(pagesLinkedFromBlock);
+
+/** The pictures a Block shows, beside its text and inside it. */
+const picturesOnBlock = (block: BlockSeed): PictureSeed[] => {
+  if (block.blockType === 'picture') {
+    return [block.media];
+  }
+  if (block.blockType !== 'terminal') {
+    return [];
+  }
+  return [...(block.picture === null ? [] : [block.picture]), ...picturesInText(block.body)];
+};
+
+/** Every picture the Page shows, which the Seed uploads when it creates the Page. */
+export const picturesOnPage = ({ blocks }: PageSeed): PictureSeed[] =>
+  blocks.flatMap(picturesOnBlock);
 
 const slugsOf = (pages: readonly PageSeed[]): string[] => pages.map(({ slug }) => slug);
 

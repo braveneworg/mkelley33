@@ -8,8 +8,8 @@ import { getPayload } from 'payload';
 
 import config from '@payload-config';
 
-import { findPageDraft, findPublishedPage } from '@/collections/published-page';
-import { isFixedPage, pageHref } from '@/lib/pages/page-address';
+import { findPageDraft, findPublishedPage, findPublishedPages } from '@/collections/published-page';
+import { pageHref } from '@/lib/pages/page-address';
 import type { Page } from '@/payload-types';
 
 /** A published Page as the menus, the command palette and the sitemap list it. */
@@ -74,21 +74,5 @@ const summarize = ({ slug, title, updatedAt }: Page): PageSummary => ({
  */
 export const listPublishedPages = cache(async (): Promise<PageSummary[]> => {
   const payload = await getPayload({ config });
-  const { docs } = await payload.find({
-    collection: 'pages',
-    depth: 0,
-    draft: false,
-    overrideAccess: true,
-    pagination: false,
-    sort: 'slug',
-  });
-  const served = await Promise.all(
-    docs.map(async (page) => {
-      if (page._status === 'published') {
-        return page;
-      }
-      return isFixedPage(page.slug) ? findPublishedPage(payload, page.slug) : null;
-    })
-  );
-  return served.flatMap((page) => (page === null ? [] : [summarize(page)]));
+  return (await findPublishedPages(payload)).map(summarize);
 });

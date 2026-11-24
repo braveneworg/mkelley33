@@ -39,156 +39,6 @@
   {
     "blocks": [
       {
-        "blockType": "servicesDetail",
-        "command": null
-      }
-    ],
-    "command": "ls ./services",
-    "intro": "Five ways I can help your team ship. Every engagement starts with a conversation — request a quote and tell me where it hurts.",
-    "meta": {
-      "description": "AI engineering enablement, full-stack product development, accessibility, performance, and mentoring — request a quote.",
-      "title": "services"
-    },
-    "slug": "services",
-    "title": "services"
-  },
-  {
-    "blocks": [
-      {
-        "blockType": "definitionList",
-        "command": null,
-        "heading": "hardware/",
-        "items": [
-          {
-            "description": "The daily driver — everything below runs here.",
-            "term": "MacBook Pro (Apple silicon)"
-          }
-        ]
-      },
-      {
-        "blockType": "definitionList",
-        "command": null,
-        "heading": "editor & terminal/",
-        "items": [
-          {
-            "description": "Primary editor, Claude Code extension always open.",
-            "term": "VS Code"
-          },
-          {
-            "description": "Agentic work: refactors, tests, whole features.",
-            "term": "Claude Code CLI"
-          },
-          {
-            "description": "Agentic IDE — piloted it at enterprise scale.",
-            "term": "Windsurf / Cascade"
-          },
-          {
-            "description": "With too many aliases to admit to.",
-            "term": "zsh"
-          },
-          {
-            "description": "The only font on this site you are not reading right now.",
-            "term": "JetBrains Mono"
-          }
-        ]
-      },
-      {
-        "blockType": "definitionList",
-        "command": null,
-        "heading": "ai toolbox/",
-        "items": [
-          {
-            "description": "Daily driver for agentic engineering.",
-            "term": "Claude Code"
-          },
-          {
-            "description": "Inline completions and PR review.",
-            "term": "GitHub Copilot"
-          },
-          {
-            "description": "Context7, SequentialThinking, Figma, Memory, Markitdown, chrome-devtools.",
-            "term": "MCP servers"
-          },
-          {
-            "description": "obra/superpowers, mattpocock/skills, and custom-built.",
-            "term": "Skills"
-          },
-          {
-            "description": "The discipline that makes the rest of this list work.",
-            "term": "Prompt & context engineering"
-          }
-        ]
-      },
-      {
-        "blockType": "definitionList",
-        "command": null,
-        "heading": "stack defaults/",
-        "items": [
-          {
-            "description": "Non-negotiable.",
-            "term": "TypeScript (strict)"
-          },
-          {
-            "description": "Server Components first.",
-            "term": "React 19 + Next.js App Router"
-          },
-          {
-            "description": "CSS-first tokens.",
-            "term": "Tailwind CSS 4"
-          },
-          {
-            "description": "Via Payload or Prisma, per project.",
-            "term": "MongoDB Atlas"
-          },
-          {
-            "description": "90%+ coverage, enforced in CI.",
-            "term": "Vitest + React Testing Library"
-          },
-          {
-            "description": "E2E for the flows that pay the bills.",
-            "term": "Playwright"
-          },
-          {
-            "description": "Fast, strict, disk-friendly.",
-            "term": "pnpm"
-          }
-        ]
-      },
-      {
-        "blockType": "definitionList",
-        "command": null,
-        "heading": "this site's stack/",
-        "items": [
-          {
-            "description": "This site, end to end — and it is open source.",
-            "term": "Next.js 16 · React 19 · Payload 3 · Tailwind 4 · Shiki · Vercel"
-          }
-        ]
-      },
-      {
-        "blockType": "linkList",
-        "command": null,
-        "items": [
-          {
-            "description": null,
-            "label": "view source on github",
-            "url": "https://github.com/braveneworg/mkelley33"
-          }
-        ]
-      }
-    ],
-    "command": "cat ./uses.md",
-    "intro": "The hardware, software, and AI tooling behind the work.",
-    "meta": {
-      "description": "Hardware, editor, terminal, AI toolbox, and stack defaults — what I actually use.",
-      "title": "uses"
-    },
-    "slug": "uses",
-    "title": "uses"
-  },
-  {
-    "blocks": [
-      {
         "blockType": "resumeDownload"
       },
       {
@@ -395,7 +245,6 @@
       },
       {
         "blockType": "terminal",
-        "command": "cat ./about.md",
         "body": {
           "root": {
             "children": [
@@ -467,6 +316,7 @@
             "version": 1
           }
         },
+        "command": "cat ./about.md",
         "picture": {
           "alt": "Michaux Kelley",
           "file": "files/headshot.webp"
@@ -475,7 +325,6 @@
       },
       {
         "blockType": "chipList",
-        "command": "cat ./ai-toolbox",
         "chips": [
           "Claude Code",
           "GitHub Copilot",
@@ -490,6 +339,7 @@
           "skills: superpowers",
           "skills: mattpocock"
         ],
+        "command": "cat ./ai-toolbox",
         "intro": "I don't just use AI tools — I deploy them into teams."
       },
       {
@@ -592,7 +442,6 @@
     "blocks": [
       {
         "blockType": "terminal",
-        "command": null,
         "body": {
           "root": {
             "children": [
@@ -611,9 +460,9 @@
                 "direction": "ltr",
                 "format": "",
                 "indent": 0,
+                "tag": "h2",
                 "type": "heading",
-                "version": 1,
-                "tag": "h2"
+                "version": 1
               },
               {
                 "children": [
@@ -639,16 +488,16 @@
                       }
                     ],
                     "direction": "ltr",
-                    "format": "",
-                    "indent": 0,
-                    "type": "link",
-                    "version": 3,
                     "fields": {
                       "linkType": "custom",
                       "newTab": false,
                       "url": "/contact"
                     },
-                    "id": "eda4eb3e3530a7991e1e58c0"
+                    "format": "",
+                    "id": "eda4eb3e3530a7991e1e58c0",
+                    "indent": 0,
+                    "type": "link",
+                    "version": 3
                   },
                   {
                     "detail": 0,
@@ -663,10 +512,10 @@
                 "direction": "ltr",
                 "format": "",
                 "indent": 0,
-                "type": "paragraph",
-                "version": 1,
                 "textFormat": 0,
-                "textStyle": ""
+                "textStyle": "",
+                "type": "paragraph",
+                "version": 1
               },
               {
                 "children": [
@@ -683,9 +532,9 @@
                 "direction": "ltr",
                 "format": "",
                 "indent": 0,
+                "tag": "h2",
                 "type": "heading",
-                "version": 1,
-                "tag": "h2"
+                "version": 1
               },
               {
                 "children": [
@@ -714,8 +563,8 @@
                     "format": "",
                     "indent": 0,
                     "type": "listitem",
-                    "version": 1,
-                    "value": 1
+                    "value": 1,
+                    "version": 1
                   },
                   {
                     "children": [
@@ -742,8 +591,8 @@
                     "format": "",
                     "indent": 0,
                     "type": "listitem",
-                    "version": 1,
-                    "value": 2
+                    "value": 2,
+                    "version": 1
                   },
                   {
                     "children": [
@@ -770,8 +619,8 @@
                     "format": "",
                     "indent": 0,
                     "type": "listitem",
-                    "version": 1,
-                    "value": 3
+                    "value": 3,
+                    "version": 1
                   },
                   {
                     "children": [
@@ -798,8 +647,8 @@
                     "format": "",
                     "indent": 0,
                     "type": "listitem",
-                    "version": 1,
-                    "value": 4
+                    "value": 4,
+                    "version": 1
                   },
                   {
                     "children": [
@@ -834,16 +683,16 @@
                           }
                         ],
                         "direction": "ltr",
-                        "format": "",
-                        "indent": 0,
-                        "type": "link",
-                        "version": 3,
                         "fields": {
                           "linkType": "custom",
                           "newTab": true,
                           "url": "https://www.cloudflare.com/turnstile-privacy-policy/"
                         },
-                        "id": "e5e249c9929eb96e266567f9"
+                        "format": "",
+                        "id": "e5e249c9929eb96e266567f9",
+                        "indent": 0,
+                        "type": "link",
+                        "version": 3
                       },
                       {
                         "detail": 0,
@@ -859,8 +708,8 @@
                     "format": "",
                     "indent": 0,
                     "type": "listitem",
-                    "version": 1,
-                    "value": 5
+                    "value": 5,
+                    "version": 1
                   },
                   {
                     "children": [
@@ -887,18 +736,18 @@
                     "format": "",
                     "indent": 0,
                     "type": "listitem",
-                    "version": 1,
-                    "value": 6
+                    "value": 6,
+                    "version": 1
                   }
                 ],
                 "direction": "ltr",
                 "format": "",
                 "indent": 0,
-                "type": "list",
-                "version": 1,
                 "listType": "bullet",
                 "start": 1,
-                "tag": "ul"
+                "tag": "ul",
+                "type": "list",
+                "version": 1
               },
               {
                 "children": [
@@ -915,9 +764,9 @@
                 "direction": "ltr",
                 "format": "",
                 "indent": 0,
+                "tag": "h2",
                 "type": "heading",
-                "version": 1,
-                "tag": "h2"
+                "version": 1
               },
               {
                 "children": [
@@ -943,16 +792,16 @@
                       }
                     ],
                     "direction": "ltr",
-                    "format": "",
-                    "indent": 0,
-                    "type": "link",
-                    "version": 3,
                     "fields": {
                       "linkType": "custom",
                       "newTab": true,
                       "url": "https://policies.google.com/privacy"
                     },
-                    "id": "47abba2d8903351855e276c9"
+                    "format": "",
+                    "id": "47abba2d8903351855e276c9",
+                    "indent": 0,
+                    "type": "link",
+                    "version": 3
                   },
                   {
                     "detail": 0,
@@ -976,16 +825,16 @@
                       }
                     ],
                     "direction": "ltr",
-                    "format": "",
-                    "indent": 0,
-                    "type": "link",
-                    "version": 3,
                     "fields": {
                       "linkType": "custom",
                       "newTab": true,
                       "url": "https://policies.google.com/technologies/partner-sites"
                     },
-                    "id": "29aade64f93262a741fcc4e5"
+                    "format": "",
+                    "id": "29aade64f93262a741fcc4e5",
+                    "indent": 0,
+                    "type": "link",
+                    "version": 3
                   },
                   {
                     "detail": 0,
@@ -1009,16 +858,16 @@
                       }
                     ],
                     "direction": "ltr",
-                    "format": "",
-                    "indent": 0,
-                    "type": "link",
-                    "version": 3,
                     "fields": {
                       "linkType": "custom",
                       "newTab": true,
                       "url": "https://www.cloudflare.com/privacypolicy/"
                     },
-                    "id": "836c7909c1a92e466a3e1e39"
+                    "format": "",
+                    "id": "836c7909c1a92e466a3e1e39",
+                    "indent": 0,
+                    "type": "link",
+                    "version": 3
                   },
                   {
                     "detail": 0,
@@ -1033,10 +882,10 @@
                 "direction": "ltr",
                 "format": "",
                 "indent": 0,
-                "type": "paragraph",
-                "version": 1,
                 "textFormat": 0,
-                "textStyle": ""
+                "textStyle": "",
+                "type": "paragraph",
+                "version": 1
               },
               {
                 "children": [
@@ -1053,9 +902,9 @@
                 "direction": "ltr",
                 "format": "",
                 "indent": 0,
+                "tag": "h2",
                 "type": "heading",
-                "version": 1,
-                "tag": "h2"
+                "version": 1
               },
               {
                 "children": [
@@ -1072,10 +921,10 @@
                 "direction": "ltr",
                 "format": "",
                 "indent": 0,
-                "type": "paragraph",
-                "version": 1,
                 "textFormat": 0,
-                "textStyle": ""
+                "textStyle": "",
+                "type": "paragraph",
+                "version": 1
               }
             ],
             "direction": "ltr",
@@ -1085,6 +934,7 @@
             "version": 1
           }
         },
+        "command": null,
         "picture": null,
         "pictureStyle": "plain"
       },
@@ -1096,7 +946,6 @@
       },
       {
         "blockType": "terminal",
-        "command": null,
         "body": {
           "root": {
             "children": [
@@ -1115,9 +964,9 @@
                 "direction": "ltr",
                 "format": "",
                 "indent": 0,
+                "tag": "h2",
                 "type": "heading",
-                "version": 1,
-                "tag": "h2"
+                "version": 1
               },
               {
                 "children": [
@@ -1134,10 +983,10 @@
                 "direction": "ltr",
                 "format": "",
                 "indent": 0,
-                "type": "paragraph",
-                "version": 1,
                 "textFormat": 0,
-                "textStyle": ""
+                "textStyle": "",
+                "type": "paragraph",
+                "version": 1
               },
               {
                 "children": [
@@ -1154,9 +1003,9 @@
                 "direction": "ltr",
                 "format": "",
                 "indent": 0,
+                "tag": "h2",
                 "type": "heading",
-                "version": 1,
-                "tag": "h2"
+                "version": 1
               },
               {
                 "children": [
@@ -1176,8 +1025,8 @@
                     "format": "",
                     "indent": 0,
                     "type": "listitem",
-                    "version": 1,
-                    "value": 1
+                    "value": 1,
+                    "version": 1
                   },
                   {
                     "children": [
@@ -1195,8 +1044,8 @@
                     "format": "",
                     "indent": 0,
                     "type": "listitem",
-                    "version": 1,
-                    "value": 2
+                    "value": 2,
+                    "version": 1
                   },
                   {
                     "children": [
@@ -1214,8 +1063,8 @@
                     "format": "",
                     "indent": 0,
                     "type": "listitem",
-                    "version": 1,
-                    "value": 3
+                    "value": 3,
+                    "version": 1
                   },
                   {
                     "children": [
@@ -1233,8 +1082,8 @@
                     "format": "",
                     "indent": 0,
                     "type": "listitem",
-                    "version": 1,
-                    "value": 4
+                    "value": 4,
+                    "version": 1
                   },
                   {
                     "children": [
@@ -1252,8 +1101,8 @@
                     "format": "",
                     "indent": 0,
                     "type": "listitem",
-                    "version": 1,
-                    "value": 5
+                    "value": 5,
+                    "version": 1
                   },
                   {
                     "children": [
@@ -1271,18 +1120,18 @@
                     "format": "",
                     "indent": 0,
                     "type": "listitem",
-                    "version": 1,
-                    "value": 6
+                    "value": 6,
+                    "version": 1
                   }
                 ],
                 "direction": "ltr",
                 "format": "",
                 "indent": 0,
-                "type": "list",
-                "version": 1,
                 "listType": "bullet",
                 "start": 1,
-                "tag": "ul"
+                "tag": "ul",
+                "type": "list",
+                "version": 1
               }
             ],
             "direction": "ltr",
@@ -1292,6 +1141,7 @@
             "version": 1
           }
         },
+        "command": null,
         "picture": null,
         "pictureStyle": "plain"
       }
@@ -1304,5 +1154,155 @@
     },
     "slug": "privacy",
     "title": "privacy"
+  },
+  {
+    "blocks": [
+      {
+        "blockType": "servicesDetail",
+        "command": null
+      }
+    ],
+    "command": "ls ./services",
+    "intro": "Five ways I can help your team ship. Every engagement starts with a conversation — request a quote and tell me where it hurts.",
+    "meta": {
+      "description": "AI engineering enablement, full-stack product development, accessibility, performance, and mentoring — request a quote.",
+      "title": "services"
+    },
+    "slug": "services",
+    "title": "services"
+  },
+  {
+    "blocks": [
+      {
+        "blockType": "definitionList",
+        "command": null,
+        "heading": "hardware/",
+        "items": [
+          {
+            "description": "The daily driver — everything below runs here.",
+            "term": "MacBook Pro (Apple silicon)"
+          }
+        ]
+      },
+      {
+        "blockType": "definitionList",
+        "command": null,
+        "heading": "editor & terminal/",
+        "items": [
+          {
+            "description": "Primary editor, Claude Code extension always open.",
+            "term": "VS Code"
+          },
+          {
+            "description": "Agentic work: refactors, tests, whole features.",
+            "term": "Claude Code CLI"
+          },
+          {
+            "description": "Agentic IDE — piloted it at enterprise scale.",
+            "term": "Windsurf / Cascade"
+          },
+          {
+            "description": "With too many aliases to admit to.",
+            "term": "zsh"
+          },
+          {
+            "description": "The only font on this site you are not reading right now.",
+            "term": "JetBrains Mono"
+          }
+        ]
+      },
+      {
+        "blockType": "definitionList",
+        "command": null,
+        "heading": "ai toolbox/",
+        "items": [
+          {
+            "description": "Daily driver for agentic engineering.",
+            "term": "Claude Code"
+          },
+          {
+            "description": "Inline completions and PR review.",
+            "term": "GitHub Copilot"
+          },
+          {
+            "description": "Context7, SequentialThinking, Figma, Memory, Markitdown, chrome-devtools.",
+            "term": "MCP servers"
+          },
+          {
+            "description": "obra/superpowers, mattpocock/skills, and custom-built.",
+            "term": "Skills"
+          },
+          {
+            "description": "The discipline that makes the rest of this list work.",
+            "term": "Prompt & context engineering"
+          }
+        ]
+      },
+      {
+        "blockType": "definitionList",
+        "command": null,
+        "heading": "stack defaults/",
+        "items": [
+          {
+            "description": "Non-negotiable.",
+            "term": "TypeScript (strict)"
+          },
+          {
+            "description": "Server Components first.",
+            "term": "React 19 + Next.js App Router"
+          },
+          {
+            "description": "CSS-first tokens.",
+            "term": "Tailwind CSS 4"
+          },
+          {
+            "description": "Via Payload or Prisma, per project.",
+            "term": "MongoDB Atlas"
+          },
+          {
+            "description": "90%+ coverage, enforced in CI.",
+            "term": "Vitest + React Testing Library"
+          },
+          {
+            "description": "E2E for the flows that pay the bills.",
+            "term": "Playwright"
+          },
+          {
+            "description": "Fast, strict, disk-friendly.",
+            "term": "pnpm"
+          }
+        ]
+      },
+      {
+        "blockType": "definitionList",
+        "command": null,
+        "heading": "this site's stack/",
+        "items": [
+          {
+            "description": "This site, end to end — and it is open source.",
+            "term": "Next.js 16 · React 19 · Payload 3 · Tailwind 4 · Shiki · Vercel"
+          }
+        ]
+      },
+      {
+        "blockType": "linkList",
+        "command": null,
+        "items": [
+          {
+            "description": null,
+            "label": "view source on github",
+            "url": "https://github.com/braveneworg/mkelley33"
+          }
+        ]
+      }
+    ],
+    "command": "cat ./uses.md",
+    "intro": "The hardware, software, and AI tooling behind the work.",
+    "meta": {
+      "description": "Hardware, editor, terminal, AI toolbox, and stack defaults — what I actually use.",
+      "title": "uses"
+    },
+    "slug": "uses",
+    "title": "uses"
   }
 ]

@@ -54,13 +54,15 @@ describe('inFillOrder', () => {
   });
 
   /**
-   * A Page that exists is never touched again, so one created with a link
-   * missing would keep the gap for good. Refusing is the honest answer.
+   * Pages that link to each other cannot both come first. Each is still
+   * listed once; the fill gives one of them an id to point at beforehand.
    */
-  it('refuses Pages that link to each other', () => {
-    expect(() => inFillOrder([page('home', 'cv'), page('cv', 'home')])).toThrow(
-      "the Seed's Pages link in a circle (home → cv → home)"
-    );
+  it('lists Pages that link to each other once each', () => {
+    expect(slugs(inFillOrder([page('home', 'cv'), page('cv', 'home')]))).toEqual(['cv', 'home']);
+  });
+
+  it('lists a Page that links to itself once', () => {
+    expect(slugs(inFillOrder([page('now', 'now')]))).toEqual(['now']);
   });
 });
 
