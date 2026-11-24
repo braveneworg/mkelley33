@@ -125,6 +125,9 @@ The owner picks from the kinds the design system offers. A new kind is a PR.
 - The admin account stays with the existing `seed:first-user`.
 - The first Seed is written from today's hard-coded content. Existing Posts
   arrive with the first Capture.
+- The Seed is meant to be a full copy of everything the owner publishes,
+  not the least that builds a working site. (Owner, 2026-11-23, asked
+  before the first Capture put six posts into it.)
 - Capture is run by hand by the owner. It reads production, rewrites the
   Seed files, and goes through a PR and the gate like any other change.
 - Capture takes published content only: published Pages, Site settings,

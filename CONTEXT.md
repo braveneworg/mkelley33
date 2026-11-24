@@ -44,7 +44,8 @@ _Avoid_: user data, production data
 
 **Seed**:
 The public starting set of Owner content that turns an empty site into the
-working one. It never holds Visitor data or the owner's login.
+working one: a full copy of what the owner publishes, as of the last Capture.
+It never holds Visitor data or the owner's login.
 _Avoid_: fixture, dump, snapshot
 
 **Capture**:
