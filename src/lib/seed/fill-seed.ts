@@ -21,6 +21,7 @@
 import path from 'node:path';
 
 import { fillPages, type LinkData, toLinkData } from '@/lib/seed/fill-pages';
+import { fillPosts } from '@/lib/seed/fill-posts';
 import type { LinkSeed } from '@/lib/seed/page-seed';
 import type { Seed, ServiceSeed } from '@/lib/seed/seed-files';
 import { storedGlobalFields } from '@/lib/seed/stored-fields';
@@ -38,7 +39,7 @@ export interface SeedReport {
    * gone adds it.
    */
   readonly skipped: string[];
-  /** How many files this run uploaded — the Resume and the Pages' pictures. */
+  /** How many files this run uploaded — the Resume, and the pictures Pages and posts show. */
   readonly uploads: number;
 }
 
@@ -249,5 +250,10 @@ export const fillSeed = async (payload: Payload, seed: Seed): Promise<SeedReport
     const wasCreated = await fillService(payload, service, order);
     (wasCreated ? created : kept).push(serviceLabel(service));
   }
-  return { created, kept, skipped, uploads };
+
+  // Posts last: their text may link to a Page.
+  const posts = await fillPosts(payload, seed.directory, seed.posts, pages.pageIds);
+  created.push(...posts.created);
+  kept.push(...posts.kept);
+  return { created, kept, skipped, uploads: uploads + posts.uploads };
 };

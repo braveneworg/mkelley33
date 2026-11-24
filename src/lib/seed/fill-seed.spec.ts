@@ -19,6 +19,7 @@ import type { Payload } from 'payload';
 const seed: Seed = {
   directory: 'seed',
   pages: [],
+  posts: [],
   services: [],
   siteSettings: {
     description: 'seed description',

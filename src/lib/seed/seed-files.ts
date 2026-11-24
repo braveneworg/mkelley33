@@ -15,8 +15,19 @@ import { join } from 'node:path';
 
 import { z } from 'zod';
 
-import { isHttpsUrl } from '@/lib/https-url';
-import { linkSeedSchema, type PageSeed, pagesSeedSchema } from '@/lib/seed/page-seed';
+import {
+  linkSeedSchema,
+  type PageSeed,
+  pagesSeedSchema,
+  picturesOnPage,
+} from '@/lib/seed/page-seed';
+import {
+  pagesLinkedFromPost,
+  picturesInPost,
+  type PostSeed,
+  postsSeedSchema,
+} from '@/lib/seed/post-seed';
+import { httpsUrl, SEED_FILES } from '@/lib/seed/seed-values';
 
 /** Lower-case words joined by hyphens — what a URL fragment can carry unescaped. */
 const SLUG = /^[a-z0-9-]+$/;
@@ -37,11 +48,6 @@ export const servicesSeedSchema = z
   });
 
 export type ServiceSeed = z.infer<typeof serviceSeedSchema>;
-
-/** A link the site renders as an `href` — the same rule the admin applies. */
-const httpsUrl = z.string().refine(isHttpsUrl, { message: 'not a full https:// address' });
-
-const SEED_FILES = 'files/';
 
 /** A bare file name: no separator, so it cannot leave the directory. */
 const FILE_NAME = /^[\w.-]+$/;
@@ -85,42 +91,84 @@ export const siteSettingsSeedSchema = z.strictObject({
 
 export type SiteSettingsSeed = z.infer<typeof siteSettingsSeedSchema>;
 
-export interface Seed {
-  /** Where the Seed was read from; the files it names are relative to this. */
-  readonly directory: string;
+/** Everything a Seed holds, apart from where it was read from. */
+export interface SeedContent {
   readonly pages: readonly PageSeed[];
+  readonly posts: readonly PostSeed[];
   readonly services: readonly ServiceSeed[];
   readonly siteSettings: SiteSettingsSeed;
 }
 
-const PAGES_FILE = 'pages.json';
-const SERVICES_FILE = 'services.json';
-const SITE_SETTINGS_FILE = 'site-settings.json';
+export interface Seed extends SeedContent {
+  /** Where the Seed was read from; the files it names are relative to this. */
+  readonly directory: string;
+}
 
-const readJson = (directory: string, file: string): unknown =>
-  JSON.parse(readFileSync(join(directory, file), 'utf8'));
+/** The Seed's JSON files, by what each holds. */
+export const SEED_JSON = {
+  pages: 'pages.json',
+  posts: 'posts.json',
+  services: 'services.json',
+  siteSettings: 'site-settings.json',
+} as const;
 
 /** The addresses a menu links to. */
 const menuTargets = ({ footerMenu, headerMenu }: SiteSettingsSeed): string[] =>
   [...headerMenu, ...footerMenu].flatMap(({ page }) => (page === null ? [] : [page]));
 
-/**
- * Reads and validates the Seed in `directory`. Throws on the first file
- * that does not fit, and when a menu links to a Page the Seed does not
- * carry — the one rule that spans two files.
- */
-export const loadSeed = (directory: string): Seed => {
-  const pages = pagesSeedSchema.parse(readJson(directory, PAGES_FILE));
-  const siteSettings = siteSettingsSeedSchema.parse(readJson(directory, SITE_SETTINGS_FILE));
+/** The first address in `targets` that is not a Page the Seed carries. */
+const strayTarget = (
+  pages: readonly PageSeed[],
+  targets: readonly string[]
+): string | undefined => {
   const carried = new Set(pages.map(({ slug }) => slug));
-  const stray = menuTargets(siteSettings).find((slug) => !carried.has(slug));
-  if (stray !== undefined) {
-    throw new Error(`a menu links to the ${stray} Page, which the Seed does not carry`);
-  }
-  return {
-    directory,
-    pages,
-    services: servicesSeedSchema.parse(readJson(directory, SERVICES_FILE)),
-    siteSettings,
-  };
+  return targets.find((slug) => !carried.has(slug));
 };
+
+/**
+ * Validates what the Seed's files hold. Throws on the first part that does
+ * not fit, and when a menu or a post links to a Page the Seed does not
+ * carry — the rules that span two files. Capture runs what it has read
+ * through this before it writes, so it cannot write a Seed the fill would
+ * refuse.
+ */
+export const parseSeed = (raw: Record<keyof SeedContent, unknown>): SeedContent => {
+  const pages = pagesSeedSchema.parse(raw.pages);
+  const siteSettings = siteSettingsSeedSchema.parse(raw.siteSettings);
+  const posts = postsSeedSchema.parse(raw.posts);
+  const fromMenu = strayTarget(pages, menuTargets(siteSettings));
+  if (fromMenu !== undefined) {
+    throw new Error(`a menu links to the ${fromMenu} Page, which the Seed does not carry`);
+  }
+  const fromPost = strayTarget(pages, posts.flatMap(pagesLinkedFromPost));
+  if (fromPost !== undefined) {
+    throw new Error(`a post links to the ${fromPost} Page, which the Seed does not carry`);
+  }
+  return { pages, posts, services: servicesSeedSchema.parse(raw.services), siteSettings };
+};
+
+const readJson = (directory: string, file: string): unknown =>
+  JSON.parse(readFileSync(join(directory, file), 'utf8'));
+
+/** Reads and validates the Seed in `directory`. */
+export const loadSeed = (directory: string): Seed => ({
+  ...parseSeed({
+    pages: readJson(directory, SEED_JSON.pages),
+    posts: readJson(directory, SEED_JSON.posts),
+    services: readJson(directory, SEED_JSON.services),
+    siteSettings: readJson(directory, SEED_JSON.siteSettings),
+  }),
+  directory,
+});
+
+/**
+ * Every file the Seed uploads, as it names them (`files/headshot.webp`),
+ * each once: the Resume, and the pictures its Pages and posts show.
+ */
+export const filesNamedBy = ({ pages, posts, siteSettings }: SeedContent): string[] => [
+  ...new Set([
+    ...(siteSettings.resume === null ? [] : [siteSettings.resume]),
+    ...pages.flatMap(picturesOnPage).map(({ file }) => file),
+    ...posts.flatMap(picturesInPost).map(({ file }) => file),
+  ]),
+];

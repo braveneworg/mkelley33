@@ -10,6 +10,7 @@
  */
 
 import { findPageId, pageLabel } from '@/lib/seed/fill-pages';
+import { postExists, postLabel } from '@/lib/seed/fill-posts';
 import {
   menusNeverStored,
   serviceExists,
@@ -86,6 +87,9 @@ export const inspectSeed = async (payload: Payload, seed: Seed): Promise<SeedIns
   missing.push(...newMenus.map(({ label }) => label));
   for (const service of seed.services) {
     sort(serviceLabel(service), await serviceExists(payload, service));
+  }
+  for (const post of seed.posts) {
+    sort(postLabel(post), await postExists(payload, post));
   }
 
   const record = await payload.findGlobal({ depth: 0, slug: SITE_SETTINGS });
