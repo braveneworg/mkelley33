@@ -4,8 +4,8 @@
 
 /**
  * Puts the files of a snapshot written by `media:backup` back into the blob
- * store behind BLOB_READ_WRITE_TOKEN — the newest snapshot in
- * MEDIA_BACKUP_DIR / `~/backups/mkelley33/media`, or an explicit one:
+ * store behind BLOB_READ_WRITE_TOKEN — the newest snapshot in BACKUP_DIR /
+ * `~/backups/mkelley33`, or an explicit one:
  * `pnpm run media:restore -- <snapshot directory>`.
  *
  * Every file goes back under the pathname it had, replacing a file the
@@ -20,23 +20,16 @@ import { readdir, stat } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { basename, join } from 'node:path';
 
-import { redactSecrets, requestedPath } from '@/lib/db-backup';
+import { redactSecrets, requestedPath, resolveBackupDir } from '@/lib/db-backup';
 import { vercelBlobStore } from '@/lib/media-backup/blob-store';
 import { restoreMedia } from '@/lib/media-backup/restore-media';
-import {
-  latestSnapshot,
-  missingMediaBackupEnv,
-  resolveMediaBackupDir,
-} from '@/lib/media-backup/snapshot';
+import { latestSnapshot, missingMediaBackupEnv } from '@/lib/media-backup/snapshot';
 
 const resolveSnapshotDir = async (requested: string | undefined): Promise<string | undefined> => {
   if (requested !== undefined) {
     return requested;
   }
-  const backupDir = resolveMediaBackupDir(
-    { MEDIA_BACKUP_DIR: process.env.MEDIA_BACKUP_DIR },
-    homedir()
-  );
+  const backupDir = resolveBackupDir({ BACKUP_DIR: process.env.BACKUP_DIR }, homedir());
   const entries = await readdir(backupDir).catch(() => []);
   const newest = latestSnapshot(entries);
   if (newest === undefined) {

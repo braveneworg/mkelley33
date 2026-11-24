@@ -27,10 +27,6 @@ export interface MediaBackupEnv {
   BLOB_READ_WRITE_TOKEN?: string;
 }
 
-export interface MediaBackupDirEnv {
-  MEDIA_BACKUP_DIR?: string;
-}
-
 export const MANIFEST_FILE = 'manifest.json';
 export const FILES_DIRECTORY = 'files';
 /** What a snapshot is called until its last file and its manifest are written. */
@@ -66,12 +62,6 @@ export type SnapshotManifest = z.infer<typeof manifestSchema>;
  */
 export const missingMediaBackupEnv = ({ BLOB_READ_WRITE_TOKEN }: MediaBackupEnv): string[] =>
   BLOB_READ_WRITE_TOKEN ? [] : ['BLOB_READ_WRITE_TOKEN'];
-
-/** Beside the database archives by default, in a directory of its own. */
-export const resolveMediaBackupDir = (
-  { MEDIA_BACKUP_DIR }: MediaBackupDirEnv,
-  home: string
-): string => MEDIA_BACKUP_DIR ?? path.join(home, 'backups', 'mkelley33', 'media');
 
 export const snapshotName = (now: Date): string =>
   `mkelley33-media-${now.toISOString().replaceAll(':', '-')}`;

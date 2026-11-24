@@ -145,10 +145,11 @@ pnpm dev               # http://localhost:3000, admin at /admin
 
 A Backup has two halves, and they belong together: `db:backup` holds the
 records and `media:backup` holds the files those records point at. Take both
-at the same time and restore both from the same time. Database archives go to
-`DB_BACKUP_DIR` (default `~/backups/mkelley33`) and media snapshots to
-`MEDIA_BACKUP_DIR` (default `~/backups/mkelley33/media`), both outside the
-repo. `media:restore` takes the newest snapshot, or the one named:
+at the same time and restore both from the same time. Both go to one
+directory, `BACKUP_DIR` (default `~/backups/mkelley33`),
+which is outside the repo: database archives as
+`mkelley33-<utc-instant>.archive.gz` and media snapshots as
+`mkelley33-media-<utc-instant>/`, so a pair taken together sits side by side. `media:restore` takes the newest snapshot, or the one named:
 `pnpm run media:restore -- <snapshot directory>`. Only the owner can run
 either pair — they need the production credentials, which no agent may read.
 

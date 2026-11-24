@@ -11,7 +11,6 @@ import {
   latestSnapshot,
   missingMediaBackupEnv,
   parseManifest,
-  resolveMediaBackupDir,
   snapshotFilePath,
   snapshotName,
   type SnapshotManifest,
@@ -42,20 +41,6 @@ describe('missingMediaBackupEnv', () => {
 
   it('returns nothing when BLOB_READ_WRITE_TOKEN is set', () => {
     expect(missingMediaBackupEnv({ BLOB_READ_WRITE_TOKEN: 'a-placeholder' })).toEqual([]);
-  });
-});
-
-describe('resolveMediaBackupDir', () => {
-  it('defaults to backups/mkelley33/media under the home directory', () => {
-    expect(resolveMediaBackupDir({}, '/Users/someone')).toBe(
-      join('/Users/someone', 'backups', 'mkelley33', 'media')
-    );
-  });
-
-  it('prefers MEDIA_BACKUP_DIR when set', () => {
-    expect(resolveMediaBackupDir({ MEDIA_BACKUP_DIR: '/mnt/media' }, '/Users/someone')).toBe(
-      '/mnt/media'
-    );
   });
 });
 
@@ -98,6 +83,8 @@ describe('latestSnapshot', () => {
         '.DS_Store',
         'mkelley33-media-2026-08-01T00-00-00.000Z',
         'mkelley33-media-2026-12-01T00-00-00.000Z.partial',
+        // Newer, and in the same directory: a database archive is not a snapshot.
+        'mkelley33-2026-12-02T00-00-00.000Z.archive.gz',
       ])
     ).toBe('mkelley33-media-2026-08-01T00-00-00.000Z');
   });
