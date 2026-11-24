@@ -19,7 +19,7 @@ export interface BackupEnv {
 }
 
 export interface BackupDirEnv {
-  DB_BACKUP_DIR?: string;
+  BACKUP_DIR?: string;
 }
 
 export interface ArchiveToolArgs {
@@ -37,8 +37,20 @@ const ARCHIVE_NAME = /^mkelley33-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.\d{3}Z\.ar
 export const missingBackupEnv = ({ DATABASE_URL }: BackupEnv): string[] =>
   DATABASE_URL ? [] : ['DATABASE_URL'];
 
-export const resolveBackupDir = ({ DB_BACKUP_DIR }: BackupDirEnv, home: string): string =>
-  DB_BACKUP_DIR ?? join(home, 'backups', 'mkelley33');
+/**
+ * The one directory a Backup is kept in, both halves of it: the database
+ * archives `db:backup` writes and the media snapshots `media:backup` writes
+ * (`src/lib/media-backup/`). Their names cannot be mistaken for each other —
+ * `isArchiveName` here and `isSnapshotName` there each refuse the other's —
+ * so the two sit side by side and a pair taken together is easy to see.
+ *
+ * The default is deliberately generic. Where the owner really keeps a Backup
+ * is a fact about one machine: it goes in BACKUP_DIR, in `.env.local`, and
+ * never in source — see
+ * docs/lessons/git-workflow/a-pushed-commit-cannot-be-unpublished.md.
+ */
+export const resolveBackupDir = ({ BACKUP_DIR }: BackupDirEnv, home: string): string =>
+  BACKUP_DIR ?? join(home, 'backups', 'mkelley33');
 
 export const archiveFileName = (now: Date): string =>
   `mkelley33-${now.toISOString().replaceAll(':', '-')}.archive.gz`;
@@ -51,6 +63,19 @@ export const isArchiveName = (name: string): boolean => ARCHIVE_NAME.test(name);
  */
 export const latestArchive = (names: readonly string[]): string | undefined =>
   names.filter(isArchiveName).sort().at(-1);
+
+/** What pnpm puts between its own arguments and a script's, and hands to the script too. */
+const ARGUMENT_SEPARATOR = '--';
+
+/**
+ * The path a restore was asked for, from the arguments after the script's
+ * name (`process.argv.slice(2)`). Both spellings have to work:
+ * `pnpm run db:restore <path>` and `pnpm run db:restore -- <path>`. pnpm
+ * passes the `--` of the second through, so the first argument is not
+ * always the path.
+ */
+export const requestedPath = (args: readonly string[]): string | undefined =>
+  args.find((arg) => arg !== ARGUMENT_SEPARATOR);
 
 /**
  * Contents of the throwaway `--config` file the tools read the uri from —

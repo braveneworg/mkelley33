@@ -14,6 +14,7 @@ import {
   mongodumpArgs,
   mongorestoreArgs,
   redactSecrets,
+  requestedPath,
   resolveBackupDir,
   toolsConfigContents,
 } from '@/lib/db-backup';
@@ -35,8 +36,8 @@ describe('resolveBackupDir', () => {
     );
   });
 
-  it('prefers DB_BACKUP_DIR when set', () => {
-    expect(resolveBackupDir({ DB_BACKUP_DIR: '/mnt/dumps' }, '/Users/someone')).toBe('/mnt/dumps');
+  it('prefers BACKUP_DIR when set', () => {
+    expect(resolveBackupDir({ BACKUP_DIR: '/mnt/backups' }, '/Users/someone')).toBe('/mnt/backups');
   });
 });
 
@@ -72,6 +73,11 @@ describe('latestArchive', () => {
   it('ignores entries that are not archives', () => {
     const only = archiveFileName(new Date('2026-08-01T07:45:00.000Z'));
     expect(latestArchive(['.DS_Store', only, 'notes.txt'])).toBe(only);
+  });
+
+  it('ignores a newer media snapshot kept in the same directory', () => {
+    const only = archiveFileName(new Date('2026-08-01T07:45:00.000Z'));
+    expect(latestArchive([only, 'mkelley33-media-2026-12-01T00-00-00.000Z'])).toBe(only);
   });
 
   it('returns undefined when no archive is present', () => {
@@ -124,5 +130,23 @@ describe('redactSecrets', () => {
 
   it('ignores empty secrets instead of corrupting the text', () => {
     expect(redactSecrets('all good', [''])).toBe('all good');
+  });
+});
+
+describe('requestedPath', () => {
+  it('takes the path given after the script name', () => {
+    expect(requestedPath(['/backups/one.archive.gz'])).toBe('/backups/one.archive.gz');
+  });
+
+  it('skips the separator pnpm passes through to the script', () => {
+    expect(requestedPath(['--', '/backups/one.archive.gz'])).toBe('/backups/one.archive.gz');
+  });
+
+  it('returns undefined when no path was given', () => {
+    expect(requestedPath([])).toBeUndefined();
+  });
+
+  it('returns undefined when the separator is all there is', () => {
+    expect(requestedPath(['--'])).toBeUndefined();
   });
 });

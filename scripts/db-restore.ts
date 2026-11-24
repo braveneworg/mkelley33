@@ -4,7 +4,7 @@
 
 /**
  * Restores the database behind DATABASE_URL from a local archive written by
- * `db:backup` — the newest one in DB_BACKUP_DIR / `~/backups/mkelley33`, or
+ * `db:backup` — the newest one in BACKUP_DIR / `~/backups/mkelley33`, or
  * an explicit path: `pnpm run db:restore -- <archive>`. Restore means
  * "return to this snapshot": every collection in the archive is dropped and
  * replaced, so point DATABASE_URL carefully before running. Needs
@@ -20,6 +20,7 @@ import {
   latestArchive,
   missingBackupEnv,
   mongorestoreArgs,
+  requestedPath,
   resolveBackupDir,
   toolsConfigContents,
 } from '@/lib/db-backup';
@@ -30,7 +31,7 @@ const resolveArchivePath = async (requested: string | undefined): Promise<string
   if (requested !== undefined) {
     return requested;
   }
-  const backupDir = resolveBackupDir({ DB_BACKUP_DIR: process.env.DB_BACKUP_DIR }, homedir());
+  const backupDir = resolveBackupDir({ BACKUP_DIR: process.env.BACKUP_DIR }, homedir());
   const entries = await readdir(backupDir).catch(() => []);
   const newest = latestArchive(entries);
   if (newest === undefined) {
@@ -50,7 +51,7 @@ const run = async (): Promise<void> => {
     console.error(`db:restore missing env — set ${missing.join(' and ')}`);
     process.exit(1);
   }
-  const archivePath = await resolveArchivePath(process.argv[2]);
+  const archivePath = await resolveArchivePath(requestedPath(process.argv.slice(2)));
   if (archivePath === undefined) {
     process.exit(1);
   }
