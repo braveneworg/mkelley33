@@ -132,14 +132,25 @@ pnpm dev               # http://localhost:3000, admin at /admin
 
 ### Database & seeding
 
-| Script            | What it does                                                                                                                                                                     |
-| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `db:backup`       | Dump the database configured in `.env.local` (`scripts/db-backup.ts`).                                                                                                           |
-| `db:restore`      | Restore a previously created dump (`scripts/db-restore.ts`).                                                                                                                     |
-| `seed:first-user` | Create the initial Payload admin user if none exists.                                                                                                                            |
-| `seed`            | Fill the database from the Seed in `seed/`: Pages, Site settings, the Resume, services and posts. Fill-only — it creates what is missing and never changes a record that exists. |
-| `seed:check`      | Report what `seed` would create and keep, and the state of the Site settings and their Resume. Reads only; writes nothing.                                                       |
-| `capture`         | Rewrite the Seed in `seed/` from what the database publishes. Reads the database, writes only to the working tree. See [`docs/deploy.md`](docs/deploy.md).                       |
+| Script            | What it does                                                                                                                                                                                                             |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `db:backup`       | Dump the database configured in `.env.local` (`scripts/db-backup.ts`).                                                                                                                                                   |
+| `db:restore`      | Restore a previously created dump (`scripts/db-restore.ts`).                                                                                                                                                             |
+| `media:backup`    | Copy every file in the blob store behind `BLOB_READ_WRITE_TOKEN` — the pictures and the Resume files — into a new snapshot directory on this machine (`scripts/media-backup.ts`). Reads the store; writes nothing to it. |
+| `media:restore`   | Put a snapshot's files back into the blob store, each under the name it had (`scripts/media-restore.ts`). Replaces a file of the same name and deletes nothing.                                                          |
+| `seed:first-user` | Create the initial Payload admin user if none exists.                                                                                                                                                                    |
+| `seed`            | Fill the database from the Seed in `seed/`: Pages, Site settings, the Resume, services and posts. Fill-only — it creates what is missing and never changes a record that exists.                                         |
+| `seed:check`      | Report what `seed` would create and keep, and the state of the Site settings and their Resume. Reads only; writes nothing.                                                                                               |
+| `capture`         | Rewrite the Seed in `seed/` from what the database publishes. Reads the database, writes only to the working tree. See [`docs/deploy.md`](docs/deploy.md).                                                               |
+
+A Backup has two halves, and they belong together: `db:backup` holds the
+records and `media:backup` holds the files those records point at. Take both
+at the same time and restore both from the same time. Database archives go to
+`DB_BACKUP_DIR` (default `~/backups/mkelley33`) and media snapshots to
+`MEDIA_BACKUP_DIR` (default `~/backups/mkelley33/media`), both outside the
+repo. `media:restore` takes the newest snapshot, or the one named:
+`pnpm run media:restore -- <snapshot directory>`. Only the owner can run
+either pair — they need the production credentials, which no agent may read.
 
 ### Code generation & misc
 

@@ -62,6 +62,14 @@ binding. Everything below it applies only once the thing it names exists.
   a route renders — published for a visitor, the newest draft for the
   owner's preview), and `preview.ts` (whether a request is previewing, and
   which paths a preview may redirect to).
+- `media-backup/` — the files half of a Backup (`pnpm media:backup` /
+  `pnpm media:restore`; the records half is `db-backup.ts`). `snapshot.ts`
+  holds the pure decisions: where a snapshot goes, its name, its manifest's
+  schema, and the guard that keeps a pathname inside it. `blob-store.ts` is
+  the store as the two commands need it, with the one implementation that
+  reaches Vercel Blob; `backup-media.ts` copies a store into a snapshot and
+  `restore-media.ts` puts one back. Their specs run against real files in a
+  temporary directory and `fake-blob-store.ts`, never a network.
 - Loose modules for cross-cutting concerns: `site-config.ts` (what stays in
   code — the domain, the Resume's permanent address and `handle`; the
   owner's identity, links and menus are Site settings, read through `repositories/site-settings.ts`, with
