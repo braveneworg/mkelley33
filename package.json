@@ -35,6 +35,7 @@
     "seed:first-user": "tsx --env-file-if-exists=.env.local scripts/seed-first-user.ts",
     "seed": "tsx --env-file-if-exists=.env.local scripts/seed.ts",
     "seed:check": "tsx --env-file-if-exists=.env.local scripts/seed.ts --check",
+    "capture": "tsx --env-file-if-exists=.env.local scripts/capture.ts",
     "prepare": "husky",
     "test:coverage:check": "vitest run --coverage"
   },

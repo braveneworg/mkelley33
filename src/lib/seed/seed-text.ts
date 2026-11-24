@@ -51,8 +51,8 @@ const withLinkedPage = (node: TextNode, value: string): TextNode => ({
   fields: { ...(isRecord(node.fields) ? node.fields : {}), doc: { relationTo: PAGES, value } },
 });
 
-/** A stored id, bare or on the record a read resolved it to. */
-const idOf = (value: unknown): string => {
+/** A stored id, bare or on the record a read resolved it to; empty when it is neither. */
+export const storedId = (value: unknown): string => {
   if (typeof value === 'string') {
     return value;
   }
@@ -122,7 +122,7 @@ export interface SeedRefs {
 }
 
 const seedLink = (node: TextNode, linked: TextNode, refs: SeedRefs): TextNode[] => {
-  const slug = linked.relationTo === PAGES ? refs.pageSlug(idOf(linked.value)) : undefined;
+  const slug = linked.relationTo === PAGES ? refs.pageSlug(storedId(linked.value)) : undefined;
   if (slug !== undefined) {
     return [withLinkedPage(node, slug)];
   }
@@ -134,7 +134,7 @@ const seedLink = (node: TextNode, linked: TextNode, refs: SeedRefs): TextNode[] 
 };
 
 const seedPicture = async (node: TextNode, refs: SeedRefs): Promise<TextNode[]> => {
-  const picture = node.relationTo === MEDIA ? await refs.picture(idOf(node.value)) : null;
+  const picture = node.relationTo === MEDIA ? await refs.picture(storedId(node.value)) : null;
   if (picture !== null) {
     return [{ ...node, value: picture }];
   }
