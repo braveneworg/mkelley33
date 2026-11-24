@@ -4,7 +4,7 @@
 
 // @vitest-environment node
 
-import { findPageDraft, findPublishedPage } from '@/collections/published-page';
+import { findPageDraft, findPublishedPage, findPublishedPages } from '@/collections/published-page';
 import { pageLink, paragraph, richText } from '@/test/lexical';
 import { createTestPayload } from '@/test/payload-harness';
 
@@ -190,6 +190,57 @@ describe('the Page visitors are served', () => {
     await unpublish(id, 'edited while unpublished');
 
     await expect(findPublishedPage(payload, 'uses')).resolves.toBeNull();
+  });
+});
+
+/** What the menus, the sitemap and Capture all go by. */
+describe('the Pages visitors are served', () => {
+  const titles = async (): Promise<string[]> =>
+    (await findPublishedPages(payload)).map(({ title }) => title);
+
+  it('are the published ones, in the order of their addresses', async () => {
+    await publish('uses');
+    await publish('blog');
+
+    await expect(titles()).resolves.toEqual(['blog', 'uses']);
+  });
+
+  it('leave out a Page that has only ever been a draft', async () => {
+    await saveDraft('uses');
+
+    await expect(titles()).resolves.toEqual([]);
+  });
+
+  it('leave out any other Page once it is unpublished', async () => {
+    const { id } = await publish('uses');
+    await unpublish(id, 'edited while unpublished');
+
+    await expect(titles()).resolves.toEqual([]);
+  });
+
+  it('hold the last published version of a Fixed Page that was unpublished', async () => {
+    const { id } = await publish('blog', 'published title');
+    await unpublish(id, 'edited while unpublished');
+
+    await expect(titles()).resolves.toEqual(['published title']);
+  });
+
+  it('hold the published version while a newer draft exists', async () => {
+    const { id } = await publish('uses', 'published title');
+    await payload.update({
+      collection: 'pages',
+      data: { title: 'a newer draft' },
+      draft: true,
+      id,
+    });
+
+    await expect(titles()).resolves.toEqual(['published title']);
+  });
+
+  it('leave out a Fixed Page that has only ever been a draft', async () => {
+    await saveDraft('blog');
+
+    await expect(titles()).resolves.toEqual([]);
   });
 });
 
