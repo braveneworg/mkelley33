@@ -14,6 +14,7 @@ import {
   mongodumpArgs,
   mongorestoreArgs,
   redactSecrets,
+  requestedPath,
   resolveBackupDir,
   toolsConfigContents,
 } from '@/lib/db-backup';
@@ -124,5 +125,23 @@ describe('redactSecrets', () => {
 
   it('ignores empty secrets instead of corrupting the text', () => {
     expect(redactSecrets('all good', [''])).toBe('all good');
+  });
+});
+
+describe('requestedPath', () => {
+  it('takes the path given after the script name', () => {
+    expect(requestedPath(['/backups/one.archive.gz'])).toBe('/backups/one.archive.gz');
+  });
+
+  it('skips the separator pnpm passes through to the script', () => {
+    expect(requestedPath(['--', '/backups/one.archive.gz'])).toBe('/backups/one.archive.gz');
+  });
+
+  it('returns undefined when no path was given', () => {
+    expect(requestedPath([])).toBeUndefined();
+  });
+
+  it('returns undefined when the separator is all there is', () => {
+    expect(requestedPath(['--'])).toBeUndefined();
   });
 });

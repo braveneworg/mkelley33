@@ -52,6 +52,19 @@ export const isArchiveName = (name: string): boolean => ARCHIVE_NAME.test(name);
 export const latestArchive = (names: readonly string[]): string | undefined =>
   names.filter(isArchiveName).sort().at(-1);
 
+/** What pnpm puts between its own arguments and a script's, and hands to the script too. */
+const ARGUMENT_SEPARATOR = '--';
+
+/**
+ * The path a restore was asked for, from the arguments after the script's
+ * name (`process.argv.slice(2)`). Both spellings have to work:
+ * `pnpm run db:restore <path>` and `pnpm run db:restore -- <path>`. pnpm
+ * passes the `--` of the second through, so the first argument is not
+ * always the path.
+ */
+export const requestedPath = (args: readonly string[]): string | undefined =>
+  args.find((arg) => arg !== ARGUMENT_SEPARATOR);
+
 /**
  * Contents of the throwaway `--config` file the tools read the uri from —
  * a double-quoted YAML scalar, so any character the connection string can

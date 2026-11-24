@@ -20,6 +20,7 @@ import {
   latestArchive,
   missingBackupEnv,
   mongorestoreArgs,
+  requestedPath,
   resolveBackupDir,
   toolsConfigContents,
 } from '@/lib/db-backup';
@@ -50,7 +51,7 @@ const run = async (): Promise<void> => {
     console.error(`db:restore missing env — set ${missing.join(' and ')}`);
     process.exit(1);
   }
-  const archivePath = await resolveArchivePath(process.argv[2]);
+  const archivePath = await resolveArchivePath(requestedPath(process.argv.slice(2)));
   if (archivePath === undefined) {
     process.exit(1);
   }
