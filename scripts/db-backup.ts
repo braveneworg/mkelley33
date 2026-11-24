@@ -5,7 +5,8 @@
 /**
  * Dumps the database behind DATABASE_URL to a gzipped archive on this
  * machine: `<dir>/mkelley33-<utc-instant>.archive.gz`, where `<dir>` is
- * DB_BACKUP_DIR or `~/backups/mkelley33`. `pnpm run db:backup` loads
+ * BACKUP_DIR or `~/projects/braveneworg/backups/mkelley33` — the directory
+ * `media:backup` writes its snapshots to as well. `pnpm run db:backup` loads
  * `.env.local` when present; shell values win. Needs `mongodump` from the
  * MongoDB Database Tools. The connection string reaches the tool through a
  * short-lived 0600 config file — never argv, never output — and is redacted
@@ -33,7 +34,7 @@ const run = async (): Promise<void> => {
     console.error(`db:backup missing env — set ${missing.join(' and ')}`);
     process.exit(1);
   }
-  const backupDir = resolveBackupDir({ DB_BACKUP_DIR: process.env.DB_BACKUP_DIR }, homedir());
+  const backupDir = resolveBackupDir({ BACKUP_DIR: process.env.BACKUP_DIR }, homedir());
   await mkdir(backupDir, { recursive: true });
   const archivePath = join(backupDir, archiveFileName(new Date()));
   const configDir = await mkdtemp(join(tmpdir(), 'db-backup-'));

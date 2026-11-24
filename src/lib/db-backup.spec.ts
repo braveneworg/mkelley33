@@ -30,14 +30,14 @@ describe('missingBackupEnv', () => {
 });
 
 describe('resolveBackupDir', () => {
-  it('defaults to backups/mkelley33 under the home directory', () => {
+  it('defaults to projects/braveneworg/backups/mkelley33 under the home directory', () => {
     expect(resolveBackupDir({}, '/Users/someone')).toBe(
-      join('/Users/someone', 'backups', 'mkelley33')
+      join('/Users/someone', 'projects', 'braveneworg', 'backups', 'mkelley33')
     );
   });
 
-  it('prefers DB_BACKUP_DIR when set', () => {
-    expect(resolveBackupDir({ DB_BACKUP_DIR: '/mnt/dumps' }, '/Users/someone')).toBe('/mnt/dumps');
+  it('prefers BACKUP_DIR when set', () => {
+    expect(resolveBackupDir({ BACKUP_DIR: '/mnt/backups' }, '/Users/someone')).toBe('/mnt/backups');
   });
 });
 
@@ -73,6 +73,11 @@ describe('latestArchive', () => {
   it('ignores entries that are not archives', () => {
     const only = archiveFileName(new Date('2026-08-01T07:45:00.000Z'));
     expect(latestArchive(['.DS_Store', only, 'notes.txt'])).toBe(only);
+  });
+
+  it('ignores a newer media snapshot kept in the same directory', () => {
+    const only = archiveFileName(new Date('2026-08-01T07:45:00.000Z'));
+    expect(latestArchive([only, 'mkelley33-media-2026-12-01T00-00-00.000Z'])).toBe(only);
   });
 
   it('returns undefined when no archive is present', () => {

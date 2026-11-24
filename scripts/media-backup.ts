@@ -5,8 +5,9 @@
 /**
  * Copies every file in the blob store behind BLOB_READ_WRITE_TOKEN — the
  * pictures and the Resume files — into a new snapshot on this machine:
- * `<dir>/mkelley33-media-<utc-instant>/`, where `<dir>` is MEDIA_BACKUP_DIR
- * or `~/backups/mkelley33/media`. `pnpm run media:backup` loads `.env.local`
+ * `<dir>/mkelley33-media-<utc-instant>/`, where `<dir>` is BACKUP_DIR or
+ * `~/projects/braveneworg/backups/mkelley33` — the directory `db:backup`
+ * writes its archives to as well. `pnpm run media:backup` loads `.env.local`
  * when present; shell values win.
  *
  * It reads the store and writes nothing to it. The database is not part of
@@ -18,10 +19,10 @@
 
 import { homedir } from 'node:os';
 
-import { redactSecrets } from '@/lib/db-backup';
+import { redactSecrets, resolveBackupDir } from '@/lib/db-backup';
 import { backupMedia } from '@/lib/media-backup/backup-media';
 import { vercelBlobStore } from '@/lib/media-backup/blob-store';
-import { missingMediaBackupEnv, resolveMediaBackupDir } from '@/lib/media-backup/snapshot';
+import { missingMediaBackupEnv } from '@/lib/media-backup/snapshot';
 
 const run = async (): Promise<void> => {
   const { BLOB_READ_WRITE_TOKEN } = process.env;
@@ -30,10 +31,7 @@ const run = async (): Promise<void> => {
     console.error(`media:backup missing env — set ${missing.join(' and ')}`);
     process.exit(1);
   }
-  const backupDir = resolveMediaBackupDir(
-    { MEDIA_BACKUP_DIR: process.env.MEDIA_BACKUP_DIR },
-    homedir()
-  );
+  const backupDir = resolveBackupDir({ BACKUP_DIR: process.env.BACKUP_DIR }, homedir());
   const { fileCount, snapshotDir, totalBytes } = await backupMedia({
     backupDir,
     now: new Date(),
