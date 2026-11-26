@@ -3,6 +3,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
 import { SiteNav } from '@/components/site/site-nav';
 
@@ -70,5 +71,142 @@ describe('SiteNav', () => {
     expect(link).toHaveAttribute('target', '_blank');
     expect(link).toHaveAttribute('rel', 'noopener noreferrer');
     expect(link).toHaveAccessibleName(/\(opens in new tab\)$/);
+  });
+
+  it('sticks to the top of the viewport above the scrolling content', () => {
+    render(<SiteNav links={LINKS} />);
+
+    expect(screen.getByRole('banner')).toHaveClass('sticky', 'top-0', 'z-30');
+  });
+
+  it('frosts the content that scrolls behind it', () => {
+    render(<SiteNav links={LINKS} />);
+
+    expect(screen.getByRole('banner')).toHaveClass('bg-canvas/80', 'backdrop-blur');
+  });
+});
+
+describe('SiteNav mobile menu', () => {
+  beforeEach(() => {
+    pathnameHolder.current = '/';
+  });
+
+  it('starts closed', () => {
+    render(<SiteNav links={LINKS} />);
+
+    const button = screen.getByRole('button', { name: 'Open menu' });
+    expect(button).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('controls the menu that holds the links', () => {
+    render(<SiteNav links={LINKS} />);
+
+    const menuId = screen.getByRole('button', { name: 'Open menu' }).getAttribute('aria-controls');
+    expect(document.getElementById(menuId ?? '')).toContainElement(
+      screen.getByRole('link', { name: './blog' })
+    );
+  });
+
+  it('is a green control shown only below the sm breakpoint', () => {
+    render(<SiteNav links={LINKS} />);
+
+    expect(screen.getByRole('button', { name: 'Open menu' })).toHaveClass(
+      'text-phosphor',
+      'sm:hidden'
+    );
+  });
+
+  it('keeps the closed menu out of the tab order on small screens', () => {
+    render(<SiteNav links={LINKS} />);
+
+    const menuId = screen.getByRole('button', { name: 'Open menu' }).getAttribute('aria-controls');
+    expect(document.getElementById(menuId ?? '')).toHaveClass('invisible', 'sm:visible');
+  });
+
+  it('opens on click', async () => {
+    const user = userEvent.setup();
+    render(<SiteNav links={LINKS} />);
+
+    await user.click(screen.getByRole('button', { name: 'Open menu' }));
+
+    expect(screen.getByRole('button', { name: 'Close menu' })).toHaveAttribute(
+      'aria-expanded',
+      'true'
+    );
+  });
+
+  it('shows the menu once open', async () => {
+    const user = userEvent.setup();
+    render(<SiteNav links={LINKS} />);
+    const button = screen.getByRole('button', { name: 'Open menu' });
+
+    await user.click(button);
+
+    expect(document.getElementById(button.getAttribute('aria-controls') ?? '')).toHaveClass(
+      'visible'
+    );
+  });
+
+  it('closes again on a second click', async () => {
+    const user = userEvent.setup();
+    render(<SiteNav links={LINKS} />);
+
+    await user.click(screen.getByRole('button', { name: 'Open menu' }));
+    await user.click(screen.getByRole('button', { name: 'Close menu' }));
+
+    expect(screen.getByRole('button', { name: 'Open menu' })).toHaveAttribute(
+      'aria-expanded',
+      'false'
+    );
+  });
+
+  it('closes when a link in it is followed', async () => {
+    const user = userEvent.setup();
+    render(<SiteNav links={LINKS} />);
+
+    await user.click(screen.getByRole('button', { name: 'Open menu' }));
+    await user.click(screen.getByRole('link', { name: './blog' }));
+
+    expect(screen.getByRole('button', { name: 'Open menu' })).toBeInTheDocument();
+  });
+
+  it('closes on Escape', async () => {
+    const user = userEvent.setup();
+    render(<SiteNav links={LINKS} />);
+
+    await user.click(screen.getByRole('button', { name: 'Open menu' }));
+    await user.keyboard('{Escape}');
+
+    expect(screen.getByRole('button', { name: 'Open menu' })).toBeInTheDocument();
+  });
+
+  it('hands focus back to the button on Escape', async () => {
+    const user = userEvent.setup();
+    render(<SiteNav links={LINKS} />);
+
+    await user.click(screen.getByRole('button', { name: 'Open menu' }));
+    await user.tab();
+    await user.keyboard('{Escape}');
+
+    expect(screen.getByRole('button', { name: 'Open menu' })).toHaveFocus();
+  });
+
+  it('turns the bars into a cross while open', async () => {
+    const user = userEvent.setup();
+    render(<SiteNav links={LINKS} />);
+    const button = screen.getByRole('button', { name: 'Open menu' });
+
+    await user.click(button);
+
+    expect(button.querySelector('[data-bar="top"]')).toHaveClass('rotate-45');
+  });
+
+  it('turns solid while open so the page does not show through the links', async () => {
+    const user = userEvent.setup();
+    render(<SiteNav links={LINKS} />);
+
+    await user.click(screen.getByRole('button', { name: 'Open menu' }));
+
+    expect(screen.getByRole('banner')).toHaveClass('bg-canvas', 'sm:bg-canvas/80');
   });
 });

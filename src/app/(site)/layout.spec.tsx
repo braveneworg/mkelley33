@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-import { generateMetadata, MAIN_CLASSES, viewport } from '@/app/(site)/layout';
+import { generateMetadata, HTML_CLASSES, MAIN_CLASSES, viewport } from '@/app/(site)/layout';
 import { siteConfig } from '@/lib/site-config';
 import { makeSiteSettings } from '@/test/make-site-settings';
 
@@ -64,5 +64,13 @@ describe('site layout main element', () => {
     // needs the stretched (`flex-1`) containing block, and `mt-auto` on the
     // trigger only reaches the bottom of short pages under `flex-col`.
     expect(MAIN_CLASSES.split(' ')).toEqual(['flex', 'flex-1', 'flex-col']);
+  });
+});
+
+describe('site layout html element', () => {
+  it('pads anchor scrolling so a jumped-to section clears the sticky header', () => {
+    // 5rem clears the one-row phone header (the menu folds behind a
+    // hamburger); 6rem clears the taller desktop row with room to spare.
+    expect(HTML_CLASSES.split(' ')).toEqual(['scroll-pt-20', 'sm:scroll-pt-24']);
   });
 });

@@ -6,7 +6,7 @@ import { QuoteCta } from '@/components/services/quote-cta';
 import type { ServiceContent } from '@/lib/services-content';
 
 export const ServiceSection = ({ service }: { service: ServiceContent }) => (
-  <section className="border-edge scroll-mt-24 border-t py-10 first:border-t-0" id={service.slug}>
+  <section className="border-edge border-t py-10 first:border-t-0" id={service.slug}>
     <h2 className="text-phosphor font-mono text-xl font-bold">{service.slug}/</h2>
     <p className="text-fg mt-1 font-mono text-sm">{service.name}</p>
     <p className="text-fg-muted mt-4 max-w-2xl leading-relaxed">{service.pitch}</p>
