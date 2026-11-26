@@ -7,6 +7,7 @@
 import { capturePage, orNull, toLinkSeed } from '@/lib/seed/capture-pages';
 import type { SeedRefs } from '@/lib/seed/seed-text';
 import type { Page } from '@/payload-types';
+import { link, pageLink, paragraph, richText } from '@/test/lexical';
 
 const leftOut: string[] = [];
 
@@ -118,7 +119,9 @@ describe('capturePage', () => {
         blocks: [
           {
             blockType: 'cvExperience',
-            entries: [{ end: 'present', org: 'An Org', role: 'A Role', start: '2021' }],
+            entries: [
+              { end: 'present', org: richText(paragraph('An Org')), role: 'A Role', start: '2021' },
+            ],
             heading: 'Experience',
           },
         ],
@@ -127,5 +130,142 @@ describe('capturePage', () => {
     );
 
     expect(captured.blocks).toMatchObject([{ entries: [{ bullets: [], location: null }] }]);
+  });
+
+  /** A line of the CV with a link to the blog in it, stored and as the Seed carries it. */
+  const stored = richText(paragraph('See ', pageLink('id-of-blog', 'the blog')));
+  const carried = richText(paragraph('See ', pageLink('blog', 'the blog')));
+
+  it('names the Page a link in the summary points at by its address', async () => {
+    const captured = await capturePage(
+      page({
+        blocks: [{ blockType: 'cvSummary', heading: 'Summary', id: 'block-id', text: stored }],
+      }),
+      refs
+    );
+
+    expect(captured.blocks).toEqual([
+      { blockType: 'cvSummary', heading: 'Summary', text: carried },
+    ]);
+  });
+
+  it('names the Page a link in a group of skills points at by its address', async () => {
+    const captured = await capturePage(
+      page({
+        blocks: [
+          {
+            blockType: 'cvSkills',
+            groups: [{ id: 'row-id', items: stored, label: 'Languages' }],
+            heading: 'Skills',
+          },
+        ],
+      }),
+      refs
+    );
+
+    expect(captured.blocks).toEqual([
+      {
+        blockType: 'cvSkills',
+        groups: [{ items: carried, label: 'Languages' }],
+        heading: 'Skills',
+      },
+    ]);
+  });
+
+  it('names the Page a link in a role points at by its address', async () => {
+    const captured = await capturePage(
+      page({
+        blocks: [
+          {
+            blockType: 'cvExperience',
+            entries: [
+              {
+                bullets: [{ id: 'row-id', text: stored }],
+                end: 'present',
+                org: stored,
+                role: 'A Role',
+                start: '2021',
+              },
+            ],
+            heading: 'Experience',
+          },
+        ],
+      }),
+      refs
+    );
+
+    expect(captured.blocks).toMatchObject([{ entries: [{ bullets: [carried], org: carried }] }]);
+  });
+
+  it('names the Page a link in an item points at by its address', async () => {
+    const captured = await capturePage(
+      page({
+        blocks: [
+          {
+            blockType: 'cvEntries',
+            heading: 'Writing',
+            items: [{ detail: stored, id: 'row-id', title: stored }],
+          },
+        ],
+      }),
+      refs
+    );
+
+    expect(captured.blocks).toEqual([
+      { blockType: 'cvEntries', heading: 'Writing', items: [{ detail: carried, title: carried }] },
+    ]);
+  });
+
+  it('writes an item with no line under it as one whose detail is null', async () => {
+    const title = richText(paragraph('A project'));
+
+    const captured = await capturePage(
+      page({ blocks: [{ blockType: 'cvEntries', heading: 'Open source', items: [{ title }] }] }),
+      refs
+    );
+
+    expect(captured.blocks).toMatchObject([{ items: [{ detail: null, title }] }]);
+  });
+
+  /** The editor leaves an empty paragraph behind; the site shows no line for it. */
+  it('writes a line under an item that the owner emptied as null', async () => {
+    const captured = await capturePage(
+      page({
+        blocks: [
+          {
+            blockType: 'cvEntries',
+            heading: 'Open source',
+            items: [{ detail: richText(paragraph()), title: richText(paragraph('A project')) }],
+          },
+        ],
+      }),
+      refs
+    );
+
+    expect(captured.blocks).toMatchObject([{ items: [{ detail: null }] }]);
+  });
+
+  it('keeps a link in the CV to an address elsewhere', async () => {
+    const text = richText(paragraph('Built ', link('https://example.com', 'a project')));
+
+    const captured = await capturePage(
+      page({ blocks: [{ blockType: 'cvSummary', heading: 'Summary', text }] }),
+      refs
+    );
+
+    expect(captured.blocks).toMatchObject([{ text }]);
+  });
+
+  it('reports a link in the CV to a Page visitors are not served', async () => {
+    const text = richText(paragraph(pageLink('id-of-a-draft', 'a draft')));
+
+    await capturePage(
+      page({ blocks: [{ blockType: 'cvSummary', heading: 'Summary', text }] }),
+      refs
+    );
+
+    expect(leftOut).toEqual([
+      'the link on "a draft": it points at a Page that is not published, or at another kind of record',
+    ]);
   });
 });

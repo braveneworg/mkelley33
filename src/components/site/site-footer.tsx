@@ -4,6 +4,7 @@
 
 import Link from 'next/link';
 
+import { OutsideArrow } from '@/components/blocks/site-link';
 import { listSocialLinks, type SiteSettingsContent } from '@/lib/site-settings-content';
 
 interface FooterLink {
@@ -50,6 +51,7 @@ export const SiteFooter = ({ settings }: { settings: SiteSettingsContent }) => (
               target="_blank"
             >
               {link.label}
+              <OutsideArrow />
               <span className="sr-only"> (opens in new tab)</span>
             </a>
           </li>
@@ -64,6 +66,7 @@ export const SiteFooter = ({ settings }: { settings: SiteSettingsContent }) => (
                 target="_blank"
               >
                 {label}
+                <OutsideArrow />
                 <span className="sr-only"> (opens in new tab)</span>
               </a>
             ) : (

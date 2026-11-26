@@ -13,7 +13,8 @@
  *   carries its alt text. The Seed uploads it when it creates the Page —
  *   see `docs/lessons/seed/seed-inputs-stay-in-the-repo.md`.
  *
- * Both hold inside a Terminal's text as well (`seed-text.ts`).
+ * Both hold inside rich text as well (`seed-text.ts`): a Terminal's text,
+ * and every line of the CV, which takes links.
  *
  * Every optional value is written out as `null` rather than left out, so
  * that two Captures of the same content produce the same file.
@@ -23,7 +24,12 @@ import { z } from 'zod';
 
 import { FIXED_PAGE_SLUGS, PRIVACY_SLUG } from '@/lib/pages/page-address';
 import { missingPrivacyBlocks } from '@/lib/pages/privacy-page';
-import { pagesLinkedInText, picturesInText, richTextSchema } from '@/lib/seed/seed-text';
+import {
+  pagesLinkedInText,
+  picturesInText,
+  type RichText,
+  richTextSchema,
+} from '@/lib/seed/seed-text';
 import {
   httpsUrl,
   optionalText,
@@ -101,10 +107,10 @@ const blockSeedSchema = z.discriminatedUnion('blockType', [
     caption: optionalText,
     media: pictureSeedSchema,
   }),
-  z.strictObject({ blockType: z.literal('cvSummary'), heading: text, text }),
+  z.strictObject({ blockType: z.literal('cvSummary'), heading: text, text: richTextSchema }),
   z.strictObject({
     blockType: z.literal('cvSkills'),
-    groups: z.array(z.strictObject({ items: text, label: text })).min(1),
+    groups: z.array(z.strictObject({ items: richTextSchema, label: text })).min(1),
     heading: text,
   }),
   z.strictObject({
@@ -112,10 +118,10 @@ const blockSeedSchema = z.discriminatedUnion('blockType', [
     entries: z
       .array(
         z.strictObject({
-          bullets: z.array(text),
+          bullets: z.array(richTextSchema),
           end: text,
           location: optionalText,
-          org: text,
+          org: richTextSchema,
           role: text,
           start: text,
         })
@@ -126,7 +132,9 @@ const blockSeedSchema = z.discriminatedUnion('blockType', [
   z.strictObject({
     blockType: z.literal('cvEntries'),
     heading: text,
-    items: z.array(z.strictObject({ detail: optionalText, title: text })).min(1),
+    items: z
+      .array(z.strictObject({ detail: richTextSchema.nullable(), title: richTextSchema }))
+      .min(1),
   }),
   z.strictObject({ blockType: z.literal('resumeDownload') }),
   z.strictObject({ blockType: z.literal('cookieInventory') }),
@@ -167,10 +175,30 @@ const blockLinks = (block: BlockSeed): (LinkSeed | null)[] => {
   return block.blockType === 'timeline' ? [block.link] : [];
 };
 
+/** Every rich text a Block holds: a Terminal's text, and each line of the CV. */
+const textsOnBlock = (block: BlockSeed): RichText[] => {
+  switch (block.blockType) {
+    case 'cvEntries':
+      return block.items.flatMap(({ detail, title }) =>
+        detail === null ? [title] : [title, detail]
+      );
+    case 'cvExperience':
+      return block.entries.flatMap(({ bullets, org }) => [org, ...bullets]);
+    case 'cvSkills':
+      return block.groups.map(({ items }) => items);
+    case 'cvSummary':
+      return [block.text];
+    case 'terminal':
+      return [block.body];
+    default:
+      return [];
+  }
+};
+
 /** The addresses a Block points at: its own links, and the links in its text. */
 const pagesLinkedFromBlock = (block: BlockSeed): string[] => [
   ...blockLinks(block).flatMap((link) => (link === null || link.page === null ? [] : [link.page])),
-  ...(block.blockType === 'terminal' ? pagesLinkedInText(block.body) : []),
+  ...textsOnBlock(block).flatMap(pagesLinkedInText),
 ];
 
 /** The addresses of the Pages this Page links to. */
@@ -182,10 +210,9 @@ const picturesOnBlock = (block: BlockSeed): PictureSeed[] => {
   if (block.blockType === 'picture') {
     return [block.media];
   }
-  if (block.blockType !== 'terminal') {
-    return [];
-  }
-  return [...(block.picture === null ? [] : [block.picture]), ...picturesInText(block.body)];
+  // The picture beside a Terminal's text first, then the ones inside the text.
+  const beside = block.blockType === 'terminal' && block.picture !== null ? [block.picture] : [];
+  return [...beside, ...textsOnBlock(block).flatMap(picturesInText)];
 };
 
 /** Every picture the Page shows, which the Seed uploads when it creates the Page. */

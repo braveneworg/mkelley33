@@ -52,13 +52,21 @@ const linkTarget = ({
   return url ? { external: OUTSIDE.test(url), href: url } : null;
 };
 
-const TextLink = ({ children, target }: { children: React.ReactNode; target: LinkTarget }) => {
+const TextLink = ({
+  arrow,
+  children,
+  target,
+}: {
+  arrow: boolean;
+  children: React.ReactNode;
+  target: LinkTarget;
+}) => {
   const resolved = linkTarget(target);
   // The words stay; only the link is withheld.
   return resolved === null ? (
     <>{children}</>
   ) : (
-    <SiteAnchor external={resolved.external} href={resolved.href}>
+    <SiteAnchor arrow={arrow} external={resolved.external} href={resolved.href}>
       {children}
     </SiteAnchor>
   );
@@ -97,28 +105,57 @@ const TextHeading = ({ children, tag }: { children: React.ReactNode; tag: string
   );
 };
 
-const converters: JSXConvertersFunction<DefaultNodeTypes> = ({ defaultConverters }) => ({
-  ...defaultConverters,
-  autolink: ({ node, nodesToJSX }) => (
-    <TextLink target={node.fields}>{nodesToJSX({ nodes: node.children })}</TextLink>
-  ),
-  heading: ({ node, nodesToJSX }) => (
-    <TextHeading tag={node.tag}>{nodesToJSX({ nodes: node.children })}</TextHeading>
-  ),
-  link: ({ node, nodesToJSX }) => (
-    <TextLink target={node.fields}>{nodesToJSX({ nodes: node.children })}</TextLink>
-  ),
-});
+/** How each kind of node is shown; `arrows` puts one after a link that leaves the site. */
+const convertersWith =
+  (arrows: boolean): JSXConvertersFunction<DefaultNodeTypes> =>
+  ({ defaultConverters }) => ({
+    ...defaultConverters,
+    autolink: ({ node, nodesToJSX }) => (
+      <TextLink arrow={arrows} target={node.fields}>
+        {nodesToJSX({ nodes: node.children })}
+      </TextLink>
+    ),
+    heading: ({ node, nodesToJSX }) => (
+      <TextHeading tag={node.tag}>{nodesToJSX({ nodes: node.children })}</TextHeading>
+    ),
+    link: ({ node, nodesToJSX }) => (
+      <TextLink arrow={arrows} target={node.fields}>
+        {nodesToJSX({ nodes: node.children })}
+      </TextLink>
+    ),
+  });
+
+const PLAIN = convertersWith(false);
+const WITH_ARROWS = convertersWith(true);
+
+/** A link looks the same wherever the text is shown. */
+const LINKS = '[&_a]:text-phosphor [&_a]:underline [&_a]:underline-offset-4';
+
+/** The text as a column of prose, which is what most Blocks show. */
+const PROSE =
+  'text-fg max-w-2xl space-y-4 leading-relaxed [&_li]:pl-1 [&_ol]:list-decimal [&_ol]:space-y-2 [&_ol]:pl-6 [&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:pl-6';
 
 /**
  * The text the owner writes into a Block, in the site's own dress: headings
  * with their `#` marks, lists, and links that behave like every other link
  * on the site.
+ *
+ * It is a column of prose unless `className` says otherwise — a line of the
+ * CV sits inside a list or a heading's row and brings its own size and
+ * colour. `arrows` marks each link that leaves the site.
  */
-export const BlockText = ({ data }: { data: ComponentProps<typeof RichText>['data'] }) => (
+export const BlockText = ({
+  arrows = false,
+  className = PROSE,
+  data,
+}: {
+  arrows?: boolean;
+  className?: string;
+  data: ComponentProps<typeof RichText>['data'];
+}) => (
   <RichText
-    className="text-fg [&_a]:text-phosphor max-w-2xl space-y-4 leading-relaxed [&_a]:underline [&_a]:underline-offset-4 [&_li]:pl-1 [&_ol]:list-decimal [&_ol]:space-y-2 [&_ol]:pl-6 [&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:pl-6"
-    converters={converters}
+    className={`${LINKS} ${className}`}
+    converters={arrows ? WITH_ARROWS : PLAIN}
     data={data}
   />
 );
