@@ -3,6 +3,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 import { CvSection } from '@/components/blocks/cv-section';
+import { CvText } from '@/components/blocks/cv-text';
 import type { CvSkillsBlock } from '@/payload-types';
 
 export const CvSkills = ({ block: { groups, heading } }: { block: CvSkillsBlock }) => (
@@ -11,7 +12,9 @@ export const CvSkills = ({ block: { groups, heading } }: { block: CvSkillsBlock 
       {groups.map(({ id, items, label }) => (
         <div key={id ?? label}>
           <dt className="text-fg font-mono text-sm font-bold">{label}</dt>
-          <dd className="text-fg-muted mt-1 text-sm leading-relaxed">{items}</dd>
+          <dd className="text-fg-muted mt-1 text-sm leading-relaxed">
+            <CvText data={items} />
+          </dd>
         </div>
       ))}
     </dl>

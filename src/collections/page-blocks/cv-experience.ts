@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
+import { cvTextField } from '@/collections/page-blocks/cv-text';
+
 import type { Block } from 'payload';
 
 /**
@@ -24,7 +26,7 @@ export const CvExperienceBlock: Block = {
         {
           name: 'bullets',
           type: 'array',
-          fields: [{ name: 'text', type: 'textarea', required: true }],
+          fields: [cvTextField('text', { required: true })],
           labels: { plural: 'Points', singular: 'Point' },
         },
       ],

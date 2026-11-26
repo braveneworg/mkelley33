@@ -66,7 +66,7 @@ const pages: Seed['pages'] = [
         blockType: 'cvExperience',
         entries: [
           {
-            bullets: ['first point', 'second point'],
+            bullets: [paragraph('first point'), paragraph('second point')],
             end: 'present',
             location: null,
             org: 'Seed Org',
@@ -247,7 +247,9 @@ describe('fillSeed on an empty database', () => {
 
     const home = await findPublishedPage(payload, 'home');
     expect(home?.blocks?.[2]).toMatchObject({
-      entries: [{ bullets: [{ text: 'first point' }, { text: 'second point' }] }],
+      entries: [
+        { bullets: [{ text: paragraph('first point') }, { text: paragraph('second point') }] },
+      ],
     });
   });
 
@@ -791,6 +793,65 @@ describe('fillSeed on text that points elsewhere', () => {
     const report = await fillSeed(payload, withText);
 
     expect(report.uploads).toBe(2);
+  });
+});
+
+/** The CV's text takes links too, and the fill has to find them in every kind of CV Block. */
+describe('fillSeed on a CV whose text links to a Page', () => {
+  const toTheBlog = richText(words('Read ', docLink('pages', 'blog', 'the blog'), '.'));
+  /** What a read hands back for that text: the link holds the Page itself. */
+  const linked = {
+    root: {
+      children: [
+        {
+          children: [{}, { fields: { doc: { relationTo: 'pages', value: { slug: 'blog' } } } }, {}],
+        },
+      ],
+    },
+  };
+  // The CV is listed first: the fill has to create the blog before it.
+  const withCv = seedOf(
+    pageOf(
+      'cv',
+      { blockType: 'cvSummary', heading: 'Summary', text: toTheBlog },
+      {
+        blockType: 'cvSkills',
+        groups: [{ items: toTheBlog, label: 'Writing' }],
+        heading: 'Skills',
+      },
+      {
+        blockType: 'cvExperience',
+        entries: [
+          {
+            bullets: [toTheBlog],
+            end: 'present',
+            location: null,
+            org: 'An Org',
+            role: 'A Role',
+            start: '2021',
+          },
+        ],
+        heading: 'Experience',
+      },
+      {
+        blockType: 'cvEntries',
+        heading: 'Writing',
+        items: [{ detail: toTheBlog, title: toTheBlog }],
+      }
+    ),
+    pageOf('blog')
+  );
+
+  it('points every such link at the Page the Seed names by address', async () => {
+    await fillSeed(payload, withCv);
+
+    const cv = await findPublishedPage(payload, 'cv');
+    expect(cv?.blocks).toMatchObject([
+      { text: linked },
+      { groups: [{ items: linked }] },
+      { entries: [{ bullets: [{ text: linked }] }] },
+      { items: [{ detail: linked, title: linked }] },
+    ]);
   });
 });
 

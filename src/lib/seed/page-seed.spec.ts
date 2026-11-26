@@ -5,6 +5,7 @@
 // @vitest-environment node
 
 import { linkSeedSchema, pagesLinkedFrom, pagesSeedSchema } from '@/lib/seed/page-seed';
+import { link, pageLink, paragraph, richText } from '@/test/lexical';
 
 const meta = { description: null, title: null };
 
@@ -123,6 +124,65 @@ describe('pagesSeedSchema', () => {
   });
 });
 
+/** A line of the CV, as the Seed carries it. */
+const line = (words: string) => richText(paragraph(words));
+
+/** The four kinds of CV Block, each holding `text` wherever the owner can type a link. */
+const cvBlocks = (text: unknown) => [
+  { blockType: 'cvSummary', heading: 'Summary', text },
+  { blockType: 'cvSkills', groups: [{ items: text, label: 'Languages' }], heading: 'Skills' },
+  {
+    blockType: 'cvExperience',
+    entries: [
+      {
+        bullets: [text],
+        end: 'present',
+        location: null,
+        org: 'An Org',
+        role: 'A Role',
+        start: '2021',
+      },
+    ],
+    heading: 'Experience',
+  },
+  { blockType: 'cvEntries', heading: 'Education', items: [{ detail: text, title: text }] },
+];
+
+describe('the text of the CV in the Seed', () => {
+  it.each(cvBlocks(line('Ten years.')))('is rich text on a $blockType Block', (block) => {
+    expect(accepts([...FIXED, page('cv', [block])])).toBe(true);
+  });
+
+  it('may link to an address elsewhere', () => {
+    const text = richText(paragraph('Built ', link('https://example.com', 'a project')));
+
+    expect(accepts([...FIXED, page('cv', cvBlocks(text))])).toBe(true);
+  });
+
+  /** What these fields held before they took links. */
+  it.each(cvBlocks('Ten years.'))('is no longer plain text on a $blockType Block', (block) => {
+    expect(accepts([...FIXED, page('cv', [block])])).toBe(false);
+  });
+
+  it('may leave the line under an item out', () => {
+    const block = {
+      blockType: 'cvEntries',
+      heading: 'Open source',
+      items: [{ detail: null, title: line('A project') }],
+    };
+
+    expect(accepts([...FIXED, page('cv', [block])])).toBe(true);
+  });
+
+  /** A link names its Page by address, as it does in a Terminal's text. */
+  it.each(cvBlocks(richText(paragraph(pageLink('now', 'what I am doing')))))(
+    'cannot link to a Page the Seed does not carry from a $blockType Block',
+    (block) => {
+      expect(accepts([...FIXED, page('cv', [block])])).toBe(false);
+    }
+  );
+});
+
 describe('linkSeedSchema', () => {
   it('accepts a link to a Page', () => {
     expect(linkSeedSchema.safeParse({ label: 'blog', page: 'blog', url: null }).success).toBe(true);
@@ -166,4 +226,14 @@ describe('pagesLinkedFrom', () => {
 
     expect(home === undefined ? [] : pagesLinkedFrom(home)).toEqual(['blog', 'contact']);
   });
+
+  it.each(cvBlocks(richText(paragraph(pageLink('blog', 'the blog')))))(
+    'lists the Pages the text of a $blockType Block links to',
+    (block) => {
+      const parsed = pagesSeedSchema.parse([...FIXED, page('cv', [block])]);
+      const cv = parsed.find(({ slug }) => slug === 'cv');
+
+      expect(new Set(cv === undefined ? [] : pagesLinkedFrom(cv))).toEqual(new Set(['blog']));
+    }
+  );
 });

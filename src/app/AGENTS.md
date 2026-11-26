@@ -51,6 +51,14 @@ binding. Everything below it applies only once the thing it names exists.
   Payload's `RichText` directly: it gives headings, lists and links the
   site's look, keeps the Page to one main heading, and sends a link to a
   Page through `resolveLink` like every other.
+- A line of the CV is rich text too, of a narrower kind: `cvTextField` in
+  `src/collections/page-blocks/cv-text.ts` gives the owner words and links
+  and nothing else, and `CvText` shows it — `BlockText`, asked for an arrow
+  after each link that leaves the site (`SiteAnchor`'s `arrow`). Only the CV
+  asks for the arrow (owner's request, 2026-11-25). These fields were plain
+  text before, and the live site's Pages and every kept version of them
+  still store it: the field's read hook hands plain text over as rich text.
+  Nothing migrates those records, so the hook stays.
 - The privacy policy is a Page with two Blocks nobody can type into, the
   Cookie inventory and Manage preferences (`docs/adr/0002`). What they show
   comes from `src/lib/consent/`, so do not give either a field. The Page
@@ -92,7 +100,9 @@ binding. Everything below it applies only once the thing it names exists.
   via `next/font/google` in the site layout.
 - Icons: no icon library is installed, and the terminal aesthetic uses text
   glyphs — `aria-hidden`, with the meaning carried by adjacent text or the
-  control's `aria-label`. Exactly one component ships an inline `<svg>`:
+  control's `aria-label`. The arrow after a link that leaves the site is such
+  a glyph (`↗` in `site-link.tsx`, with the selector that keeps a phone from
+  drawing it as an emoji). Exactly one component ships an inline `<svg>`:
   `src/components/consent/consent-cookie-trigger.tsx`, whose cookie is a
   deliberate exception (owner decision, 2026-08-02) because the caret glyph is
   reserved for the terminal branding and an emoji cookie cannot be tinted

@@ -500,7 +500,24 @@ export interface PictureBlock {
  */
 export interface CvSummaryBlock {
   heading: string;
-  text: string;
+  /**
+   * Select words to turn them into a link.
+   */
+  text: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
   id?: string | null;
   blockName?: string | null;
   blockType: 'cvSummary';
@@ -513,7 +530,24 @@ export interface CvSkillsBlock {
   heading: string;
   groups: {
     label: string;
-    items: string;
+    /**
+     * Select words to turn them into a link.
+     */
+    items: {
+      root: {
+        type: string;
+        children: {
+          type: any;
+          version: number;
+          [k: string]: unknown;
+        }[];
+        direction: ('ltr' | 'rtl') | null;
+        format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+        indent: number;
+        version: number;
+      };
+      [k: string]: unknown;
+    };
     id?: string | null;
   }[];
   id?: string | null;
@@ -534,7 +568,24 @@ export interface CvExperienceBlock {
     end: string;
     bullets?:
       | {
-          text: string;
+          /**
+           * Select words to turn them into a link.
+           */
+          text: {
+            root: {
+              type: string;
+              children: {
+                type: any;
+                version: number;
+                [k: string]: unknown;
+              }[];
+              direction: ('ltr' | 'rtl') | null;
+              format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+              indent: number;
+              version: number;
+            };
+            [k: string]: unknown;
+          };
           id?: string | null;
         }[]
       | null;
@@ -551,8 +602,42 @@ export interface CvExperienceBlock {
 export interface CvEntriesBlock {
   heading: string;
   items: {
-    title: string;
-    detail?: string | null;
+    /**
+     * Select words to turn them into a link.
+     */
+    title: {
+      root: {
+        type: string;
+        children: {
+          type: any;
+          version: number;
+          [k: string]: unknown;
+        }[];
+        direction: ('ltr' | 'rtl') | null;
+        format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+        indent: number;
+        version: number;
+      };
+      [k: string]: unknown;
+    };
+    /**
+     * Select words to turn them into a link.
+     */
+    detail?: {
+      root: {
+        type: string;
+        children: {
+          type: any;
+          version: number;
+          [k: string]: unknown;
+        }[];
+        direction: ('ltr' | 'rtl') | null;
+        format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+        indent: number;
+        version: number;
+      };
+      [k: string]: unknown;
+    } | null;
     id?: string | null;
   }[];
   id?: string | null;

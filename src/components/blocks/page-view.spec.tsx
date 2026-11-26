@@ -6,6 +6,7 @@ import { render, screen } from '@testing-library/react';
 
 import { PageView } from '@/components/blocks/page-view';
 import type { Page } from '@/payload-types';
+import { paragraph, richText } from '@/test/lexical';
 
 // The Hero reads Site settings, so it is an async Server Component, which a
 // client render cannot await. Its own spec covers it; here it only has to
@@ -87,7 +88,9 @@ describe('PageView', () => {
     const { container } = render(
       <PageView
         page={page({
-          blocks: [{ blockType: 'cvSummary', heading: 'Summary', text: 'Ten years.' }],
+          blocks: [
+            { blockType: 'cvSummary', heading: 'Summary', text: richText(paragraph('Ten years.')) },
+          ],
           title: 'Owner Name',
         })}
       />

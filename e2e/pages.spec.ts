@@ -51,6 +51,20 @@ test('a Page that is not a Fixed Page is served at its address', async ({ page }
 });
 
 /**
+ * Every line of the CV is rich text, stored by the Seed and rendered by the
+ * site's own text component. A real server shows the words come out the
+ * other end as words.
+ */
+test('the CV shows the text the Seed carries', async ({ page }) => {
+  await page.goto('/cv');
+
+  await expect(page.getByRole('heading', { level: 2, name: 'Professional summary' })).toBeVisible();
+  await expect(
+    page.getByText(/^Senior full-stack software engineer with 10\+ years/)
+  ).toBeVisible();
+});
+
+/**
  * The privacy policy is a Page too, with two Blocks the owner cannot type
  * into (docs/adr/0002). A real server shows the whole chain: the Seed's
  * text, the consent code's own table, and a button that works once the
