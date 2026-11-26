@@ -14,6 +14,8 @@
  * type-check here until it has a case.
  */
 
+import { wordsOfText } from '@/lib/pages/text-words';
+import { inOrder } from '@/lib/seed/in-order';
 import type { BlockSeed, LinkSeed, PageSeed } from '@/lib/seed/page-seed';
 import { type SeedRefs, storedId, toSeedText } from '@/lib/seed/seed-text';
 import type { PictureSeed } from '@/lib/seed/seed-values';
@@ -98,50 +100,69 @@ const captureBare = (
   }
 };
 
-/** The CV's own kinds, which hold only what the owner typed. */
-const captureCv = (
-  block: Exclude<StoredBlock, Kind<'hero' | 'picture' | 'terminal' | 'timeline'> | TypedList>
-): BlockSeed => {
+type CvBlock = Kind<'cvEntries' | 'cvExperience' | 'cvSkills' | 'cvSummary'>;
+
+/**
+ * The CV's own kinds. Every line of them is rich text that takes links, so
+ * each goes through `toSeedText` as a Terminal's text does.
+ */
+const captureCv = async (block: CvBlock, refs: SeedRefs): Promise<BlockSeed> => {
   switch (block.blockType) {
     case 'cvEntries':
       return {
         blockType: 'cvEntries',
         heading: block.heading,
-        items: block.items.map(({ detail, title }) => ({ detail: orNull(detail), title })),
+        items: await inOrder(block.items, async ({ detail, title }) => ({
+          title: await toSeedText(title, refs),
+          // A line the owner emptied still holds an empty paragraph; the site shows none.
+          detail: detail && wordsOfText(detail) !== '' ? await toSeedText(detail, refs) : null,
+        })),
       };
     case 'cvExperience':
       return {
         blockType: 'cvExperience',
-        entries: block.entries.map(({ bullets, end, location, org, role, start }) => ({
-          bullets: (bullets ?? []).map(({ text }) => text),
-          end,
-          location: orNull(location),
-          org,
-          role,
-          start,
-        })),
+        entries: await inOrder(
+          block.entries,
+          async ({ bullets, end, location, org, role, start }) => {
+            // The organisation first: it comes before the points on the Page.
+            const organisation = await toSeedText(org, refs);
+            return {
+              bullets: await inOrder(bullets ?? [], ({ text }) => toSeedText(text, refs)),
+              end,
+              location: orNull(location),
+              org: organisation,
+              role,
+              start,
+            };
+          }
+        ),
         heading: block.heading,
       };
     case 'cvSkills':
       return {
         blockType: 'cvSkills',
-        groups: block.groups.map(({ items, label }) => ({ items, label })),
+        groups: await inOrder(block.groups, async ({ items, label }) => ({
+          items: await toSeedText(items, refs),
+          label,
+        })),
         heading: block.heading,
       };
     case 'cvSummary':
-      return { blockType: 'cvSummary', heading: block.heading, text: block.text };
-    default:
-      return captureBare(block);
+      return {
+        blockType: 'cvSummary',
+        heading: block.heading,
+        text: await toSeedText(block.text, refs),
+      };
+    default: {
+      const unknown: never = block;
+      return unknown;
+    }
   }
 };
 
-type TypedList = Kind<
-  'chipList' | 'definitionList' | 'latestPosts' | 'linkList' | 'newsletterSignup'
->;
-
 /** The kinds that hold a list or a line the owner typed, and point at nothing. */
 const captureTyped = (
-  block: Exclude<StoredBlock, Kind<'hero' | 'picture' | 'terminal' | 'timeline'>>
+  block: Exclude<StoredBlock, CvBlock | Kind<'hero' | 'picture' | 'terminal' | 'timeline'>>
 ): BlockSeed => {
   const command = 'command' in block ? orNull(block.command) : null;
   switch (block.blockType) {
@@ -172,7 +193,7 @@ const captureTyped = (
     case 'newsletterSignup':
       return { blockType: 'newsletterSignup', command, intro: orNull(block.intro) };
     default:
-      return captureCv(block);
+      return captureBare(block);
   }
 };
 
@@ -182,6 +203,11 @@ const captureTyped = (
  */
 const captureBlock = async (block: StoredBlock, refs: SeedRefs): Promise<BlockSeed | null> => {
   switch (block.blockType) {
+    case 'cvEntries':
+    case 'cvExperience':
+    case 'cvSkills':
+    case 'cvSummary':
+      return captureCv(block, refs);
     case 'hero':
       return {
         blockType: 'hero',

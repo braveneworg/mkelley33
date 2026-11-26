@@ -73,6 +73,18 @@ describe('SiteNav', () => {
     expect(link).toHaveAccessibleName(/\(opens in new tab\)$/);
   });
 
+  it('puts an arrow after a menu item that leaves the site', () => {
+    render(<SiteNav links={[{ external: true, href: 'https://example.com', label: 'docs' }]} />);
+
+    expect(screen.getByRole('link', { name: /^docs/ })).toHaveTextContent('↗');
+  });
+
+  it('puts no arrow after a menu item that stays on the site', () => {
+    render(<SiteNav links={[{ external: false, href: '/uses', label: './uses' }]} />);
+
+    expect(screen.getByRole('link', { name: './uses' })).not.toHaveTextContent('↗');
+  });
+
   it('sticks to the top of the viewport above the scrolling content', () => {
     render(<SiteNav links={LINKS} />);
 

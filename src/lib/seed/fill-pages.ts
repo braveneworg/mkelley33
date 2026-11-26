@@ -8,6 +8,7 @@
  * exists — published, draft or unpublished — is left exactly as it is.
  */
 
+import { inOrder } from '@/lib/seed/in-order';
 import type { BlockSeed, LinkSeed, PageSeed } from '@/lib/seed/page-seed';
 import { pagesLinkedFrom } from '@/lib/seed/page-seed';
 import { type StoredRefs, toStoredText } from '@/lib/seed/seed-text';
@@ -94,17 +95,44 @@ export const toLinkData = (
 const optionalLink = (link: LinkSeed | null, { pageIds }: StoredRefs): LinkData | undefined =>
   link === null ? undefined : toLinkData(link, pageIds);
 
-/** One Block as Payload stores it. Most kinds are stored just as the Seed has them. */
+/**
+ * One Block as Payload stores it. Most kinds are stored just as the Seed has
+ * them; the ones that hold a link, a picture or rich text have the Seed's
+ * names turned into ids.
+ */
 const toBlockData = async (block: BlockSeed, refs: StoredRefs) => {
   switch (block.blockType) {
+    case 'cvEntries':
+      return {
+        ...block,
+        items: await inOrder(block.items, async ({ detail, title }) => ({
+          title: await toStoredText(title, refs),
+          // Awaited after the title: properties are evaluated in this order.
+          detail: detail === null ? null : await toStoredText(detail, refs),
+        })),
+      };
     case 'cvExperience':
       return {
         ...block,
-        entries: block.entries.map(({ bullets, ...entry }) => ({
+        entries: await inOrder(block.entries, async ({ bullets, org, ...entry }) => ({
           ...entry,
-          bullets: bullets.map((text) => ({ text })),
+          org: await toStoredText(org, refs),
+          // Awaited after the organisation: properties are evaluated in this order.
+          bullets: await inOrder(bullets, async (text) => ({
+            text: await toStoredText(text, refs),
+          })),
         })),
       };
+    case 'cvSkills':
+      return {
+        ...block,
+        groups: await inOrder(block.groups, async ({ items, label }) => ({
+          items: await toStoredText(items, refs),
+          label,
+        })),
+      };
+    case 'cvSummary':
+      return { ...block, text: await toStoredText(block.text, refs) };
     case 'hero':
       return {
         ...block,

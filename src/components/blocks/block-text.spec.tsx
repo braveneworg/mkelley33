@@ -132,4 +132,33 @@ describe('BlockText', () => {
     expect(screen.queryByRole('link')).not.toBeInTheDocument();
     expect(screen.getByText('nowhere')).toBeInTheDocument();
   });
+
+  it('puts an arrow after a link that leaves the site when asked to', () => {
+    const body = richText(paragraph(link('https://example.com', 'the docs')));
+
+    render(<BlockText arrows data={body} />);
+
+    expect(screen.getByRole('link')).toHaveTextContent('↗');
+  });
+
+  it('puts no arrow after a link to a Page, even when asked to', () => {
+    render(<BlockText arrows data={richText(paragraph(pageLink(usesPage, 'what I use')))} />);
+
+    expect(screen.getByRole('link')).toHaveTextContent(/^what I use$/);
+  });
+
+  it('shows no arrow unless asked to', () => {
+    render(<BlockText data={richText(paragraph(link('https://example.com', 'the docs')))} />);
+
+    expect(screen.getByRole('link')).not.toHaveTextContent('↗');
+  });
+
+  it('wears the classes it is given in place of its own column', () => {
+    const { container } = render(
+      <BlockText className="text-fg-muted text-sm" data={richText(paragraph('TypeScript'))} />
+    );
+
+    expect(container.firstElementChild).toHaveClass('text-fg-muted', 'text-sm');
+    expect(container.firstElementChild).not.toHaveClass('max-w-2xl');
+  });
 });

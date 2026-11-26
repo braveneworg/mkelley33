@@ -9,6 +9,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
+import { OutsideArrow } from '@/components/blocks/site-link';
 import { ThemeToggle } from '@/components/site/theme-toggle';
 import type { ResolvedLink } from '@/lib/pages/links';
 
@@ -119,6 +120,7 @@ export const SiteNav = ({ links }: { links: readonly ResolvedLink[] }) => {
                       target="_blank"
                     >
                       {label}
+                      <OutsideArrow />
                       <span className="sr-only"> (opens in new tab)</span>
                     </a>
                   ) : (

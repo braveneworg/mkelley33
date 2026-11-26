@@ -50,7 +50,8 @@ binding. Everything below it applies only once the thing it names exists.
   `capture-seed.ts` reads what a database publishes, `capture-pages.ts`
   maps a stored Page back, `capture-files.ts` names the files,
   `read-upload.ts` fetches an upload's bytes, and `write-seed.ts` with
-  `seed-json.ts` rewrites the directory. `stored-fields.ts` is the one place
+  `seed-json.ts` rewrites the directory. `in-order.ts` maps a list one item
+  at a time, for both directions. `stored-fields.ts` is the one place
   that reads a stored record directly, to tell a field a record has never
   had from one the owner emptied. Read `docs/lessons/seed/` before changing
   any of them.
@@ -60,8 +61,10 @@ binding. Everything below it applies only once the thing it names exists.
   Page cannot be published without), `links.ts` (a stored link into an
   `href`, or nothing when its Page is unpublished or deleted), `load-page.ts` (the Page
   a route renders — published for a visitor, the newest draft for the
-  owner's preview), and `preview.ts` (whether a request is previewing, and
-  which paths a preview may redirect to).
+  owner's preview), `preview.ts` (whether a request is previewing, and
+  which paths a preview may redirect to), and `text-words.ts` (the words of
+  a rich text, which is how to ask whether one the owner emptied says
+  anything).
 - `media-backup/` — the files half of a Backup (`pnpm media:backup` /
   `pnpm media:restore`; the records half is `db-backup.ts`). `snapshot.ts`
   holds the pure decisions: where a snapshot goes, its name, its manifest's
