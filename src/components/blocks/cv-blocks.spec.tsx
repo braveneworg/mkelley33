@@ -103,7 +103,7 @@ describe('CvExperience', () => {
     bullets: [{ text: line('Shipped the thing.') }, { text: line('Tested the thing.') }],
     end: 'present',
     location: 'Remote',
-    org: 'Example Co',
+    org: line('Example Co'),
     role: 'Senior Engineer',
     start: '2021',
   };
@@ -115,8 +115,8 @@ describe('CvExperience', () => {
       />
     );
 
-    expect(screen.getByRole('heading', { level: 3, name: 'Senior Engineer' })).toBeInTheDocument();
-    expect(screen.getByText('Example Co · Remote · 2021–present')).toBeInTheDocument();
+    const role = screen.getByRole('heading', { level: 3, name: 'Senior Engineer' });
+    expect(role.nextElementSibling).toHaveTextContent(/^Example Co · Remote · 2021–present$/);
   });
 
   it('leaves the place out when the owner did', () => {
@@ -130,7 +130,9 @@ describe('CvExperience', () => {
       />
     );
 
-    expect(screen.getByText('Example Co · 2021–present')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 3 }).nextElementSibling).toHaveTextContent(
+      /^Example Co · 2021–present$/
+    );
   });
 
   it('lists the points under the role', () => {
@@ -156,6 +158,20 @@ describe('CvExperience', () => {
     );
 
     expect(screen.getAllByRole('list')).toHaveLength(1);
+  });
+
+  it('follows a link on the organisation, and marks one that leaves the site', () => {
+    const org = richText(paragraph(link('https://example.com', 'Example Co')));
+
+    render(
+      <CvExperience
+        block={{ blockType: 'cvExperience', entries: [{ ...entry, org }], heading: 'Experience' }}
+      />
+    );
+
+    const anchor = screen.getByRole('link', { name: /^Example Co/ });
+    expect(anchor).toHaveAttribute('href', 'https://example.com');
+    expect(anchor).toHaveTextContent('↗');
   });
 
   it('marks a link in a point that leaves the site', () => {

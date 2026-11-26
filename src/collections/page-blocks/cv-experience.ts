@@ -19,7 +19,7 @@ export const CvExperienceBlock: Block = {
       type: 'array',
       fields: [
         { name: 'role', type: 'text', required: true },
-        { name: 'org', type: 'text', label: 'Organisation', required: true },
+        cvTextField('org', { label: 'Organisation', required: true }),
         { name: 'location', type: 'text' },
         { name: 'start', type: 'text', required: true },
         { name: 'end', type: 'text', required: true },

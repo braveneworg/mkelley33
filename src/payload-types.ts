@@ -500,9 +500,6 @@ export interface PictureBlock {
  */
 export interface CvSummaryBlock {
   heading: string;
-  /**
-   * Select words to turn them into a link.
-   */
   text: {
     root: {
       type: string;
@@ -530,9 +527,6 @@ export interface CvSkillsBlock {
   heading: string;
   groups: {
     label: string;
-    /**
-     * Select words to turn them into a link.
-     */
     items: {
       root: {
         type: string;
@@ -562,15 +556,26 @@ export interface CvExperienceBlock {
   heading: string;
   entries: {
     role: string;
-    org: string;
+    org: {
+      root: {
+        type: string;
+        children: {
+          type: any;
+          version: number;
+          [k: string]: unknown;
+        }[];
+        direction: ('ltr' | 'rtl') | null;
+        format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+        indent: number;
+        version: number;
+      };
+      [k: string]: unknown;
+    };
     location?: string | null;
     start: string;
     end: string;
     bullets?:
       | {
-          /**
-           * Select words to turn them into a link.
-           */
           text: {
             root: {
               type: string;
@@ -602,9 +607,6 @@ export interface CvExperienceBlock {
 export interface CvEntriesBlock {
   heading: string;
   items: {
-    /**
-     * Select words to turn them into a link.
-     */
     title: {
       root: {
         type: string;
@@ -620,9 +622,6 @@ export interface CvEntriesBlock {
       };
       [k: string]: unknown;
     };
-    /**
-     * Select words to turn them into a link.
-     */
     detail?: {
       root: {
         type: string;

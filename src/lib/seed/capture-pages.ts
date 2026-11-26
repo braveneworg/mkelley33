@@ -123,14 +123,18 @@ const captureCv = async (block: CvBlock, refs: SeedRefs): Promise<BlockSeed> => 
         blockType: 'cvExperience',
         entries: await inOrder(
           block.entries,
-          async ({ bullets, end, location, org, role, start }) => ({
-            bullets: await inOrder(bullets ?? [], ({ text }) => toSeedText(text, refs)),
-            end,
-            location: orNull(location),
-            org,
-            role,
-            start,
-          })
+          async ({ bullets, end, location, org, role, start }) => {
+            // The organisation first: it comes before the points on the Page.
+            const organisation = await toSeedText(org, refs);
+            return {
+              bullets: await inOrder(bullets ?? [], ({ text }) => toSeedText(text, refs)),
+              end,
+              location: orNull(location),
+              org: organisation,
+              role,
+              start,
+            };
+          }
         ),
         heading: block.heading,
       };

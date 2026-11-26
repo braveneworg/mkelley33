@@ -138,7 +138,7 @@ const cvBlocks = (text: unknown) => [
         bullets: [text],
         end: 'present',
         location: null,
-        org: 'An Org',
+        org: text,
         role: 'A Role',
         start: '2021',
       },

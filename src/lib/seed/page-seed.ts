@@ -121,7 +121,7 @@ const blockSeedSchema = z.discriminatedUnion('blockType', [
           bullets: z.array(richTextSchema),
           end: text,
           location: optionalText,
-          org: text,
+          org: richTextSchema,
           role: text,
           start: text,
         })
@@ -183,7 +183,7 @@ const textsOnBlock = (block: BlockSeed): RichText[] => {
         detail === null ? [title] : [title, detail]
       );
     case 'cvExperience':
-      return block.entries.flatMap(({ bullets }) => bullets);
+      return block.entries.flatMap(({ bullets, org }) => [org, ...bullets]);
     case 'cvSkills':
       return block.groups.map(({ items }) => items);
     case 'cvSummary':

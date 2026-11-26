@@ -69,7 +69,7 @@ const pages: Seed['pages'] = [
             bullets: [paragraph('first point'), paragraph('second point')],
             end: 'present',
             location: null,
-            org: 'Seed Org',
+            org: paragraph('Seed Org'),
             role: 'Seed Role',
             start: '2021',
           },
@@ -826,7 +826,7 @@ describe('fillSeed on a CV whose text links to a Page', () => {
             bullets: [toTheBlog],
             end: 'present',
             location: null,
-            org: 'An Org',
+            org: toTheBlog,
             role: 'A Role',
             start: '2021',
           },
@@ -849,7 +849,7 @@ describe('fillSeed on a CV whose text links to a Page', () => {
     expect(cv?.blocks).toMatchObject([
       { text: linked },
       { groups: [{ items: linked }] },
-      { entries: [{ bullets: [{ text: linked }] }] },
+      { entries: [{ bullets: [{ text: linked }], org: linked }] },
       { items: [{ detail: linked, title: linked }] },
     ]);
   });

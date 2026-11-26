@@ -119,7 +119,9 @@ describe('capturePage', () => {
         blocks: [
           {
             blockType: 'cvExperience',
-            entries: [{ end: 'present', org: 'An Org', role: 'A Role', start: '2021' }],
+            entries: [
+              { end: 'present', org: richText(paragraph('An Org')), role: 'A Role', start: '2021' },
+            ],
             heading: 'Experience',
           },
         ],
@@ -170,7 +172,7 @@ describe('capturePage', () => {
     ]);
   });
 
-  it('names the Page a link in a point points at by its address', async () => {
+  it('names the Page a link in a role points at by its address', async () => {
     const captured = await capturePage(
       page({
         blocks: [
@@ -180,7 +182,7 @@ describe('capturePage', () => {
               {
                 bullets: [{ id: 'row-id', text: stored }],
                 end: 'present',
-                org: 'An Org',
+                org: stored,
                 role: 'A Role',
                 start: '2021',
               },
@@ -192,7 +194,7 @@ describe('capturePage', () => {
       refs
     );
 
-    expect(captured.blocks).toMatchObject([{ entries: [{ bullets: [carried] }] }]);
+    expect(captured.blocks).toMatchObject([{ entries: [{ bullets: [carried], org: carried }] }]);
   });
 
   it('names the Page a link in an item points at by its address', async () => {

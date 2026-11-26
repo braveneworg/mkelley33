@@ -7,19 +7,27 @@ import { CvText } from '@/components/blocks/cv-text';
 import { wordsOfText } from '@/lib/pages/text-words';
 import type { CvExperienceBlock } from '@/payload-types';
 
-/** `Org · Place · 2021–present`, without the place when the owner left it out. */
-const byline = (parts: (null | string | undefined)[]): string =>
-  parts.filter((part) => Boolean(part)).join(' · ');
+/**
+ * ` · Place · 2021–present`, to follow the organisation on its line;
+ * without the place when the owner left it out.
+ */
+const whereAndWhen = (parts: (null | string | undefined)[]): string =>
+  parts
+    .filter((part) => Boolean(part))
+    .map((part) => ` · ${part}`)
+    .join('');
 
 export const CvExperience = ({ block: { entries, heading } }: { block: CvExperienceBlock }) => (
   <CvSection heading={heading}>
     <ol className="mt-3 space-y-8">
       {entries.map(({ bullets, end, id, location, org, role, start }) => (
-        <li key={id ?? `${role}-${org}-${start}`}>
+        <li key={id ?? `${role}-${wordsOfText(org)}-${start}`}>
           <h3 className="text-fg font-mono text-base font-bold">{role}</h3>
-          <p className="text-fg-muted mt-1 font-mono text-sm">
-            {byline([org, location, `${start}–${end}`])}
-          </p>
+          {/* One line: the organisation, which takes links, then where and when. */}
+          <div className="text-fg-muted mt-1 font-mono text-sm">
+            <CvText className="inline [&_p]:inline" data={org} />
+            {whereAndWhen([location, `${start}–${end}`])}
+          </div>
           {bullets && bullets.length > 0 ? (
             <ul className="text-fg mt-3 space-y-2 text-sm leading-relaxed">
               {bullets.map(({ id: bulletId, text }) => (

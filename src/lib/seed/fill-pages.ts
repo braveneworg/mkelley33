@@ -114,8 +114,10 @@ const toBlockData = async (block: BlockSeed, refs: StoredRefs) => {
     case 'cvExperience':
       return {
         ...block,
-        entries: await inOrder(block.entries, async ({ bullets, ...entry }) => ({
+        entries: await inOrder(block.entries, async ({ bullets, org, ...entry }) => ({
           ...entry,
+          org: await toStoredText(org, refs),
+          // Awaited after the organisation: properties are evaluated in this order.
           bullets: await inOrder(bullets, async (text) => ({
             text: await toStoredText(text, refs),
           })),
