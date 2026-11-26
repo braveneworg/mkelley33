@@ -14,6 +14,6 @@ export const CvDownloadLink = ({ resumePdf }: { resumePdf: string }) => (
     href={resumePdf}
     onClick={() => trackEvent('cv_download', { format: 'pdf' })}
   >
-    Download PDF ↓
+    Download Resume (PDF) ↓
   </a>
 );

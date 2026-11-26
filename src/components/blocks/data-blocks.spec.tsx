@@ -177,7 +177,7 @@ describe('ResumeDownload', () => {
 
     render(await ResumeDownload());
 
-    expect(screen.getByRole('link', { name: /download pdf/i })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /download resume \(pdf\)/i })).toHaveAttribute(
       'href',
       '/michaux-kelley-resume.pdf'
     );

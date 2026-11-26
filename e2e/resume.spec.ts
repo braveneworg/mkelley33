@@ -24,7 +24,7 @@ test('the CV page links to the Resume address', async ({ page }) => {
   await seedDecidedConsent(page);
   await page.goto('/cv');
 
-  await expect(page.getByRole('link', { name: /download pdf/i })).toHaveAttribute(
+  await expect(page.getByRole('link', { name: /download resume \(pdf\)/i })).toHaveAttribute(
     'href',
     '/michaux-kelley-resume.pdf'
   );
