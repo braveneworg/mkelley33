@@ -95,8 +95,6 @@ const cvTextEditor = lexicalEditor({
   ],
 });
 
-const DESCRIPTION = 'Select words to turn them into a link.';
-
 /**
  * A line or a paragraph of the CV, which the owner can put links in. The
  * site shows it through `CvText`.
@@ -107,7 +105,6 @@ export const cvTextField = (
 ): RichTextField => ({
   name,
   type: 'richText',
-  admin: { description: DESCRIPTION },
   editor: cvTextEditor,
   hooks: { afterRead: [readPlainTextAsRichText] },
   ...(label === undefined ? {} : { label }),
