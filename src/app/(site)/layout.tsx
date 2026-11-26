@@ -78,6 +78,13 @@ export const viewport: Viewport = {
  */
 export const MAIN_CLASSES = 'flex flex-1 flex-col';
 
+/**
+ * Fragment jumps (skip link, /services#slug) stop clear of the sticky header:
+ * 5rem over the one-row phone header (~53px, links behind the hamburger),
+ * 6rem over the desktop row.
+ */
+export const HTML_CLASSES = 'scroll-pt-20 sm:scroll-pt-24';
+
 /** The schema.org Person the layout publishes on every page. */
 interface PersonJsonLd {
   '@context': 'https://schema.org';
@@ -104,7 +111,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     isPreviewing(),
   ]);
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html className={HTML_CLASSES} lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
         <PaletteHotkey />
         <a
