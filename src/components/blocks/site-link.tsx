@@ -20,13 +20,28 @@ const LEAVES_THE_SITE = '\u2197\uFE0E';
 const WORD_JOINER = '\u2060';
 
 /**
- * The one way the site renders a link: an address on this site through the
+ * The arrow that shows a link leaves the site, to go inside the link after
+ * its words. It is decoration — the link's spoken "(opens in new tab)"
+ * already says so — and is left off paper, where nothing can be followed.
+ *
+ * `SiteAnchor` puts it there when asked. The header and the footer build
+ * their own anchors, for `aria-current` and `rel="me"`, and place it
+ * themselves.
+ */
+export const OutsideArrow = () => (
+  <span aria-hidden="true" className="whitespace-nowrap">
+    {WORD_JOINER}
+    {/* A block of its own, so the link's underline stops at the words. */}
+    <span className="ml-0.5 inline-block print:hidden">{LEAVES_THE_SITE}</span>
+  </span>
+);
+
+/**
+ * The one way a Block renders a link: an address on this site through the
  * router, an address elsewhere in a new tab with the `rel` that keeps the
  * opener safe and a spoken hint that it leaves.
  *
  * With `arrow`, a link that leaves also shows it: an arrow after its words.
- * The arrow is decoration — the spoken hint already says so — and is left
- * off paper, where nothing can be followed.
  */
 export const SiteAnchor = ({
   arrow = false,
@@ -44,13 +59,7 @@ export const SiteAnchor = ({
   external ? (
     <a className={className} href={href} rel="noopener noreferrer" target="_blank">
       {children}
-      {arrow ? (
-        <span aria-hidden="true" className="whitespace-nowrap">
-          {WORD_JOINER}
-          {/* A block of its own, so the link's underline stops at the words. */}
-          <span className="ml-0.5 inline-block print:hidden">{LEAVES_THE_SITE}</span>
-        </span>
-      ) : null}
+      {arrow ? <OutsideArrow /> : null}
       <span className="sr-only"> (opens in new tab)</span>
     </a>
   ) : (

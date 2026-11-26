@@ -54,8 +54,11 @@ binding. Everything below it applies only once the thing it names exists.
 - A line of the CV is rich text too, of a narrower kind: `cvTextField` in
   `src/collections/page-blocks/cv-text.ts` gives the owner words and links
   and nothing else, and `CvText` shows it — `BlockText`, asked for an arrow
-  after each link that leaves the site (`SiteAnchor`'s `arrow`). Only the CV
-  asks for the arrow (owner's request, 2026-11-25). These fields were plain
+  after each link that leaves the site (`SiteAnchor`'s `arrow`). The arrow
+  itself is `OutsideArrow`; the header menu and the footer, which build
+  their own anchors, place it after every link that leaves too. The other
+  Blocks' links do not show it: the owner asked for the CV, the menus and
+  the footer (2026-11-25). These fields were plain
   text before, and the live site's Pages and every kept version of them
   still store it: the field's read hook hands plain text over as rich text.
   Nothing migrates those records, so the hook stays.

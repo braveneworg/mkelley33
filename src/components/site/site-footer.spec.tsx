@@ -122,4 +122,30 @@ describe('SiteFooter', () => {
 
     expect(screen.getByRole('link', { name: /^now/ })).toHaveAttribute('target', '_blank');
   });
+
+  /** The arrow says in sight what "(opens in new tab)" says aloud. */
+  it.each([/^github/, /^linkedin/, /^bluesky/, /^source/])(
+    'puts an arrow after the %s link, which leaves the site',
+    (name) => {
+      render(<SiteFooter settings={settings} />);
+
+      expect(screen.getByRole('link', { name })).toHaveTextContent('↗');
+    }
+  );
+
+  it('puts an arrow after a footer menu item that leads elsewhere', () => {
+    const footerMenu = [{ external: true, href: 'https://example.com/now', label: 'now' }];
+    render(<SiteFooter settings={{ ...settings, footerMenu }} />);
+
+    expect(screen.getByRole('link', { name: /^now/ })).toHaveTextContent('↗');
+  });
+
+  it.each(['uses', 'rss', 'privacy'])(
+    'puts no arrow after the %s link, which stays on the site',
+    (name) => {
+      render(<SiteFooter settings={settings} />);
+
+      expect(screen.getByRole('link', { name })).not.toHaveTextContent('↗');
+    }
+  );
 });
