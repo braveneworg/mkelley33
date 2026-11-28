@@ -26,7 +26,17 @@ const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
 
 export default buildConfig({
-  admin: { user: 'users' },
+  admin: {
+    components: {
+      views: {
+        // Payload's sign-in screen, with the Turnstile challenge inside its
+        // form. `requireLoginChallenge` on the Users collection refuses a
+        // sign-in without the token only this screen sends.
+        login: { Component: '@/components/admin/login-view#LoginView' },
+      },
+    },
+    user: 'users',
+  },
   collections: [
     Users,
     Pages,
