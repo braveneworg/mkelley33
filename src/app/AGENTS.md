@@ -72,6 +72,28 @@ binding. Everything below it applies only once the thing it names exists.
   in `src/lib/seed/privacy-claims.spec.tsx`: when the code's behaviour
   changes, change the Seed's text with it.
 
+## The admin
+
+- The admin is Payload's, with one screen of this repo's:
+  `src/components/admin/` holds the sign-in screen (`login-view.tsx`, its
+  form, and `login-challenge.tsx`, the Turnstile widget), registered as
+  `admin.components.views.login` in `src/payload.config.ts`. It replaces
+  Payload's because the token has to be a field of the sign-in form and
+  Payload's form takes no extra field. The form is rebuilt from Payload's
+  own parts; when upgrading Payload, compare it with
+  `@payloadcms/next/dist/views/Login/`.
+- The screen is not what protects the admin. `requireLoginChallenge` on the
+  Users collection refuses any sign-in without a token Cloudflare accepts,
+  before the password is looked at, whichever way the sign-in arrives. Do
+  not move that check into the form, a route or a view.
+- A component Payload renders is found through the import map. After adding
+  or renaming one, run `pnpm generate:importmap` and commit the result;
+  `src/payload-import-map.spec.ts` pins the entries a missing one of which
+  blanks the admin.
+- `@payloadcms/ui` is imported only under `src/components/admin/`, and is
+  kept at the same version as `payload`. The admin has no Tailwind: the few
+  rules its components need are in `src/app/(payload)/custom.scss`.
+
 ## Forms
 
 - React Hook Form + Zod via `zodResolver` (both installed; used by the contact

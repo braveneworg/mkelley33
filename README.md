@@ -38,7 +38,8 @@ with AI tooling (Claude Code, MCP). Its pages:
 - **Newsletter** (`/newsletter`) — double-opt-in subscribe flow with confirm
   and unsubscribe pages.
 - **Admin** (`/admin`) — the Payload CMS admin panel for managing posts,
-  services, media, subscribers, and contact submissions.
+  services, media, subscribers, and contact submissions. Signing in passes
+  Cloudflare Turnstile first; a sign-in without it is refused.
 
 The site is a PWA (Serwist service worker with an offline page), ships a
 command palette (`⌘K`), supports light/dark themes, and tracks conversions
