@@ -103,7 +103,9 @@ violate these rules. Follow them when introducing the thing they describe;
 do not file a bug because today's code does not comply.
 
 - **Auth and rate limiting.** `src/lib/decorators/` does not exist and no
-  route or action is gated; the Payload admin handles its own auth. When
+  route or action is gated; the Payload admin handles its own auth (its
+  sign-in passes Cloudflare Turnstile first — see "The admin" in
+  [`src/app/AGENTS.md`](app/AGENTS.md)). When
   adding protected routes: `withAuth` / `withAdmin` / `withRateLimit` in
   `src/lib/decorators/`, and gate every protected route and action through
   them.

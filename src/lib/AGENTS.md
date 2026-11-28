@@ -35,9 +35,16 @@ binding. Everything below it applies only once the thing it names exists.
   convenience over a memoized default mailer, and `templates.ts` holds the
   message bodies.
 - `turnstile/` — split at the client/server seam. `site-key.ts` reads only
-  `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and is imported by the form hook;
-  `verify.ts` reads `TURNSTILE_SECRET_KEY`, is marked `server-only`, and is
-  imported by `actions/run-form-submission.ts` alone. Never merge them: one
+  `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and is imported by the form hook and the
+  admin's sign-in screen;
+  `verify.ts` reads `TURNSTILE_SECRET_KEY`, is marked `server-only`, and has
+  two callers: `actions/run-form-submission.ts` imports it, and
+  `src/collections/hooks/require-login-challenge.ts` — the check on the
+  admin's sign-in — loads it with `import()` when a sign-in arrives. That
+  hook is part of the Payload config, which plain Node also loads (the Seed,
+  the generators, every integration spec), where `server-only` throws on
+  import; anything else the config reaches must load `verify.ts` the same
+  way. Never merge them: one
   file exporting both halves puts the secret-reading code in the client
   graph and leaves tree-shaking as the only thing removing it.
 - `seed/` — the Seed, and its two directions. Reading it:

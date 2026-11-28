@@ -191,7 +191,7 @@ new records" below.
 `NODE_ENV=production` (Vercel sets `VERCEL_ENV=preview`, not `NODE_ENV`), so
 it fails **closed** there too: give preview the `production,preview` target
 for that variable, or accept that every contact and newsletter submission on
-a preview URL is rejected.
+a preview URL is rejected and that nobody can sign in to its admin.
 
 Replacing an existing value — the only way to change a sensitive one —
 takes `--force`:
@@ -416,7 +416,8 @@ reviewed commit.
 `TURNSTILE_SECRET_KEY` is the exception: `src/lib/turnstile/verify.ts` fails
 **closed** when it is unset and `NODE_ENV` is `production`, so removing it
 from the manifest does not soft-launch the spam gate — it rejects every
-contact, newsletter, and comment submission. It also fails closed when
+contact, newsletter, and comment submission, and every sign-in to the admin
+(below). It also fails closed when
 `VERCEL_ENV` is `production` and the value is one of Cloudflare's published
 test secrets: a test secret makes siteverify accept every token, and the
 preflight cannot tell it from a real one because a sensitive value pulls as a
@@ -430,6 +431,16 @@ To confirm the stored secret is the widget's own, submit one real form on the
 deployed site and watch the widget's **Token validation** panel in the
 Turnstile dashboard: the Siteverify request count must move. Nothing on the
 Vercel side can check it.
+
+The admin's sign-in passes the same check with the same two keys:
+`requireLoginChallenge` on the Users collection refuses a sign-in whose
+Turnstile token `verify.ts` does not accept, before the password is looked
+at. So whatever makes the forms reject every submission — a missing secret,
+a test secret on production, a secret that is not this widget's, a hostname
+the widget does not list — also keeps the owner out of `/admin`, and there
+is no way in around it. Make the form check above before a deploy that
+changes either key, and fix a lock-out the same way as a broken form: put
+the right value in Vercel and redeploy.
 
 When the app starts reading a new env var, add it to the manifest — the
 spec in `src/lib/deploy/env-manifest.spec.ts` pins the list, so the change

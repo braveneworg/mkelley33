@@ -47,6 +47,25 @@ describe('payload import map', () => {
 });
 
 /**
+ * The admin's sign-in screen is replaced by one that carries the Turnstile
+ * challenge (`src/components/admin/login-view.tsx`). Payload finds a custom
+ * view through the import map alone, so a config that names the view and a
+ * map that lacks it is the same blank admin as above — on the one screen
+ * there is no getting past.
+ */
+describe('the admin sign-in screen', () => {
+  it("is the one the config registers in place of Payload's own", () => {
+    expect(payloadConfig()).toMatch(
+      /login: \{ Component: '@\/components\/admin\/login-view#LoginView' \}/
+    );
+  });
+
+  it('is in the import map', () => {
+    expect(importMap()).toMatch(/"@\/components\/admin\/login-view#LoginView":/);
+  });
+});
+
+/**
  * The upstream `payload generate:importmap` CLI dies with
  * ERR_REQUIRE_ASYNC_MODULE (payloadcms/payload#16378), so the script must go
  * through the same fallback shape as `generate:types`: the tsx CLI calling

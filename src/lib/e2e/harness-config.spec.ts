@@ -10,10 +10,13 @@ import {
   CONFIRM_TOKEN_PATTERN,
   DB_PROBE_TOKEN,
   E2E_BASE_URL,
+  E2E_OWNER,
   E2E_PORT,
   dbProbeUrl,
   makeEnv,
+  ownerSeedEnv,
 } from '@/lib/e2e/harness-config';
+import { seedFirstUserSchema } from '@/lib/validation/seed-first-user';
 
 /**
  * `e2e/AGENTS.md` states the harness's invariants in prose; this turns each
@@ -170,5 +173,31 @@ describe('coupling with the playwright spec', () => {
 
   it('leaves no second copy of the confirm-token pattern in the newsletter spec', () => {
     expect(newsletterSpec).not.toContain('[0-9a-f]{64}');
+  });
+});
+
+describe("the suite's owner account", () => {
+  /**
+   * `scripts/seed-first-user.ts` refuses an account its schema rejects, and
+   * the harness would then report a failed seed step rather than why.
+   */
+  it('is one the first-user seed accepts', () => {
+    expect(seedFirstUserSchema.safeParse(E2E_OWNER).success).toBe(true);
+  });
+
+  it('is handed to the first-user seed as its email', () => {
+    expect(ownerSeedEnv(makeEnv(URI, PARAMS)).SEED_ADMIN_EMAIL).toBe(E2E_OWNER.email);
+  });
+
+  it('is handed to the first-user seed as its password', () => {
+    expect(ownerSeedEnv(makeEnv(URI, PARAMS)).SEED_ADMIN_PASSWORD).toBe(E2E_OWNER.password);
+  });
+
+  it('leaves the pinned environment it is added to as it was', () => {
+    expect(ownerSeedEnv(makeEnv(URI, PARAMS))).toMatchObject(makeEnv(URI, PARAMS));
+  });
+
+  it('is the account the admin spec signs in with', () => {
+    expect(readFileSync('e2e/admin.spec.ts', 'utf8')).toContain("from '@/lib/e2e/harness-config'");
   });
 });
