@@ -34,6 +34,7 @@ import {
   E2E_PORT,
   FAST_DRIVER_PARAMS,
   makeEnv,
+  ownerSeedEnv,
   PATIENT_DRIVER_PARAMS,
 } from '@/lib/e2e/harness-config';
 import { runInHarness, type HarnessContext } from '@/lib/harness/docker-harness';
@@ -145,6 +146,14 @@ const setUp = async (mongoUrl: string): Promise<null | string> => {
         'seed:e2e-post',
         ['exec', 'tsx', 'scripts/seed-e2e-post.ts'],
         makeEnv(uri, FAST_DRIVER_PARAMS),
+        STEP_TIMEOUT_MS
+      )) &&
+      // The admin spec signs in, and the sign-in screen only exists once
+      // there is an account: without one Payload shows create-first-user.
+      (await runStep(
+        'seed:first-user',
+        ['exec', 'tsx', 'scripts/seed-first-user.ts'],
+        ownerSeedEnv(makeEnv(uri, FAST_DRIVER_PARAMS)),
         STEP_TIMEOUT_MS
       )) &&
       (await runStep('build', ['build'], makeEnv(uri, PATIENT_DRIVER_PARAMS), BUILD_TIMEOUT_MS));

@@ -86,3 +86,25 @@ export const makeEnv = (uri: string, driverParams: string): NodeJS.ProcessEnv =>
   // Pinned to '' so a developer's shell cannot make the suite look like one.
   VERCEL_ENV: '',
 });
+
+/**
+ * The one admin account in the suite's throwaway database, there so the
+ * admin spec has someone to sign in as. The run that creates it deletes the
+ * database it is in, and nothing else is ever seeded with it.
+ */
+export const E2E_OWNER = {
+  email: 'owner@e2e.test',
+  password: 'e2e-owner-sign-in',
+} as const;
+
+/**
+ * The environment of the one step that creates {@link E2E_OWNER}:
+ * `scripts/seed-first-user.ts` reads the account from these two variables.
+ * Added to a pinned environment rather than to `makeEnv` itself, so the
+ * build and the server never carry them.
+ */
+export const ownerSeedEnv = (env: NodeJS.ProcessEnv): NodeJS.ProcessEnv => ({
+  ...env,
+  SEED_ADMIN_EMAIL: E2E_OWNER.email,
+  SEED_ADMIN_PASSWORD: E2E_OWNER.password,
+});

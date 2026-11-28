@@ -80,8 +80,11 @@ runner path has no such wall.
 
 The database is the only copy of Owner content (`docs/adr/0001`), so a build
 against an empty one has no Site settings to render and fails. The harness
-runs the Seed (`scripts/seed.ts`, the same file `pnpm seed` runs) and then
-adds the E2E post, before it builds — keep it so. The pages that read the
+runs the Seed (`scripts/seed.ts`, the same file `pnpm seed` runs), then adds
+the E2E post and the suite's one admin account (`scripts/seed-first-user.ts`,
+handed `E2E_OWNER` from `harness-config.ts`), before it builds — keep it so.
+The account is what gives the admin a sign-in screen for `admin.spec.ts` to
+sign in through; an empty Users collection shows create-first-user instead. The pages that read the
 database use ISR (`revalidate = 300`), so whatever the build saw is also what
 the specs' first visit is served.
 
